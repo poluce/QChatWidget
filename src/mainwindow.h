@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "qchatwidget.h"
+#include "chatwidget/qchatwidget.h"
 
 class MainWindow : public QMainWindow
 {
@@ -20,6 +20,7 @@ private:
     QChatWidget *m_chatWidget;
     
     // Demo variables
+    QString m_lastUserMessage;
     QString m_responseContent;
     int m_streamIndex;
     

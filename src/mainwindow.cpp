@@ -28,7 +28,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::onMessageSent(const QString &content)
 {
-    Q_UNUSED(content);
+    m_lastUserMessage = content;
     // Simulate thinking delay
     QTimer::singleShot(600, this, &MainWindow::onStartSimulatedReply);
 }
@@ -39,12 +39,7 @@ void MainWindow::onStartSimulatedReply()
     m_chatWidget->addMessage("", false, "AI");
     
     // 2. Start streaming content
-    m_responseContent = "I received your message. Here is a **Markdown** list:\n"
-                        "- Item 1\n- Item 2\n- `Code Block`\n\n"
-                        "And here is a table:\n\n"
-                        "| Header 1 | Header 2 |\n"
-                        "| -------- | -------- |\n"
-                        "| Cell 1   | Cell 2   |\n";
+    m_responseContent = m_lastUserMessage;
     m_streamIndex = 0;
     
     QTimer *timer = new QTimer(this);
