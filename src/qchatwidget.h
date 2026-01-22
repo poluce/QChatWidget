@@ -18,6 +18,9 @@ public:
 
     // API: 添加消息
     void addMessage(const QString &content, bool isMine, const QString &sender = "User");
+    
+    // API: 流式输出（追加内容到最后一条消息）
+    void streamOutput(const QString &content);
 
 signals:
     // API: 消息发送信号

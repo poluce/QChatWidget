@@ -14,10 +14,17 @@ public:
 
 private slots:
     void onMessageSent(const QString &content);
-    void onSimulateReply();
+
 
 private:
     QChatWidget *m_chatWidget;
+    
+    // Demo variables
+    QString m_responseContent;
+    int m_streamIndex;
+    
+private slots:
+    void onStartSimulatedReply();
 };
 
 #endif // MAINWINDOW_H

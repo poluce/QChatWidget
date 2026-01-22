@@ -45,3 +45,12 @@ void ChatModel::addMessage(const ChatMessage &message)
     m_messages.append(message);
     endInsertRows();
 }
+
+void ChatModel::appendContentToLastMessage(const QString &content)
+{
+    if (m_messages.isEmpty()) return;
+
+    m_messages.last().content.append(content);
+    QModelIndex idx = index(m_messages.count() - 1, 0);
+    emit dataChanged(idx, idx, {ContentRole});
+}

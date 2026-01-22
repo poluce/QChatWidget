@@ -5,8 +5,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    setWindowTitle("Qt High Performance Chat");
-    resize(400, 600);
+    setWindowTitle("Qt AI Chat Demo");
+    resize(500, 700);
 
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -17,6 +17,9 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(m_chatWidget);
 
     connect(m_chatWidget, &QChatWidget::messageSent, this, &MainWindow::onMessageSent);
+    
+    // Welcome message with Markdown
+    m_chatWidget->addMessage("**Hello!** I am an AI Assistant.\nI support *Markdown* rendering and `streaming` output.\n\nTry sending a message!", false, "AI");
 }
 
 MainWindow::~MainWindow()
@@ -25,13 +28,37 @@ MainWindow::~MainWindow()
 
 void MainWindow::onMessageSent(const QString &content)
 {
-    // Simulate auto-reply logic
     Q_UNUSED(content);
-    QTimer::singleShot(1000, this, &MainWindow::onSimulateReply);
+    // Simulate thinking delay
+    QTimer::singleShot(600, this, &MainWindow::onStartSimulatedReply);
 }
 
-void MainWindow::onSimulateReply()
+void MainWindow::onStartSimulatedReply()
 {
-    QString replyContent = "我收到了你的消息"; // Generic reply for now as model access is encapsulated
-    m_chatWidget->addMessage(replyContent, false, "AutoReply");
+    // 1. Create an empty message first
+    m_chatWidget->addMessage("", false, "AI");
+    
+    // 2. Start streaming content
+    m_responseContent = "I received your message. Here is a **Markdown** list:\n"
+                        "- Item 1\n- Item 2\n- `Code Block`\n\n"
+                        "And here is a table:\n\n"
+                        "| Header 1 | Header 2 |\n"
+                        "| -------- | -------- |\n"
+                        "| Cell 1   | Cell 2   |\n";
+    m_streamIndex = 0;
+    
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, [this, timer]() {
+        if (m_streamIndex < m_responseContent.length()) {
+            // Append 1-3 characters at a time to simulate typing
+            int chunk = qMin(3, m_responseContent.length() - m_streamIndex);
+            QString textChunk = m_responseContent.mid(m_streamIndex, chunk);
+            m_chatWidget->streamOutput(textChunk);
+            m_streamIndex += chunk;
+        } else {
+            timer->stop();
+            timer->deleteLater();
+        }
+    });
+    timer->start(30); // 30ms delay between chunks
 }

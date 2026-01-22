@@ -80,3 +80,9 @@ void QChatWidget::onSendClicked()
 
     m_inputEdit->clear();
 }
+
+void QChatWidget::streamOutput(const QString &content)
+{
+    m_model->appendContentToLastMessage(content);
+    m_chatView->scrollToBottom();
+}

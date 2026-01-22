@@ -31,6 +31,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     void addMessage(const ChatMessage &message);
+    void appendContentToLastMessage(const QString &content);
 
 private:
     QList<ChatMessage> m_messages;
