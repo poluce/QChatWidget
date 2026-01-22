@@ -8,6 +8,8 @@ INCLUDEPATH += \
 SOURCES += \
     $$CHATWIDGET_DIR/chatmodel.cpp \
     $$CHATWIDGET_DIR/chatdelegate.cpp \
+    $$CHATWIDGET_DIR/chatviewwidget.cpp \
+    $$CHATWIDGET_DIR/chatinputwidget.cpp \
     $$CHATWIDGET_DIR/qchatwidget.cpp \
     $$CHATWIDGET_DIR/markdownutils.cpp \
     $$MD4C_DIR/md4c.c \
@@ -17,6 +19,8 @@ SOURCES += \
 HEADERS += \
     $$CHATWIDGET_DIR/chatmodel.h \
     $$CHATWIDGET_DIR/chatdelegate.h \
+    $$CHATWIDGET_DIR/chatviewwidget.h \
+    $$CHATWIDGET_DIR/chatinputwidget.h \
     $$CHATWIDGET_DIR/qchatwidget.h \
     $$CHATWIDGET_DIR/markdownutils.h \
     $$MD4C_DIR/md4c.h \

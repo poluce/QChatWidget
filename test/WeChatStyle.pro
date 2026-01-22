@@ -7,16 +7,18 @@ CONFIG += c++11
 TARGET = WeChatStyle
 TEMPLATE = app
 
+INCLUDEPATH += ../src
+
 # 源文件
 SOURCES += \
-    src/main.cpp \
-    src/mainwindow.cpp
+    main.cpp \
+    mainwindow.cpp
 
-include(src/chatwidget/chatwidget.pri)
+include(../src/chatwidget/chatwidget.pri)
 
 # 头文件
 HEADERS += \
-    src/mainwindow.h
+    mainwindow.h
 
 # 针对高分屏的一些默认适配（可选）
 DEFINES += QT_DEPRECATED_WARNINGS

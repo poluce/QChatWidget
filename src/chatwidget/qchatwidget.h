@@ -2,11 +2,6 @@
 #define QCHATWIDGET_H
 
 #include <QWidget>
-#include <QListView>
-#include <QLineEdit>
-#include <QPushButton>
-#include "chatmodel.h"
-#include "chatdelegate.h"
 
 class QChatWidget : public QWidget
 {
@@ -21,23 +16,22 @@ public:
     
     // API: 流式输出（追加内容到最后一条消息）
     void streamOutput(const QString &content);
+    void setInputWidget(class ChatInputWidgetBase *widget);
+    class ChatInputWidgetBase *inputWidget() const;
 
 signals:
     // API: 消息发送信号
     void messageSent(const QString &content);
 
 private slots:
-    void onSendClicked();
+    void onInputMessageSent(const QString &content);
 
 private:
     void setupUi();
 
-    QListView *m_chatView;
-    ChatModel *m_model;
-    ChatDelegate *m_delegate;
-
-    QLineEdit *m_inputEdit;
-    QPushButton *m_sendButton;
+    class QVBoxLayout *m_mainLayout;
+    class ChatViewWidget *m_viewWidget;
+    class ChatInputWidgetBase *m_inputWidget;
 };
 
 #endif // QCHATWIDGET_H
