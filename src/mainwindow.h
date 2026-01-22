@@ -2,11 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QListView>
-#include <QLineEdit>
-#include <QPushButton>
-#include "chatmodel.h"
-#include "chatdelegate.h"
+#include "qchatwidget.h"
 
 class MainWindow : public QMainWindow
 {
@@ -17,16 +13,11 @@ public:
     ~MainWindow();
 
 private slots:
-    void onSendClicked();
+    void onMessageSent(const QString &content);
     void onSimulateReply();
 
 private:
-    QListView *m_chatView;
-    ChatModel *m_model;
-    ChatDelegate *m_delegate;
-    
-    QLineEdit *m_inputEdit;
-    QPushButton *m_sendButton;
+    QChatWidget *m_chatWidget;
 };
 
 #endif // MAINWINDOW_H

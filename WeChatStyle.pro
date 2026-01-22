@@ -12,12 +12,14 @@ SOURCES += \
     src/main.cpp \
     src/chatmodel.cpp \
     src/chatdelegate.cpp \
+    src/qchatwidget.cpp \
     src/mainwindow.cpp
 
 # 头文件
 HEADERS += \
     src/chatmodel.h \
     src/chatdelegate.h \
+    src/qchatwidget.h \
     src/mainwindow.h
 
 # 针对高分屏的一些默认适配（可选）
