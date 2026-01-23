@@ -57,3 +57,8 @@ void ChatWidgetView::streamOutput(const QString &content)
     m_model->appendContentToLastMessage(content);
     m_chatView->scrollToBottom();
 }
+
+void ChatWidgetView::removeLastMessage()
+{
+    m_model->removeLastMessage();
+}

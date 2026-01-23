@@ -18,6 +18,7 @@ public:
 
     void addMessage(const QString &content, bool isMine, const QString &sender = "User");
     void streamOutput(const QString &content);
+    void removeLastMessage();
 
 private:
     void setupUi();

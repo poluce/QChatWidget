@@ -130,3 +130,8 @@ void ChatWidget::onInputMessageSent(const QString &content)
     addMessage(content, true, "Me");
     emit messageSent(content);
 }
+
+void ChatWidget::removeLastMessage()
+{
+    m_viewWidget->removeLastMessage();
+}
