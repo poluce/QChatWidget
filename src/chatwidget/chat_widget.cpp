@@ -100,6 +100,16 @@ bool ChatWidget::applyStyleSheetFile(const QString &fileNameOrPath)
     return applyStyleSheetFromFile(this, fileNameOrPath);
 }
 
+void ChatWidget::setDelegateStyle(const ChatWidgetDelegate::Style &style)
+{
+    m_viewWidget->setDelegateStyle(style);
+}
+
+ChatWidgetDelegate::Style ChatWidget::delegateStyle() const
+{
+    return m_viewWidget->delegateStyle();
+}
+
 void ChatWidget::setInputWidget(ChatWidgetInputBase *widget)
 {
     if (!widget || widget == m_inputWidget) {

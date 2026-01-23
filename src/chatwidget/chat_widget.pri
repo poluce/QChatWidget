@@ -30,3 +30,5 @@ HEADERS += \
 !contains(RESOURCES, $$PWD/../../resources/styles.qrc) {
     RESOURCES += $$PWD/../../resources/styles.qrc
 }
+
+include($$PWD/../common/theme_manager.pri)

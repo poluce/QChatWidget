@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QString>
+#include "chat_widget_delegate.h"
 
 class ChatWidget : public QWidget
 {
@@ -18,6 +19,8 @@ public:
     // API: 流式输出（追加内容到最后一条消息）
     void streamOutput(const QString &content);
     bool applyStyleSheetFile(const QString &fileNameOrPath);
+    void setDelegateStyle(const ChatWidgetDelegate::Style &style);
+    ChatWidgetDelegate::Style delegateStyle() const;
     void setInputWidget(class ChatWidgetInputBase *widget);
     class ChatWidgetInputBase *inputWidget() const;
 

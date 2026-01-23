@@ -57,3 +57,14 @@ void ChatWidgetView::streamOutput(const QString &content)
     m_model->appendContentToLastMessage(content);
     m_chatView->scrollToBottom();
 }
+
+void ChatWidgetView::setDelegateStyle(const ChatWidgetDelegate::Style &style)
+{
+    m_delegate->setStyle(style);
+    m_chatView->viewport()->update();
+}
+
+ChatWidgetDelegate::Style ChatWidgetView::delegateStyle() const
+{
+    return m_delegate->style();
+}

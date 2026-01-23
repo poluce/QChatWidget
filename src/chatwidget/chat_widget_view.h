@@ -3,10 +3,10 @@
 
 #include <QWidget>
 #include <QString>
+#include "chat_widget_delegate.h"
 
 class QListView;
 class ChatWidgetModel;
-class ChatWidgetDelegate;
 
 class ChatWidgetView : public QWidget
 {
@@ -18,6 +18,9 @@ public:
 
     void addMessage(const QString &content, bool isMine, const QString &sender = "User");
     void streamOutput(const QString &content);
+    
+    void setDelegateStyle(const ChatWidgetDelegate::Style &style);
+    ChatWidgetDelegate::Style delegateStyle() const;
 
 private:
     void setupUi();
