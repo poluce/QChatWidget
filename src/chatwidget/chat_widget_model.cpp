@@ -54,3 +54,15 @@ void ChatWidgetModel::appendContentToLastMessage(const QString &content)
     QModelIndex idx = index(m_messages.count() - 1, 0);
     emit dataChanged(idx, idx, {ChatWidgetContentRole});
 }
+
+void ChatWidgetModel::removeLastMessage()
+{
+    if (m_messages.isEmpty()) {
+        return;
+    }
+
+    int lastIdx = m_messages.size() - 1;
+    beginRemoveRows(QModelIndex(), lastIdx, lastIdx);
+    m_messages.removeAt(lastIdx);
+    endRemoveRows();
+}

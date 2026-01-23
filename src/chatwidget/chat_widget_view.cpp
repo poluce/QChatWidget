@@ -44,7 +44,8 @@ void ChatWidgetView::addMessage(const QString &content, bool isMine, const QStri
     msg.sender = sender;
     msg.timestamp = QDateTime::currentDateTime();
 
-    if (!isMine) {
+    if (!isMine)
+    {
         msg.avatarPath = ":/res/other.png";
     }
 
