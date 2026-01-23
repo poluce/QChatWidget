@@ -1,15 +1,16 @@
-#ifndef Q_CHAT_WIDGET_H
-#define Q_CHAT_WIDGET_H
+#ifndef CHAT_WIDGET_H
+#define CHAT_WIDGET_H
 
 #include <QWidget>
+#include <QString>
 
-class QChatWidget : public QWidget
+class ChatWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit QChatWidget(QWidget *parent = nullptr);
-    ~QChatWidget();
+    explicit ChatWidget(QWidget *parent = nullptr);
+    ~ChatWidget();
 
     // API: 添加消息
     void addMessage(const QString &content, bool isMine, const QString &sender = "User");
@@ -35,4 +36,4 @@ private:
     class ChatWidgetInputBase *m_inputWidget;
 };
 
-#endif // Q_CHAT_WIDGET_H
+#endif // CHAT_WIDGET_H

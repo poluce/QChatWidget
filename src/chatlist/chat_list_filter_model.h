@@ -2,6 +2,7 @@
 #define CHAT_LIST_FILTER_MODEL_H
 
 #include <QSortFilterProxyModel>
+#include <QList>
 
 class ChatListFilterModel : public QSortFilterProxyModel
 {

@@ -11,6 +11,7 @@
 
 class QLineEdit;
 class QVBoxLayout;
+class QColor;
 class ChatListView;
 
 class ChatListWidget : public QWidget

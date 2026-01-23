@@ -10,7 +10,7 @@ SOURCES += \
     $$CHATWIDGET_DIR/chat_widget_delegate.cpp \
     $$CHATWIDGET_DIR/chat_widget_view.cpp \
     $$CHATWIDGET_DIR/chat_widget_input.cpp \
-    $$CHATWIDGET_DIR/q_chat_widget.cpp \
+    $$CHATWIDGET_DIR/chat_widget.cpp \
     $$CHATWIDGET_DIR/chat_widget_markdown_utils.cpp \
     $$MD4C_DIR/md4c.c \
     $$MD4C_DIR/md4c-html.c \
@@ -21,7 +21,7 @@ HEADERS += \
     $$CHATWIDGET_DIR/chat_widget_delegate.h \
     $$CHATWIDGET_DIR/chat_widget_view.h \
     $$CHATWIDGET_DIR/chat_widget_input.h \
-    $$CHATWIDGET_DIR/q_chat_widget.h \
+    $$CHATWIDGET_DIR/chat_widget.h \
     $$CHATWIDGET_DIR/chat_widget_markdown_utils.h \
     $$MD4C_DIR/md4c.h \
     $$MD4C_DIR/md4c-html.h \

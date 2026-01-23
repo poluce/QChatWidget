@@ -4,7 +4,6 @@
 #include <QPainter>
 #include <QTextDocument>
 #include <QAbstractTextDocumentLayout>
-#include <QDebug>
 
 ChatWidgetDelegate::ChatWidgetDelegate(QObject *parent)
     : QStyledItemDelegate(parent)
@@ -13,7 +12,7 @@ ChatWidgetDelegate::ChatWidgetDelegate(QObject *parent)
 
 QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    QString content = index.data(ChatWidgetModel::ContentRole).toString();
+    QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
     // Convert to HTML
     QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
     
@@ -36,8 +35,8 @@ void ChatWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
 
-    bool isMine = index.data(ChatWidgetModel::IsMineRole).toBool();
-    QString content = index.data(ChatWidgetModel::ContentRole).toString();
+    bool isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
+    QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
     QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
 
     // Layout Logic

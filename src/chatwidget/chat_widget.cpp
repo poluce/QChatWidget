@@ -1,19 +1,19 @@
-#include "q_chat_widget.h"
+#include "chat_widget.h"
 #include "chat_widget_view.h"
 #include "chat_widget_input.h"
 #include <QVBoxLayout>
 
-QChatWidget::QChatWidget(QWidget *parent)
+ChatWidget::ChatWidget(QWidget *parent)
     : QWidget(parent)
 {
     setupUi();
 }
 
-QChatWidget::~QChatWidget()
+ChatWidget::~ChatWidget()
 {
 }
 
-void QChatWidget::setupUi()
+void ChatWidget::setupUi()
 {
     m_viewWidget = new ChatWidgetView(this);
     m_inputWidget = new ChatWidgetInput(this);
@@ -23,23 +23,23 @@ void QChatWidget::setupUi()
     m_mainLayout->addWidget(m_viewWidget);
     m_mainLayout->addWidget(m_inputWidget);
 
-    connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &QChatWidget::onInputMessageSent);
+    connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &ChatWidget::onInputMessageSent);
     if (auto *input = qobject_cast<ChatWidgetInput *>(m_inputWidget)) {
-        connect(input, &ChatWidgetInput::stopRequested, this, &QChatWidget::stopRequested);
+        connect(input, &ChatWidgetInput::stopRequested, this, &ChatWidget::stopRequested);
     }
 }
 
-void QChatWidget::addMessage(const QString &content, bool isMine, const QString &sender)
+void ChatWidget::addMessage(const QString &content, bool isMine, const QString &sender)
 {
     m_viewWidget->addMessage(content, isMine, sender);
 }
 
-void QChatWidget::streamOutput(const QString &content)
+void ChatWidget::streamOutput(const QString &content)
 {
     m_viewWidget->streamOutput(content);
 }
 
-void QChatWidget::setInputWidget(ChatWidgetInputBase *widget)
+void ChatWidget::setInputWidget(ChatWidgetInputBase *widget)
 {
     if (!widget || widget == m_inputWidget) {
         return;
@@ -53,18 +53,18 @@ void QChatWidget::setInputWidget(ChatWidgetInputBase *widget)
     widget->setParent(this);
     m_inputWidget = widget;
     m_mainLayout->addWidget(m_inputWidget);
-    connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &QChatWidget::onInputMessageSent);
+    connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &ChatWidget::onInputMessageSent);
     if (auto *input = qobject_cast<ChatWidgetInput *>(m_inputWidget)) {
-        connect(input, &ChatWidgetInput::stopRequested, this, &QChatWidget::stopRequested);
+        connect(input, &ChatWidgetInput::stopRequested, this, &ChatWidget::stopRequested);
     }
 }
 
-ChatWidgetInputBase *QChatWidget::inputWidget() const
+ChatWidgetInputBase *ChatWidget::inputWidget() const
 {
     return m_inputWidget;
 }
 
-void QChatWidget::onInputMessageSent(const QString &content)
+void ChatWidget::onInputMessageSent(const QString &content)
 {
     addMessage(content, true, "Me");
     emit messageSent(content);

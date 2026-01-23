@@ -184,11 +184,11 @@ int ChatListView::addChatItem(const QString &name,
 {
     QStandardItemModel *model = ensureStandardModel();
     QStandardItem *item = new QStandardItem();
-    item->setData(name, NameRole);
-    item->setData(message, MessageRole);
-    item->setData(time, TimeRole);
-    item->setData(avatarColor, AvatarColorRole);
-    item->setData(unreadCount, UnreadCountRole);
+    item->setData(name, ChatListNameRole);
+    item->setData(message, ChatListMessageRole);
+    item->setData(time, ChatListTimeRole);
+    item->setData(avatarColor, ChatListAvatarColorRole);
+    item->setData(unreadCount, ChatListUnreadCountRole);
     model->appendRow(item);
     return model->rowCount() - 1;
 }
@@ -208,11 +208,11 @@ void ChatListView::updateChatItem(int row,
     if (!item) {
         return;
     }
-    item->setData(name, NameRole);
-    item->setData(message, MessageRole);
-    item->setData(time, TimeRole);
-    item->setData(avatarColor, AvatarColorRole);
-    item->setData(unreadCount, UnreadCountRole);
+    item->setData(name, ChatListNameRole);
+    item->setData(message, ChatListMessageRole);
+    item->setData(time, ChatListTimeRole);
+    item->setData(avatarColor, ChatListAvatarColorRole);
+    item->setData(unreadCount, ChatListUnreadCountRole);
 }
 
 bool ChatListView::updateChatItemData(int row, int role, const QVariant &value)
@@ -258,7 +258,7 @@ int ChatListView::findRowByName(const QString &name) const
     }
     for (int row = 0; row < standard->rowCount(); ++row) {
         const QModelIndex index = standard->index(row, 0);
-        if (index.data(NameRole).toString() == name) {
+        if (index.data(ChatListNameRole).toString() == name) {
             return row;
         }
     }
@@ -279,7 +279,7 @@ QList<int> ChatListView::findRowsByName(const QString &name) const
     }
     for (int row = 0; row < standard->rowCount(); ++row) {
         const QModelIndex index = standard->index(row, 0);
-        if (index.data(NameRole).toString() == name) {
+        if (index.data(ChatListNameRole).toString() == name) {
             rows.append(row);
         }
     }
@@ -375,11 +375,11 @@ void ChatListView::onItemClicked(const QModelIndex &index)
     if (!index.isValid()) {
         return;
     }
-    const QString name = index.data(NameRole).toString();
-    const QString message = index.data(MessageRole).toString();
-    const QString time = index.data(TimeRole).toString();
-    const QColor avatarColor = index.data(AvatarColorRole).value<QColor>();
-    const int unreadCount = index.data(UnreadCountRole).toInt();
+    const QString name = index.data(ChatListNameRole).toString();
+    const QString message = index.data(ChatListMessageRole).toString();
+    const QString time = index.data(ChatListTimeRole).toString();
+    const QColor avatarColor = index.data(ChatListAvatarColorRole).value<QColor>();
+    const int unreadCount = index.data(ChatListUnreadCountRole).toInt();
     emit chatItemActivated(name, message, time, avatarColor, unreadCount);
 }
 

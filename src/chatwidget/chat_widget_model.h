@@ -3,6 +3,10 @@
 
 #include <QAbstractListModel>
 #include <QDateTime>
+#include <QHash>
+#include <QList>
+#include <QString>
+#include <QVariant>
 
 struct ChatWidgetMessage {
     QString sender;     // 发送者姓名
@@ -16,12 +20,12 @@ class ChatWidgetModel : public QAbstractListModel
 {
     Q_OBJECT
 public:
-    enum ChatRoles {
-        SenderRole = Qt::UserRole + 1,
-        ContentRole,
-        AvatarRole,
-        TimestampRole,
-        IsMineRole
+    enum ChatWidgetRoles {
+        ChatWidgetSenderRole = Qt::UserRole + 1,
+        ChatWidgetContentRole,
+        ChatWidgetAvatarRole,
+        ChatWidgetTimestampRole,
+        ChatWidgetIsMineRole
     };
 
     explicit ChatWidgetModel(QObject *parent = nullptr);

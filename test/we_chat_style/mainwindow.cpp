@@ -11,12 +11,12 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
-    m_chatWidget = new QChatWidget(this);
+    m_chatWidget = new ChatWidget(this);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
     mainLayout->addWidget(m_chatWidget);
 
-    connect(m_chatWidget, &QChatWidget::messageSent, this, &MainWindow::onMessageSent);
+    connect(m_chatWidget, &ChatWidget::messageSent, this, &MainWindow::onMessageSent);
     
     // Welcome message with Markdown
     m_chatWidget->addMessage("**Hello!** I am an AI Assistant.\nI support *Markdown* rendering and `streaming` output.\n\nTry sending a message!", false, "AI");

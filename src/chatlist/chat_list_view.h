@@ -10,6 +10,7 @@
 #include "chat_list_delegate.h"
 
 class QStandardItemModel;
+class QFont;
 
 class ChatListView : public QListView {
     Q_OBJECT

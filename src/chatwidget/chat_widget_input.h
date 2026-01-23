@@ -2,6 +2,7 @@
 #define CHAT_WIDGET_INPUT_H
 
 #include <QWidget>
+#include <QString>
 
 class QLineEdit;
 class QPushButton;

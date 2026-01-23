@@ -1,14 +1,14 @@
-# QChatWidget
+# ChatWidget
 
 一个可移植的 Qt 对话窗口组件，支持 Markdown 渲染与流式输出。仓库内包含示例应用与可独立编译的库，同时提供聊天列表组件。
 
 ## 目录说明
 - `src/chatwidget/`：组件源码（库主体）
 - `src/chatlist/`：聊天列表组件
-- `test/WeChatStyle/WeChatStyle.pro`：示例应用
-- `test/WeChatListDemo/WeChatListDemo.pro`：聊天列表示例
-- `lib/QChatWidgetLib.pro`：纯库（`TEMPLATE = lib`）
-- `lib/QChatListLib.pro`：聊天列表纯库
+- `test/we_chat_style/WeChatStyle.pro`：示例应用
+- `test/we_chat_list_demo/WeChatListDemo.pro`：聊天列表示例
+- `lib/ChatWidgetLib.pro`：纯库（`TEMPLATE = lib`）
+- `lib/ChatListLib.pro`：聊天列表纯库
 
 ## 聊天列表示例（带搜索）
 `ChatListWidget` 是一个可选复合控件（搜索栏 + 列表），默认不强制使用。  
@@ -23,15 +23,15 @@ include(/path/to/QChatWidget/src/chatwidget/chat_widget.pri)
 
 示例代码：
 ```
-QChatWidget *chat = new QChatWidget(this);
+ChatWidget *chat = new ChatWidget(this);
 layout->addWidget(chat);
-connect(chat, &QChatWidget::messageSent, this, [](const QString &text){
+connect(chat, &ChatWidget::messageSent, this, [](const QString &text){
     // 处理用户输入
 });
 ```
 
 ## 用法二：编译成静态库
-打开 `lib/QChatWidgetLib.pro` 编译即可。  
+打开 `lib/ChatWidgetLib.pro` 编译即可。  
 如果需要导出头文件/库，可执行 `make install`（或 `mingw32-make install`），会在构建目录输出：
 - `lib/`：库文件
 - `include/`：头文件
@@ -39,8 +39,8 @@ connect(chat, &QChatWidget::messageSent, this, [](const QString &text){
 然后在你的项目中链接：
 ```
 INCLUDEPATH += /path/to/include
-LIBS += -L/path/to/lib -lQChatWidget
+LIBS += -L/path/to/lib -lChatWidget
 ```
 
 ## 示例应用
-`test/WeChatStyle.pro` 是完整示例，可直接运行查看效果。
+`test/we_chat_style/WeChatStyle.pro` 是完整示例，可直接运行查看效果。

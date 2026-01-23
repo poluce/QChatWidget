@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QColor>
 #include <QVBoxLayout>
 #include "chat_list_widget.h"
 #include "chat_list_roles.h"
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]) {
 
     ChatListWidget *chatWidget = new ChatListWidget();
     chatWidget->enableSearchFiltering(true);
-    chatWidget->setSearchRoles(QList<int>() << NameRole << MessageRole);
+    chatWidget->setSearchRoles(QList<int>() << ChatListNameRole << ChatListMessageRole);
 
     auto addChat = [&](const QString &name, const QString &msg, const QString &time, QColor color, int unread) {
         chatWidget->addChatItem(name, msg, time, color, unread);

@@ -1,17 +1,18 @@
-# QChatWidget 代码规范
+# ChatWidget 代码规范
 
 本文档定义本仓库的命名、结构、API 设计与信号/槽约定。
 
 ## 1) 命名规范
 
 - **文件名**：统一 `lower_snake`（如 `chat_list_view.h`、`chat_widget_input.cpp`）
+- **.pro 文件名**：首字母大写的驼峰（如 `WeChatStyle.pro`、`ChatWidgetLib.pro`）
 - **类名**：`PascalCase`，带模块前缀  
   - 聊天列表模块：`ChatList*`  
   - 聊天窗口模块：`ChatWidget*`  
-  - 组件主入口保留 Qt 风格：`QChatWidget`
+  - 组件主入口不使用 `Q` 前缀（如 `ChatWidget`）
 - **方法/函数**：`camelCase`
 - **成员变量**：`m_` + `camelCase`
-- **枚举/角色**：模块前缀 + `Role`（如 `ChatListRoles::NameRole`）
+- **枚举/角色**：枚举名和枚举值都带模块前缀（如 `ChatListRoles::ChatListNameRole`）
 - **头文件保护**：`MODULE_FILE_H`（如 `CHAT_LIST_VIEW_H`）
 
 ## 2) 目录结构
@@ -60,7 +61,7 @@
 - 不强制 UI 组合；复合控件可选
 
 对外组件要求：
-- 必须提供一个主入口组件（如 `QChatWidget`、`ChatListWidget`）
+- 必须提供一个主入口组件（如 `ChatWidget`、`ChatListWidget`）
 - 提供最小化配置接口
 - 允许访问内部子组件（如 `listView()` / `searchBar()`）
 
@@ -82,4 +83,4 @@
 ## 9) 构建约定
 
 - `chat_list.pri` 与 `chat_widget.pri` 是唯一对外入口
-- `lib/QChatListLib.pro` / `lib/QChatWidgetLib.pro` 默认构建静态库
+- `lib/ChatListLib.pro` / `lib/ChatWidgetLib.pro` 默认构建静态库

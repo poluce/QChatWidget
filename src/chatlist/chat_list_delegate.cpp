@@ -1,7 +1,6 @@
 #include "chat_list_delegate.h"
 #include <QPainter>
 #include <QPainterPath>
-#include <QDebug>
 
 ChatListDelegate::ChatListDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
@@ -25,11 +24,11 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->setRenderHint(QPainter::Antialiasing);
 
     // 1. 获取数据
-    QString name = index.data(NameRole).toString();
-    QString message = index.data(MessageRole).toString();
-    QString time = index.data(TimeRole).toString();
-    QColor avatarColor = index.data(AvatarColorRole).value<QColor>();
-    int unreadCount = index.data(UnreadCountRole).toInt();
+    QString name = index.data(ChatListNameRole).toString();
+    QString message = index.data(ChatListMessageRole).toString();
+    QString time = index.data(ChatListTimeRole).toString();
+    QColor avatarColor = index.data(ChatListAvatarColorRole).value<QColor>();
+    int unreadCount = index.data(ChatListUnreadCountRole).toInt();
 
     // 2. 绘制背景
     QRect rect = option.rect;

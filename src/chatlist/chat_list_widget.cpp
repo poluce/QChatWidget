@@ -91,7 +91,7 @@ void ChatListWidget::enableSearchFiltering(bool enabled)
         m_filterModel->setSourceModel(source);
         m_listView->setModel(m_filterModel);
         if (m_filterModel->searchRoles().isEmpty()) {
-            m_filterModel->setSearchRoles(QList<int>() << NameRole << MessageRole);
+            m_filterModel->setSearchRoles(QList<int>() << ChatListNameRole << ChatListMessageRole);
         }
         applyFilterText(m_searchBar->text());
     } else {

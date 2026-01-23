@@ -2,6 +2,7 @@
 #define CHAT_WIDGET_VIEW_H
 
 #include <QWidget>
+#include <QString>
 
 class QListView;
 class ChatWidgetModel;

@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "chatwidget/q_chat_widget.h"
+#include "chatwidget/chat_widget.h"
 
 class MainWindow : public QMainWindow
 {
@@ -14,18 +14,15 @@ public:
 
 private slots:
     void onMessageSent(const QString &content);
-
+    void onStartSimulatedReply();
 
 private:
-    QChatWidget *m_chatWidget;
+    ChatWidget *m_chatWidget;
     
     // Demo variables
     QString m_lastUserMessage;
     QString m_responseContent;
     int m_streamIndex;
-    
-private slots:
-    void onStartSimulatedReply();
 };
 
 #endif // MAINWINDOW_H

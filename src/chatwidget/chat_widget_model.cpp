@@ -20,11 +20,11 @@ QVariant ChatWidgetModel::data(const QModelIndex &index, int role) const
     const ChatWidgetMessage &msg = m_messages[index.row()];
 
     switch (role) {
-    case SenderRole:    return msg.sender;
-    case ContentRole:   return msg.content;
-    case AvatarRole:    return msg.avatarPath;
-    case TimestampRole: return msg.timestamp;
-    case IsMineRole:    return msg.isMine;
+    case ChatWidgetSenderRole:    return msg.sender;
+    case ChatWidgetContentRole:   return msg.content;
+    case ChatWidgetAvatarRole:    return msg.avatarPath;
+    case ChatWidgetTimestampRole: return msg.timestamp;
+    case ChatWidgetIsMineRole:    return msg.isMine;
     default:            return QVariant();
     }
 }
@@ -32,10 +32,10 @@ QVariant ChatWidgetModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> ChatWidgetModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
-    roles[SenderRole] = "sender";
-    roles[ContentRole] = "content";
-    roles[AvatarRole] = "avatar";
-    roles[IsMineRole] = "isMine";
+    roles[ChatWidgetSenderRole] = "sender";
+    roles[ChatWidgetContentRole] = "content";
+    roles[ChatWidgetAvatarRole] = "avatar";
+    roles[ChatWidgetIsMineRole] = "isMine";
     return roles;
 }
 
@@ -52,5 +52,5 @@ void ChatWidgetModel::appendContentToLastMessage(const QString &content)
 
     m_messages.last().content.append(content);
     QModelIndex idx = index(m_messages.count() - 1, 0);
-    emit dataChanged(idx, idx, {ContentRole});
+    emit dataChanged(idx, idx, {ChatWidgetContentRole});
 }
