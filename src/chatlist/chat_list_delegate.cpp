@@ -47,11 +47,20 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     // 4. 绘制头像
     QRect avatarRect(rect.left() + margin, rect.top() + (rect.height() - avatarSize) / 2, avatarSize, avatarSize);
-    QPainterPath path;
-    path.addEllipse(avatarRect);
-    painter->setClipPath(path);
-    painter->fillRect(avatarRect, avatarColor);
-    painter->setClipping(false);
+    if (m_style.avatarShape == AvatarSquare) {
+        painter->fillRect(avatarRect, avatarColor);
+    } else {
+        QPainterPath path;
+        if (m_style.avatarShape == AvatarRoundedRect) {
+            const int radius = qMax(0, m_style.avatarCornerRadius);
+            path.addRoundedRect(avatarRect, radius, radius);
+        } else {
+            path.addEllipse(avatarRect);
+        }
+        painter->setClipPath(path);
+        painter->fillRect(avatarRect, avatarColor);
+        painter->setClipping(false);
+    }
 
     // 5. 绘制未读红点
     if (m_style.showUnreadBadge && unreadCount > 0) {

@@ -2,8 +2,16 @@
 #include "chat_list_view.h"
 #include "chat_list_filter_model.h"
 #include "chat_list_roles.h"
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QLineEdit>
+#include <QFileInfo>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QToolButton>
+#include <QMenu>
+#include <QAction>
 #include <QRegularExpression>
 #include <QStandardItemModel>
 #include <QItemSelectionModel>
@@ -18,23 +26,88 @@ ChatListWidget::~ChatListWidget()
 {
 }
 
+namespace {
+QString resolveStyleSheetPath(const QString &fileNameOrPath)
+{
+    if (fileNameOrPath.startsWith(":/")) {
+        return fileNameOrPath;
+    }
+    if (QFile::exists(fileNameOrPath)) {
+        return QFileInfo(fileNameOrPath).absoluteFilePath();
+    }
+
+    const QString fileName = QFileInfo(fileNameOrPath).fileName();
+    if (fileName.isEmpty()) {
+        return QString();
+    }
+
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList candidates = {
+        QDir(appDir).filePath("resources/styles/" + fileName),
+        QDir(appDir).filePath("../resources/styles/" + fileName),
+        QDir(QDir::currentPath()).filePath("resources/styles/" + fileName),
+        QDir(QDir::currentPath()).filePath("../resources/styles/" + fileName)
+    };
+
+    for (const QString &path : candidates) {
+        if (QFile::exists(path)) {
+            return path;
+        }
+    }
+    return QString();
+}
+
+bool applyStyleSheetFromFile(QWidget *target, const QString &fileNameOrPath)
+{
+    if (!target) {
+        return false;
+    }
+
+    const QString resolved = resolveStyleSheetPath(fileNameOrPath);
+    const QString fileName = QFileInfo(fileNameOrPath).fileName();
+    QFile file(resolved.isEmpty() ? QString(":/styles/%1").arg(fileName) : resolved);
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        return false;
+    }
+
+    target->setStyleSheet(QString::fromUtf8(file.readAll()));
+    return true;
+}
+} // namespace
+
 void ChatListWidget::setupUi()
 {
+    setObjectName("chatListWidget");
     m_searchBar = new QLineEdit(this);
+    m_searchBar->setObjectName("chatListSearchBar");
     m_searchBar->setPlaceholderText("搜索");
-    m_searchBar->setStyleSheet(
-        "QLineEdit { border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; margin: 10px; background: #f5f5f5; color: #333; }"
-    );
 
     m_listView = new ChatListView(this);
     m_filterModel = new ChatListFilterModel(this);
     m_filterModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     applyDefaultStyle();
 
+    m_moreButton = new QToolButton(this);
+    m_moreButton->setObjectName("chatListMoreButton");
+    m_moreButton->setText("+");
+    m_moreButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    m_moreButton->setPopupMode(QToolButton::InstantPopup);
+
+    m_moreMenu = new QMenu(this);
+    m_moreMenu->setObjectName("chatListHeaderMenu");
+    m_moreButton->setMenu(m_moreMenu);
+
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(0);
-    m_layout->addWidget(m_searchBar);
+
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setContentsMargins(10, 10, 10, 10);
+    headerLayout->setSpacing(8);
+    headerLayout->addWidget(m_searchBar);
+    headerLayout->addWidget(m_moreButton);
+
+    m_layout->addLayout(headerLayout);
     m_layout->addWidget(m_listView);
 
     connect(m_searchBar, &QLineEdit::textChanged, this, &ChatListWidget::searchTextChanged);
@@ -66,6 +139,14 @@ void ChatListWidget::applyDefaultStyle()
     m_listView->setShowSeparator(true);
     m_listView->setHoverColor(QColor(236, 238, 242));
     m_listView->setSelectedColor(QColor(220, 224, 230));
+}
+
+bool ChatListWidget::applyStyleSheetFile(const QString &fileNameOrPath)
+{
+    if (fileNameOrPath.trimmed().isEmpty()) {
+        return false;
+    }
+    return applyStyleSheetFromFile(this, fileNameOrPath);
 }
 
 void ChatListWidget::setSearchPlaceholder(const QString &text)
@@ -110,6 +191,72 @@ void ChatListWidget::setSearchRoles(const QList<int> &roles)
 void ChatListWidget::setSearchCaseSensitivity(Qt::CaseSensitivity sensitivity)
 {
     m_filterModel->setFilterCaseSensitivity(sensitivity);
+}
+
+void ChatListWidget::setItemHeight(int height)
+{
+    m_listView->setItemHeight(height);
+}
+
+void ChatListWidget::setAvatarSize(int size)
+{
+    m_listView->setAvatarSize(size);
+}
+
+void ChatListWidget::setAvatarShape(ChatListDelegate::AvatarShape shape)
+{
+    m_listView->setAvatarShape(shape);
+}
+
+void ChatListWidget::setAvatarCornerRadius(int radius)
+{
+    m_listView->setAvatarCornerRadius(radius);
+}
+
+void ChatListWidget::setItemMargins(int margin)
+{
+    m_listView->setMargins(margin);
+}
+
+void ChatListWidget::setBadgeSize(int size)
+{
+    m_listView->setBadgeSize(size);
+}
+
+void ChatListWidget::setItemSize(int height, int avatarSize, int margin)
+{
+    m_listView->setItemHeight(height);
+    m_listView->setAvatarSize(avatarSize);
+    m_listView->setMargins(margin);
+}
+
+QAction *ChatListWidget::addHeaderAction(const QString &text, const QVariant &data)
+{
+    QAction *action = m_moreMenu->addAction(text);
+    action->setData(data);
+    connect(action, &QAction::triggered, this, [this, action]() {
+        emit headerActionTriggered(action);
+    });
+    return action;
+}
+
+void ChatListWidget::setHeaderActions(const QList<QAction *> &actions)
+{
+    m_moreMenu->clear();
+    for (QAction *action : actions) {
+        if (!action) {
+            continue;
+        }
+        m_moreMenu->addAction(action);
+        connect(action, &QAction::triggered, this, [this, action]() {
+            emit headerActionTriggered(action);
+        });
+    }
+}
+
+void ChatListWidget::clearHeaderActions()
+{
+    m_moreMenu->clear();
 }
 
 int ChatListWidget::addChatItem(const QString &name,

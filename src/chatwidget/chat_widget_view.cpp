@@ -8,6 +8,7 @@
 ChatWidgetView::ChatWidgetView(QWidget *parent)
     : QWidget(parent)
 {
+    setObjectName("chatWidgetView");
     setupUi();
 }
 
@@ -21,11 +22,12 @@ void ChatWidgetView::setupUi()
     m_delegate = new ChatWidgetDelegate(this);
 
     m_chatView = new QListView(this);
+    m_chatView->setObjectName("chatWidgetViewList");
     m_chatView->setModel(m_model);
     m_chatView->setItemDelegate(m_delegate);
+    m_chatView->setObjectName("chatWidgetViewList");
     m_chatView->setSelectionMode(QAbstractItemView::NoSelection);
     m_chatView->setFocusPolicy(Qt::NoFocus);
-    m_chatView->setStyleSheet("QListView { background-color: #f5f5f5; border: none; }");
     m_chatView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_chatView->setResizeMode(QListView::Adjust);
 

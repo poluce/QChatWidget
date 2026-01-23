@@ -12,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralWidget);
 
     m_chatWidget = new ChatWidget(this);
+    m_chatWidget->applyStyleSheetFile("chat_widget.qss");
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
     mainLayout->addWidget(m_chatWidget);

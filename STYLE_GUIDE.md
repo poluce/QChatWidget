@@ -19,6 +19,7 @@
 
 - `src/chatlist/`：聊天列表组件
 - `src/chatwidget/`：聊天窗口组件
+- `resources/styles/`：样式表目录（每个模块一个 .qss）
 - `lib/`：库工程 .pro
 - `test/`：示例工程（不进入库）
 
@@ -64,6 +65,8 @@
 - 必须提供一个主入口组件（如 `ChatWidget`、`ChatListWidget`）
 - 提供最小化配置接口
 - 允许访问内部子组件（如 `listView()` / `searchBar()`）
+- 样式可通过 API 调整（例如头像大小/形状/圆角）
+- 样式表不自动加载，调用方需显式应用（如 `applyStyleSheetFile(...)` 或自行 `setStyleSheet`）
 
 ## 7) 代码风格
 
@@ -71,6 +74,12 @@
 - `{` 与控制语句同一行
 - 单行 `if` 可省略 `{}`，多行必须加
 - Qt 信号/槽使用函数指针形式
+
+## 8) 窗口与尺寸规范
+
+- 避免在窗口/控件上使用**固定尺寸**（`setFixedWidth/Height/Size`），优先使用 `setMinimum*` / `setMaximum*`。
+- 尽量依赖布局（`QVBoxLayout` / `QHBoxLayout` 等）完成自适应。
+- 需要用户可调整时，优先使用可拖拽分割（如 `QSplitter`）。
 
 ## 8) 文档与示例
 

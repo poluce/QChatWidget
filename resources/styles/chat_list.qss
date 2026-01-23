@@ -1,0 +1,54 @@
+#chatListWidget {
+    background: #ffffff;
+}
+
+#chatListView {
+    background-color: property(chatListBg);
+    outline: none;
+}
+
+#chatListSearchBar {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 6px 10px;
+    background: #f5f5f5;
+    color: #333;
+    min-height: 34px;
+}
+
+#chatListMoreButton {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 4px 12px;
+    background: #f5f5f5;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 40px;
+    min-height: 34px;
+}
+
+#chatListMoreButton:hover {
+    background: #ededed;
+}
+
+#chatListMoreButton::menu-indicator {
+    image: none;
+    width: 0px;
+}
+
+#chatListHeaderMenu {
+    background: white;
+    border: 1px solid #dfe3ea;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+#chatListHeaderMenu::item {
+    padding: 6px 16px;
+    border-radius: 6px;
+}
+
+#chatListHeaderMenu::item:selected {
+    background: #e9f1ff;
+}

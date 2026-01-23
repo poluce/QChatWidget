@@ -31,41 +31,39 @@ void ChatWidgetInput::resizeEvent(QResizeEvent *event)
 
 void ChatWidgetInput::setupUi()
 {
-    setObjectName("chatInputRoot");
+    setObjectName("chatWidgetInputRoot");
 
     m_inputBar = new QFrame(this);
-    m_inputBar->setObjectName("inputBar");
+    m_inputBar->setObjectName("chatWidgetInputBar");
 
     m_plusButton = new QToolButton(m_inputBar);
+    m_plusButton->setObjectName("chatWidgetInputPlusButton");
     m_plusButton->setText("+");
     m_plusButton->setProperty("role", "icon");
-    m_plusButton->setFixedWidth(36);
     m_plusButton->setPopupMode(QToolButton::InstantPopup);
 
     m_voiceButton = new QPushButton("语音", m_inputBar);
+    m_voiceButton->setObjectName("chatWidgetInputVoiceButton");
     m_voiceButton->setProperty("role", "icon");
-    m_voiceButton->setFixedWidth(52);
     m_inputEdit = new QLineEdit(m_inputBar);
+    m_inputEdit->setObjectName("chatWidgetInputEdit");
     m_inputEdit->setPlaceholderText("输入消息...");
     m_sendButton = new QPushButton("发送", m_inputBar);
+    m_sendButton->setObjectName("chatWidgetInputSendButton");
     m_sendButton->setProperty("role", "primary");
-    m_sendButton->setFixedWidth(64);
 
     m_plusMenu = new QMenu(this);
+    m_plusMenu->setObjectName("chatWidgetInputMenu");
     m_pickImageAction = m_plusMenu->addAction("图片");
     m_pickFileAction = m_plusMenu->addAction("文件");
     m_plusButton->setMenu(m_plusMenu);
 
     m_commandMenu = new QListWidget(this);
+    m_commandMenu->setObjectName("chatWidgetCommandMenu");
     m_commandMenu->setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
     m_commandMenu->setFocusPolicy(Qt::NoFocus);
     m_commandMenu->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_commandMenu->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_commandMenu->setStyleSheet(
-        "QListWidget { background: white; border: 1px solid #dfe3ea; border-radius: 10px; }"
-        "QListWidget::item { padding: 8px 12px; }"
-        "QListWidget::item:selected { background: #e9f1ff; }"
-    );
     m_commandMenu->setSpacing(2);
 
     QGraphicsDropShadowEffect *barShadow = new QGraphicsDropShadowEffect(this);
@@ -91,24 +89,6 @@ void ChatWidgetInput::setupUi()
     QVBoxLayout *rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(10, 8, 10, 12);
     rootLayout->addWidget(m_inputBar);
-
-    setStyleSheet(
-        "#chatInputRoot { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f7f7f8, stop:1 #eceff3); }"
-        "#inputBar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; }"
-        "QPushButton[role=\"icon\"] { background: #f4f6f9; border: 1px solid #e1e4ea; border-radius: 10px; padding: 6px 10px; color: #374151; }"
-        "QPushButton[role=\"icon\"]:hover { background: #eef2f7; }"
-        "QPushButton[role=\"icon\"]:pressed { background: #e2e8f0; }"
-        "QToolButton[role=\"icon\"] { background: #f4f6f9; border: 1px solid #e1e4ea; border-radius: 10px; padding: 4px 8px; color: #374151; }"
-        "QToolButton[role=\"icon\"]:hover { background: #eef2f7; }"
-        "QToolButton[role=\"icon\"]:pressed { background: #e2e8f0; }"
-        "QPushButton[role=\"primary\"] { background: #4b7bec; color: white; border: none; border-radius: 12px; padding: 6px 14px; }"
-        "QPushButton[role=\"primary\"]:hover { background: #3b6fe0; }"
-        "QPushButton[role=\"primary\"]:pressed { background: #2f62d6; }"
-        "QLineEdit { background: transparent; border: none; padding: 6px 6px; color: #111827; }"
-        "QMenu { background: white; border: 1px solid #dfe3ea; border-radius: 10px; padding: 6px; }"
-        "QMenu::item { padding: 6px 16px; border-radius: 6px; }"
-        "QMenu::item:selected { background: #e9f1ff; }"
-    );
 
     connect(m_sendButton, &QPushButton::clicked, this, &ChatWidgetInput::onSendClicked);
     connect(m_inputEdit, &QLineEdit::returnPressed, this, &ChatWidgetInput::onSendClicked);
@@ -225,8 +205,10 @@ void ChatWidgetInput::positionCommandMenu()
     const int rows = m_commandMenu->count();
     const int maxVisibleRows = qMin(rows, 6);
     const int height = (rowHeight > 0 ? rowHeight : 24) * maxVisibleRows + 2;
-    m_commandMenu->setFixedWidth(m_inputBar->width());
-    m_commandMenu->setFixedHeight(height);
+    m_commandMenu->setMinimumWidth(m_inputBar->width());
+    m_commandMenu->setMaximumWidth(m_inputBar->width());
+    m_commandMenu->setMinimumHeight(height);
+    m_commandMenu->setMaximumHeight(height);
 
     const QPoint globalPos = m_inputBar->mapToGlobal(QPoint(0, 0));
     const int y = globalPos.y() - height - 6;

@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
     layout->setSpacing(0);
 
     ChatListWidget *chatWidget = new ChatListWidget();
+    chatWidget->applyStyleSheetFile("chat_list.qss");
     chatWidget->enableSearchFiltering(true);
     chatWidget->setSearchRoles(QList<int>() << ChatListNameRole << ChatListMessageRole);
 

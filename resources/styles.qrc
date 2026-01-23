@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/styles">
+        <file alias="chat_list.qss">styles/chat_list.qss</file>
+        <file alias="chat_widget.qss">styles/chat_widget.qss</file>
+    </qresource>
+</RCC>

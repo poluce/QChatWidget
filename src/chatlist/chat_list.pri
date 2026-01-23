@@ -14,3 +14,7 @@ HEADERS += \
     $$CHATLIST_DIR/chat_list_filter_model.h \
     $$CHATLIST_DIR/chat_list_view.h \
     $$CHATLIST_DIR/chat_list_widget.h
+
+!contains(RESOURCES, $$PWD/../../resources/styles.qrc) {
+    RESOURCES += $$PWD/../../resources/styles.qrc
+}

@@ -23,6 +23,8 @@ public:
 
     void setItemHeight(int height);
     void setAvatarSize(int size);
+    void setAvatarShape(ChatListDelegate::AvatarShape shape);
+    void setAvatarCornerRadius(int radius);
     void setMargins(int margin);
     void setBadgeSize(int size);
     void setShowSeparator(bool show);

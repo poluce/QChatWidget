@@ -9,11 +9,19 @@
 class ChatListDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
+    enum AvatarShape {
+        AvatarCircle,
+        AvatarRoundedRect,
+        AvatarSquare
+    };
+
     struct Style {
         int itemHeight = 72;
         int avatarSize = 50;
         int margin = 12;
         int badgeSize = 18;
+        int avatarCornerRadius = 8;
+        AvatarShape avatarShape = AvatarCircle;
 
         QColor backgroundColor = Qt::white;
         QColor hoverColor = QColor(220, 220, 220);

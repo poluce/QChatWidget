@@ -13,6 +13,7 @@
 ## 聊天列表示例（带搜索）
 `ChatListWidget` 是一个可选复合控件（搜索栏 + 列表），默认不强制使用。  
 示例里通过 `enableSearchFiltering(true)` 开启过滤，并设置搜索角色（如昵称 + 最后消息）。
+样式表需显式调用（如 `chatListWidget->applyStyleSheetFile("chat_list.qss")`）。
 
 ## 用法一：源码直引（最简单）
 在你的 `.pro` 中加入：
@@ -24,6 +25,7 @@ include(/path/to/QChatWidget/src/chatwidget/chat_widget.pri)
 示例代码：
 ```
 ChatWidget *chat = new ChatWidget(this);
+chat->applyStyleSheetFile("chat_widget.qss");
 layout->addWidget(chat);
 connect(chat, &ChatWidget::messageSent, this, [](const QString &text){
     // 处理用户输入

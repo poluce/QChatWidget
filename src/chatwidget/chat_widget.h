@@ -17,6 +17,7 @@ public:
     
     // API: 流式输出（追加内容到最后一条消息）
     void streamOutput(const QString &content);
+    bool applyStyleSheetFile(const QString &fileNameOrPath);
     void setInputWidget(class ChatWidgetInputBase *widget);
     class ChatWidgetInputBase *inputWidget() const;
 

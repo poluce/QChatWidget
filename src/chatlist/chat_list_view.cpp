@@ -14,6 +14,7 @@ ChatListView::ChatListView(QWidget *parent) : QListView(parent) {
     // 设置自定义委托
     m_delegate = new ChatListDelegate(this);
     this->setItemDelegate(m_delegate);
+    setObjectName("chatListView");
     updateViewStyleSheet();
 
     connect(this, &QListView::clicked, this, &ChatListView::onItemClicked);
@@ -54,6 +55,20 @@ void ChatListView::setAvatarSize(int size)
 {
     auto style = currentStyle();
     style.avatarSize = size;
+    setStyle(style);
+}
+
+void ChatListView::setAvatarShape(ChatListDelegate::AvatarShape shape)
+{
+    auto style = currentStyle();
+    style.avatarShape = shape;
+    setStyle(style);
+}
+
+void ChatListView::setAvatarCornerRadius(int radius)
+{
+    auto style = currentStyle();
+    style.avatarCornerRadius = radius;
     setStyle(style);
 }
 
@@ -426,6 +441,7 @@ QStandardItemModel *ChatListView::ensureStandardModel()
 void ChatListView::updateViewStyleSheet()
 {
     const QColor bg = m_delegate ? m_delegate->style().backgroundColor : QColor(Qt::white);
-    setStyleSheet(QString("QListView { background-color: %1; outline: none; }")
-                      .arg(bg.name()));
+    setProperty("chatListBg", bg.name());
+    style()->unpolish(this);
+    style()->polish(this);
 }

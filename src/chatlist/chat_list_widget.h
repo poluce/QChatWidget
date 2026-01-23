@@ -8,11 +8,15 @@
 #include <QHash>
 #include <QModelIndex>
 #include <QItemSelection>
+#include "chat_list_delegate.h"
 
 class QLineEdit;
 class QVBoxLayout;
 class QColor;
 class ChatListView;
+class QToolButton;
+class QMenu;
+class QAction;
 
 class ChatListWidget : public QWidget
 {
@@ -33,6 +37,17 @@ public:
     void enableSearchFiltering(bool enabled);
     void setSearchRoles(const QList<int> &roles);
     void setSearchCaseSensitivity(Qt::CaseSensitivity sensitivity);
+    QAction *addHeaderAction(const QString &text, const QVariant &data = QVariant());
+    void setHeaderActions(const QList<QAction *> &actions);
+    void clearHeaderActions();
+    bool applyStyleSheetFile(const QString &fileNameOrPath);
+    void setItemHeight(int height);
+    void setAvatarSize(int size);
+    void setAvatarShape(ChatListDelegate::AvatarShape shape);
+    void setAvatarCornerRadius(int radius);
+    void setItemMargins(int margin);
+    void setBadgeSize(int size);
+    void setItemSize(int height, int avatarSize, int margin);
 
     int addChatItem(const QString &name,
                     const QString &message,
@@ -65,6 +80,7 @@ signals:
                            const QString &time,
                            const QColor &avatarColor,
                            int unreadCount);
+    void headerActionTriggered(QAction *action);
     void clicked(const QModelIndex &index);
     void doubleClicked(const QModelIndex &index);
     void pressed(const QModelIndex &index);
@@ -81,6 +97,8 @@ private:
 
     QLineEdit *m_searchBar;
     ChatListView *m_listView;
+    QToolButton *m_moreButton;
+    QMenu *m_moreMenu;
     class ChatListFilterModel *m_filterModel;
     class QItemSelectionModel *m_selectionModel = nullptr;
     bool m_filterEnabled = false;

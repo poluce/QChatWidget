@@ -1,0 +1,93 @@
+#chatWidgetInputRoot {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f7f7f8, stop:1 #eceff3);
+}
+
+#chatWidgetView {
+    background: #f5f5f5;
+}
+
+#chatWidgetViewList {
+    background: #f5f5f5;
+    border: none;
+    outline: none;
+}
+
+#chatWidgetInputBar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+#chatWidgetInputPlusButton,
+#chatWidgetInputVoiceButton {
+    background: #f4f6f9;
+    border: 1px solid #e1e4ea;
+    border-radius: 10px;
+    padding: 6px 10px;
+    color: #374151;
+    min-width: 36px;
+}
+
+#chatWidgetInputPlusButton:hover,
+#chatWidgetInputVoiceButton:hover {
+    background: #eef2f7;
+}
+
+#chatWidgetInputPlusButton:pressed,
+#chatWidgetInputVoiceButton:pressed {
+    background: #e2e8f0;
+}
+
+#chatWidgetInputSendButton {
+    background: #4b7bec;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 6px 14px;
+    min-width: 64px;
+}
+
+#chatWidgetInputSendButton:hover {
+    background: #3b6fe0;
+}
+
+#chatWidgetInputSendButton:pressed {
+    background: #2f62d6;
+}
+
+#chatWidgetInputEdit {
+    background: transparent;
+    border: none;
+    padding: 6px 6px;
+    color: #111827;
+}
+
+#chatWidgetInputMenu {
+    background: white;
+    border: 1px solid #dfe3ea;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+#chatWidgetInputMenu::item {
+    padding: 6px 16px;
+    border-radius: 6px;
+}
+
+#chatWidgetInputMenu::item:selected {
+    background: #e9f1ff;
+}
+
+#chatWidgetCommandMenu {
+    background: white;
+    border: 1px solid #dfe3ea;
+    border-radius: 10px;
+}
+
+#chatWidgetCommandMenu::item {
+    padding: 8px 12px;
+}
+
+#chatWidgetCommandMenu::item:selected {
+    background: #e9f1ff;
+}

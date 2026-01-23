@@ -26,3 +26,7 @@ HEADERS += \
     $$MD4C_DIR/md4c.h \
     $$MD4C_DIR/md4c-html.h \
     $$MD4C_DIR/entity.h
+
+!contains(RESOURCES, $$PWD/../../resources/styles.qrc) {
+    RESOURCES += $$PWD/../../resources/styles.qrc
+}
