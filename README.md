@@ -1,11 +1,18 @@
 # QChatWidget
 
-一个可移植的 Qt 对话窗口组件，支持 Markdown 渲染与流式输出。仓库内包含示例应用与可独立编译的库。
+一个可移植的 Qt 对话窗口组件，支持 Markdown 渲染与流式输出。仓库内包含示例应用与可独立编译的库，同时提供聊天列表组件。
 
 ## 目录说明
 - `src/chatwidget/`：组件源码（库主体）
-- `test/WeChatStyle.pro`：示例应用
+- `src/chatlist/`：聊天列表组件
+- `test/WeChatStyle/WeChatStyle.pro`：示例应用
+- `test/WeChatListDemo/WeChatListDemo.pro`：聊天列表示例
 - `lib/QChatWidgetLib.pro`：纯库（`TEMPLATE = lib`）
+- `lib/QChatListLib.pro`：聊天列表纯库
+
+## 聊天列表示例（带搜索）
+`ChatListWidget` 是一个可选复合控件（搜索栏 + 列表），默认不强制使用。  
+示例里通过 `enableSearchFiltering(true)` 开启过滤，并设置搜索角色（如昵称 + 最后消息）。
 
 ## 用法一：源码直引（最简单）
 在你的 `.pro` 中加入：

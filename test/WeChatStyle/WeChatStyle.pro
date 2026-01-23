@@ -7,14 +7,14 @@ CONFIG += c++11
 TARGET = WeChatStyle
 TEMPLATE = app
 
-INCLUDEPATH += ../src
+INCLUDEPATH += ../../src
 
 # 源文件
 SOURCES += \
     main.cpp \
     mainwindow.cpp
 
-include(../src/chatwidget/chatwidget.pri)
+include(../../src/chatwidget/chatwidget.pri)
 
 # 头文件
 HEADERS += \

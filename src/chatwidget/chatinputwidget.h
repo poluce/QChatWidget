@@ -35,6 +35,10 @@ public:
 signals:
     void voiceStartRequested();
     void voiceStopRequested();
+    void stopRequested();
+
+public slots:
+    void setSendingState(bool sending);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -58,6 +62,7 @@ private:
     bool tryApplyCommand(const QString &text);
     void applyMode(InputMode mode);
     void positionCommandMenu();
+    void setSending(bool sending);
     QFrame *m_inputBar;
     QLineEdit *m_inputEdit;
     QPushButton *m_sendButton;
@@ -69,6 +74,7 @@ private:
     QListWidget *m_commandMenu;
     InputMode m_inputMode = NormalMode;
     bool m_isRecording = false;
+    bool m_isSending = false;
 };
 
 #endif // CHATINPUTWIDGET_H

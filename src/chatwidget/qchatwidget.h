@@ -22,6 +22,7 @@ public:
 signals:
     // API: 消息发送信号
     void messageSent(const QString &content);
+    void stopRequested();
 
 private slots:
     void onInputMessageSent(const QString &content);

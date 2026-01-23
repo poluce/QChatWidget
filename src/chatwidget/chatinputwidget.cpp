@@ -121,6 +121,11 @@ void ChatInputWidget::setupUi()
 
 void ChatInputWidget::onSendClicked()
 {
+    if (m_isSending) {
+        emit stopRequested();
+        return;
+    }
+
     const QString text = m_inputEdit->text().trimmed();
     if (text.isEmpty()) return;
 
@@ -130,6 +135,7 @@ void ChatInputWidget::onSendClicked()
 
     emit messageSent(text);
     m_inputEdit->clear();
+    setSending(true);
 }
 
 void ChatInputWidget::onInputTextChanged(const QString &text)
@@ -225,6 +231,17 @@ void ChatInputWidget::positionCommandMenu()
     const QPoint globalPos = m_inputBar->mapToGlobal(QPoint(0, 0));
     const int y = globalPos.y() - height - 6;
     m_commandMenu->move(globalPos.x(), y);
+}
+
+void ChatInputWidget::setSending(bool sending)
+{
+    m_isSending = sending;
+    m_sendButton->setText(m_isSending ? "停止" : "发送");
+}
+
+void ChatInputWidget::setSendingState(bool sending)
+{
+    setSending(sending);
 }
 
 void ChatInputWidget::onVoiceClicked()

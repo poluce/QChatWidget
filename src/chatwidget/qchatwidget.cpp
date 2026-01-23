@@ -24,6 +24,9 @@ void QChatWidget::setupUi()
     m_mainLayout->addWidget(m_inputWidget);
 
     connect(m_inputWidget, &ChatInputWidgetBase::messageSent, this, &QChatWidget::onInputMessageSent);
+    if (auto *input = qobject_cast<ChatInputWidget *>(m_inputWidget)) {
+        connect(input, &ChatInputWidget::stopRequested, this, &QChatWidget::stopRequested);
+    }
 }
 
 void QChatWidget::addMessage(const QString &content, bool isMine, const QString &sender)
@@ -51,6 +54,9 @@ void QChatWidget::setInputWidget(ChatInputWidgetBase *widget)
     m_inputWidget = widget;
     m_mainLayout->addWidget(m_inputWidget);
     connect(m_inputWidget, &ChatInputWidgetBase::messageSent, this, &QChatWidget::onInputMessageSent);
+    if (auto *input = qobject_cast<ChatInputWidget *>(m_inputWidget)) {
+        connect(input, &ChatInputWidget::stopRequested, this, &QChatWidget::stopRequested);
+    }
 }
 
 ChatInputWidgetBase *QChatWidget::inputWidget() const

@@ -1,0 +1,106 @@
+#include "ChatDelegate.h"
+#include <QPainter>
+#include <QPainterPath>
+#include <QDebug>
+
+ChatDelegate::ChatDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
+
+void ChatDelegate::setStyle(const Style &style)
+{
+    m_style = style;
+}
+
+ChatDelegate::Style ChatDelegate::style() const
+{
+    return m_style;
+}
+
+QSize ChatDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+    Q_UNUSED(index);
+    return QSize(option.rect.width(), m_style.itemHeight);
+}
+
+void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    // 1. 获取数据
+    QString name = index.data(NameRole).toString();
+    QString message = index.data(MessageRole).toString();
+    QString time = index.data(TimeRole).toString();
+    QColor avatarColor = index.data(AvatarColorRole).value<QColor>();
+    int unreadCount = index.data(UnreadCountRole).toInt();
+
+    // 2. 绘制背景
+    QRect rect = option.rect;
+    if (option.state & QStyle::State_Selected) {
+        painter->fillRect(rect, m_style.selectedColor);
+    } else if (option.state & QStyle::State_MouseOver) {
+        painter->fillRect(rect, m_style.hoverColor);
+    } else {
+        painter->fillRect(rect, m_style.backgroundColor);
+    }
+
+    // 3. 布局参数
+    int avatarSize = m_style.avatarSize;
+    int margin = m_style.margin;
+    int textLeftMargin = margin + avatarSize + margin;
+
+    // 4. 绘制头像
+    QRect avatarRect(rect.left() + margin, rect.top() + (rect.height() - avatarSize) / 2, avatarSize, avatarSize);
+    QPainterPath path;
+    path.addEllipse(avatarRect);
+    painter->setClipPath(path);
+    painter->fillRect(avatarRect, avatarColor);
+    painter->setClipping(false);
+
+    // 5. 绘制未读红点
+    if (m_style.showUnreadBadge && unreadCount > 0) {
+        int badgeSize = m_style.badgeSize;
+        QRect badgeRect(avatarRect.right() - 6, avatarRect.top() - 6, badgeSize, badgeSize);
+        painter->setBrush(m_style.badgeColor);
+        painter->setPen(Qt::NoPen);
+        painter->drawEllipse(badgeRect);
+        
+        painter->setPen(m_style.badgeTextColor);
+        QFont badgeFont = m_style.badgeFont;
+        painter->setFont(badgeFont);
+        painter->drawText(badgeRect, Qt::AlignCenter, QString::number(unreadCount));
+    }
+
+    // 6. 绘制昵称
+    painter->setPen(m_style.nameColor);
+    QFont nameFont = m_style.nameFont;
+    painter->setFont(nameFont);
+    
+    QFont timeFont = m_style.timeFont;
+    QFontMetrics fmTime(timeFont);
+    int timeWidth = fmTime.horizontalAdvance(time) + margin;
+
+    QRect nameRect(textLeftMargin, rect.top() + 14, rect.width() - textLeftMargin - timeWidth, 25);
+    QString elidedName = painter->fontMetrics().elidedText(name, Qt::ElideRight, nameRect.width());
+    painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, elidedName);
+
+    // 7. 绘制时间
+    painter->setPen(m_style.timeColor);
+    painter->setFont(timeFont);
+    QRect timeRect(rect.right() - timeWidth, rect.top() + 14, timeWidth - margin, 25);
+    painter->drawText(timeRect, Qt::AlignRight | Qt::AlignVCenter, time);
+
+    // 8. 绘制消息内容
+    painter->setPen(m_style.messageColor);
+    QFont msgFont = m_style.messageFont;
+    painter->setFont(msgFont);
+    
+    QRect msgRect(textLeftMargin, rect.bottom() - 35, rect.width() - textLeftMargin - margin, 20);
+    QString elidedMsg = painter->fontMetrics().elidedText(message, Qt::ElideRight, msgRect.width());
+    painter->drawText(msgRect, Qt::AlignLeft | Qt::AlignVCenter, elidedMsg);
+
+    // 9. 分隔线
+    if (m_style.showSeparator) {
+        painter->setPen(m_style.separatorColor);
+        painter->drawLine(textLeftMargin, rect.bottom(), rect.right(), rect.bottom());
+    }
+
+    painter->restore();
+}
