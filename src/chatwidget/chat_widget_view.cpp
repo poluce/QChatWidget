@@ -1,24 +1,24 @@
-#include "chatviewwidget.h"
-#include "chatmodel.h"
-#include "chatdelegate.h"
+#include "chat_widget_view.h"
+#include "chat_widget_model.h"
+#include "chat_widget_delegate.h"
 #include <QListView>
 #include <QVBoxLayout>
 #include <QDateTime>
 
-ChatViewWidget::ChatViewWidget(QWidget *parent)
+ChatWidgetView::ChatWidgetView(QWidget *parent)
     : QWidget(parent)
 {
     setupUi();
 }
 
-ChatViewWidget::~ChatViewWidget()
+ChatWidgetView::~ChatWidgetView()
 {
 }
 
-void ChatViewWidget::setupUi()
+void ChatWidgetView::setupUi()
 {
-    m_model = new ChatModel(this);
-    m_delegate = new ChatDelegate(this);
+    m_model = new ChatWidgetModel(this);
+    m_delegate = new ChatWidgetDelegate(this);
 
     m_chatView = new QListView(this);
     m_chatView->setModel(m_model);
@@ -34,9 +34,9 @@ void ChatViewWidget::setupUi()
     layout->addWidget(m_chatView);
 }
 
-void ChatViewWidget::addMessage(const QString &content, bool isMine, const QString &sender)
+void ChatWidgetView::addMessage(const QString &content, bool isMine, const QString &sender)
 {
-    ChatMessage msg;
+    ChatWidgetMessage msg;
     msg.content = content;
     msg.isMine = isMine;
     msg.sender = sender;
@@ -50,7 +50,7 @@ void ChatViewWidget::addMessage(const QString &content, bool isMine, const QStri
     m_chatView->scrollToBottom();
 }
 
-void ChatViewWidget::streamOutput(const QString &content)
+void ChatWidgetView::streamOutput(const QString &content)
 {
     m_model->appendContentToLastMessage(content);
     m_chatView->scrollToBottom();

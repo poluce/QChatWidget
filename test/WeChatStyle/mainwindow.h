@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "chatwidget/qchatwidget.h"
+#include "chatwidget/q_chat_widget.h"
 
 class MainWindow : public QMainWindow
 {

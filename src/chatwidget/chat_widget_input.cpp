@@ -1,4 +1,4 @@
-#include "chatinputwidget.h"
+#include "chat_widget_input.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QToolButton>
@@ -11,17 +11,17 @@
 #include <QGraphicsDropShadowEffect>
 #include <QResizeEvent>
 
-ChatInputWidget::ChatInputWidget(QWidget *parent)
-    : ChatInputWidgetBase(parent)
+ChatWidgetInput::ChatWidgetInput(QWidget *parent)
+    : ChatWidgetInputBase(parent)
 {
     setupUi();
 }
 
-ChatInputWidget::~ChatInputWidget()
+ChatWidgetInput::~ChatWidgetInput()
 {
 }
 
-void ChatInputWidget::resizeEvent(QResizeEvent *event)
+void ChatWidgetInput::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     if (m_commandMenu->isVisible()) {
@@ -29,7 +29,7 @@ void ChatInputWidget::resizeEvent(QResizeEvent *event)
     }
 }
 
-void ChatInputWidget::setupUi()
+void ChatWidgetInput::setupUi()
 {
     setObjectName("chatInputRoot");
 
@@ -110,16 +110,16 @@ void ChatInputWidget::setupUi()
         "QMenu::item:selected { background: #e9f1ff; }"
     );
 
-    connect(m_sendButton, &QPushButton::clicked, this, &ChatInputWidget::onSendClicked);
-    connect(m_inputEdit, &QLineEdit::returnPressed, this, &ChatInputWidget::onSendClicked);
-    connect(m_inputEdit, &QLineEdit::textChanged, this, &ChatInputWidget::onInputTextChanged);
-    connect(m_commandMenu, &QListWidget::itemClicked, this, &ChatInputWidget::onCommandClicked);
-    connect(m_voiceButton, &QPushButton::clicked, this, &ChatInputWidget::onVoiceClicked);
-    connect(m_pickImageAction, &QAction::triggered, this, &ChatInputWidget::onPickImage);
-    connect(m_pickFileAction, &QAction::triggered, this, &ChatInputWidget::onPickFile);
+    connect(m_sendButton, &QPushButton::clicked, this, &ChatWidgetInput::onSendClicked);
+    connect(m_inputEdit, &QLineEdit::returnPressed, this, &ChatWidgetInput::onSendClicked);
+    connect(m_inputEdit, &QLineEdit::textChanged, this, &ChatWidgetInput::onInputTextChanged);
+    connect(m_commandMenu, &QListWidget::itemClicked, this, &ChatWidgetInput::onCommandClicked);
+    connect(m_voiceButton, &QPushButton::clicked, this, &ChatWidgetInput::onVoiceClicked);
+    connect(m_pickImageAction, &QAction::triggered, this, &ChatWidgetInput::onPickImage);
+    connect(m_pickFileAction, &QAction::triggered, this, &ChatWidgetInput::onPickFile);
 }
 
-void ChatInputWidget::onSendClicked()
+void ChatWidgetInput::onSendClicked()
 {
     if (m_isSending) {
         emit stopRequested();
@@ -138,12 +138,12 @@ void ChatInputWidget::onSendClicked()
     setSending(true);
 }
 
-void ChatInputWidget::onInputTextChanged(const QString &text)
+void ChatWidgetInput::onInputTextChanged(const QString &text)
 {
     updateCommandMenu(text);
 }
 
-void ChatInputWidget::onCommandClicked(QListWidgetItem *item)
+void ChatWidgetInput::onCommandClicked(QListWidgetItem *item)
 {
     if (!item) return;
     const QString cmd = item->data(Qt::UserRole).toString();
@@ -152,7 +152,7 @@ void ChatInputWidget::onCommandClicked(QListWidgetItem *item)
     }
 }
 
-void ChatInputWidget::updateCommandMenu(const QString &text)
+void ChatWidgetInput::updateCommandMenu(const QString &text)
 {
     if (!text.startsWith("/")) {
         m_commandMenu->hide();
@@ -190,7 +190,7 @@ void ChatInputWidget::updateCommandMenu(const QString &text)
     m_commandMenu->show();
 }
 
-bool ChatInputWidget::tryApplyCommand(const QString &text)
+bool ChatWidgetInput::tryApplyCommand(const QString &text)
 {
     const QString trimmed = text.trimmed();
     const QString command = trimmed.split(' ', Qt::SkipEmptyParts).value(0);
@@ -206,7 +206,7 @@ bool ChatInputWidget::tryApplyCommand(const QString &text)
     return false;
 }
 
-void ChatInputWidget::applyMode(InputMode mode)
+void ChatWidgetInput::applyMode(InputMode mode)
 {
     m_inputMode = mode;
     if (m_inputMode == TranslateMode) {
@@ -219,7 +219,7 @@ void ChatInputWidget::applyMode(InputMode mode)
     m_commandMenu->hide();
 }
 
-void ChatInputWidget::positionCommandMenu()
+void ChatWidgetInput::positionCommandMenu()
 {
     const int rowHeight = m_commandMenu->sizeHintForRow(0);
     const int rows = m_commandMenu->count();
@@ -233,18 +233,18 @@ void ChatInputWidget::positionCommandMenu()
     m_commandMenu->move(globalPos.x(), y);
 }
 
-void ChatInputWidget::setSending(bool sending)
+void ChatWidgetInput::setSending(bool sending)
 {
     m_isSending = sending;
     m_sendButton->setText(m_isSending ? "停止" : "发送");
 }
 
-void ChatInputWidget::setSendingState(bool sending)
+void ChatWidgetInput::setSendingState(bool sending)
 {
     setSending(sending);
 }
 
-void ChatInputWidget::onVoiceClicked()
+void ChatWidgetInput::onVoiceClicked()
 {
     m_isRecording = !m_isRecording;
     if (m_isRecording) {
@@ -262,7 +262,7 @@ void ChatInputWidget::onVoiceClicked()
     }
 }
 
-void ChatInputWidget::onPickImage()
+void ChatWidgetInput::onPickImage()
 {
     const QString filter = "Images (*.png *.jpg *.jpeg *.bmp *.gif)";
     const QString path = QFileDialog::getOpenFileName(this, "选择图片", QString(), filter);
@@ -273,7 +273,7 @@ void ChatInputWidget::onPickImage()
     emit messageSent("【图片】" + path);
 }
 
-void ChatInputWidget::onPickFile()
+void ChatWidgetInput::onPickFile()
 {
     const QString filter = "All Files (*.*)";
     const QString path = QFileDialog::getOpenFileName(this, "选择文件", QString(), filter);

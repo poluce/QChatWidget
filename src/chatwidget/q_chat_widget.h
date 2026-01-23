@@ -1,5 +1,5 @@
-#ifndef QCHATWIDGET_H
-#define QCHATWIDGET_H
+#ifndef Q_CHAT_WIDGET_H
+#define Q_CHAT_WIDGET_H
 
 #include <QWidget>
 
@@ -16,8 +16,8 @@ public:
     
     // API: 流式输出（追加内容到最后一条消息）
     void streamOutput(const QString &content);
-    void setInputWidget(class ChatInputWidgetBase *widget);
-    class ChatInputWidgetBase *inputWidget() const;
+    void setInputWidget(class ChatWidgetInputBase *widget);
+    class ChatWidgetInputBase *inputWidget() const;
 
 signals:
     // API: 消息发送信号
@@ -31,8 +31,8 @@ private:
     void setupUi();
 
     class QVBoxLayout *m_mainLayout;
-    class ChatViewWidget *m_viewWidget;
-    class ChatInputWidgetBase *m_inputWidget;
+    class ChatWidgetView *m_viewWidget;
+    class ChatWidgetInputBase *m_inputWidget;
 };
 
-#endif // QCHATWIDGET_H
+#endif // Q_CHAT_WIDGET_H

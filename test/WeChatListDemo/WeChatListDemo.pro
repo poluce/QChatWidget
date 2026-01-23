@@ -11,5 +11,5 @@ CONFIG += c++11
 SOURCES += \
     main.cpp
 
-include(../../src/chatlist/chatlist.pri)
+include(../../src/chatlist/chat_list.pri)
 

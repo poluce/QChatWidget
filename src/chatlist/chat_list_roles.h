@@ -1,10 +1,10 @@
-#ifndef CHATROLES_H
-#define CHATROLES_H
+#ifndef CHAT_LIST_ROLES_H
+#define CHAT_LIST_ROLES_H
 
 #include <Qt>
 
 // 定义数据模型中的自定义角色
-enum ChatRoles {
+enum ChatListRoles {
     NameRole = Qt::UserRole + 1, // 昵称
     MessageRole,                 // 最后一条消息
     TimeRole,                    // 时间
@@ -12,4 +12,4 @@ enum ChatRoles {
     UnreadCountRole              // 未读消息数
 };
 
-#endif // CHATROLES_H
+#endif // CHAT_LIST_ROLES_H

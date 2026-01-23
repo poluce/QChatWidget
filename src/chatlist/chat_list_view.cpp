@@ -1,4 +1,4 @@
-#include "ChatListView.h"
+#include "chat_list_view.h"
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QSortFilterProxyModel>
@@ -12,14 +12,14 @@ ChatListView::ChatListView(QWidget *parent) : QListView(parent) {
     this->setSelectionMode(QAbstractItemView::SingleSelection);
     
     // 设置自定义委托
-    m_delegate = new ChatDelegate(this);
+    m_delegate = new ChatListDelegate(this);
     this->setItemDelegate(m_delegate);
     updateViewStyleSheet();
 
     connect(this, &QListView::clicked, this, &ChatListView::onItemClicked);
 }
 
-ChatDelegate *ChatListView::chatDelegate() const
+ChatListDelegate *ChatListView::chatDelegate() const
 {
     return m_delegate;
 }
@@ -29,7 +29,7 @@ QStandardItemModel *ChatListView::standardModel()
     return ensureStandardModel();
 }
 
-void ChatListView::setChatDelegate(ChatDelegate *delegate)
+void ChatListView::setChatDelegate(ChatListDelegate *delegate)
 {
     if (!delegate || delegate == m_delegate) {
         return;
@@ -383,12 +383,12 @@ void ChatListView::onItemClicked(const QModelIndex &index)
     emit chatItemActivated(name, message, time, avatarColor, unreadCount);
 }
 
-ChatDelegate::Style ChatListView::currentStyle() const
+ChatListDelegate::Style ChatListView::currentStyle() const
 {
-    return m_delegate ? m_delegate->style() : ChatDelegate::Style();
+    return m_delegate ? m_delegate->style() : ChatListDelegate::Style();
 }
 
-void ChatListView::setStyle(const ChatDelegate::Style &style)
+void ChatListView::setStyle(const ChatListDelegate::Style &style)
 {
     if (m_delegate) {
         m_delegate->setStyle(style);

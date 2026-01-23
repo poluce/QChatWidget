@@ -7,17 +7,17 @@ TARGET = QChatList
 
 INCLUDEPATH += ../src
 
-include(../src/chatlist/chatlist.pri)
+include(../src/chatlist/chat_list.pri)
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
 # 可选：make install 时导出头文件/库
 HEADERS_INSTALL.files = \
-    ../src/chatlist/ChatRoles.h \
-    ../src/chatlist/ChatDelegate.h \
-    ../src/chatlist/ChatListFilterModel.h \
-    ../src/chatlist/ChatListView.h \
-    ../src/chatlist/ChatListWidget.h
+    ../src/chatlist/chat_list_roles.h \
+    ../src/chatlist/chat_list_delegate.h \
+    ../src/chatlist/chat_list_filter_model.h \
+    ../src/chatlist/chat_list_view.h \
+    ../src/chatlist/chat_list_widget.h
 HEADERS_INSTALL.path = $$OUT_PWD/include
 
 target.path = $$OUT_PWD/lib

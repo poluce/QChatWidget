@@ -1,5 +1,5 @@
-#ifndef CHATLISTWIDGET_H
-#define CHATLISTWIDGET_H
+#ifndef CHAT_LIST_WIDGET_H
+#define CHAT_LIST_WIDGET_H
 
 #include <QWidget>
 #include <Qt>
@@ -86,4 +86,4 @@ private:
     QVBoxLayout *m_layout;
 };
 
-#endif // CHATLISTWIDGET_H
+#endif // CHAT_LIST_WIDGET_H

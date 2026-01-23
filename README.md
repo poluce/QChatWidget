@@ -18,7 +18,7 @@
 在你的 `.pro` 中加入：
 ```
 INCLUDEPATH += /path/to/QChatWidget/src
-include(/path/to/QChatWidget/src/chatwidget/chatwidget.pri)
+include(/path/to/QChatWidget/src/chatwidget/chat_widget.pri)
 ```
 
 示例代码：

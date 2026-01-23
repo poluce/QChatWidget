@@ -1,13 +1,13 @@
-#ifndef CHATLISTVIEW_H
-#define CHATLISTVIEW_H
+#ifndef CHAT_LIST_VIEW_H
+#define CHAT_LIST_VIEW_H
 
 #include <QListView>
 #include <QColor>
 #include <QVariant>
 #include <QHash>
 #include <QList>
-#include "ChatRoles.h"
-#include "ChatDelegate.h"
+#include "chat_list_roles.h"
+#include "chat_list_delegate.h"
 
 class QStandardItemModel;
 
@@ -16,8 +16,8 @@ class ChatListView : public QListView {
 public:
     explicit ChatListView(QWidget *parent = nullptr);
 
-    ChatDelegate *chatDelegate() const;
-    void setChatDelegate(ChatDelegate *delegate);
+    ChatListDelegate *chatDelegate() const;
+    void setChatDelegate(ChatListDelegate *delegate);
     QStandardItemModel *standardModel();
 
     void setItemHeight(int height);
@@ -77,13 +77,13 @@ private slots:
     void onItemClicked(const QModelIndex &index);
 
 private:
-    ChatDelegate::Style currentStyle() const;
-    void setStyle(const ChatDelegate::Style &style);
+    ChatListDelegate::Style currentStyle() const;
+    void setStyle(const ChatListDelegate::Style &style);
     QStandardItemModel *ensureStandardModel();
     void updateViewStyleSheet();
 
-    ChatDelegate *m_delegate = nullptr;
+    ChatListDelegate *m_delegate = nullptr;
     QStandardItemModel *m_standardModel = nullptr;
 };
 
-#endif // CHATLISTVIEW_H
+#endif // CHAT_LIST_VIEW_H

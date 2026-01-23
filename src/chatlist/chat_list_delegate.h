@@ -1,12 +1,12 @@
-#ifndef CHATDELEGATE_H
-#define CHATDELEGATE_H
+#ifndef CHAT_LIST_DELEGATE_H
+#define CHAT_LIST_DELEGATE_H
 
 #include <QStyledItemDelegate>
 #include <QColor>
 #include <QFont>
-#include "ChatRoles.h"
+#include "chat_list_roles.h"
 
-class ChatDelegate : public QStyledItemDelegate {
+class ChatListDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     struct Style {
@@ -34,7 +34,7 @@ public:
         bool showUnreadBadge = true;
     };
 
-    explicit ChatDelegate(QObject *parent = nullptr);
+    explicit ChatListDelegate(QObject *parent = nullptr);
 
     void setStyle(const Style &style);
     Style style() const;
@@ -46,4 +46,4 @@ private:
     Style m_style;
 };
 
-#endif // CHATDELEGATE_H
+#endif // CHAT_LIST_DELEGATE_H

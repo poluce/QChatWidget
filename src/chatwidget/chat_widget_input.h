@@ -1,5 +1,5 @@
-#ifndef CHATINPUTWIDGET_H
-#define CHATINPUTWIDGET_H
+#ifndef CHAT_WIDGET_INPUT_H
+#define CHAT_WIDGET_INPUT_H
 
 #include <QWidget>
 
@@ -13,24 +13,24 @@ class QFrame;
 class QMenu;
 class QAction;
 
-class ChatInputWidgetBase : public QWidget
+class ChatWidgetInputBase : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ChatInputWidgetBase(QWidget *parent = nullptr) : QWidget(parent) {}
+    explicit ChatWidgetInputBase(QWidget *parent = nullptr) : QWidget(parent) {}
 
 signals:
     void messageSent(const QString &content);
 };
 
-class ChatInputWidget : public ChatInputWidgetBase
+class ChatWidgetInput : public ChatWidgetInputBase
 {
     Q_OBJECT
 
 public:
-    explicit ChatInputWidget(QWidget *parent = nullptr);
-    ~ChatInputWidget();
+    explicit ChatWidgetInput(QWidget *parent = nullptr);
+    ~ChatWidgetInput();
 
 signals:
     void voiceStartRequested();
@@ -77,4 +77,4 @@ private:
     bool m_isSending = false;
 };
 
-#endif // CHATINPUTWIDGET_H
+#endif // CHAT_WIDGET_INPUT_H

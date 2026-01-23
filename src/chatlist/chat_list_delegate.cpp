@@ -1,26 +1,26 @@
-#include "ChatDelegate.h"
+#include "chat_list_delegate.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QDebug>
 
-ChatDelegate::ChatDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
+ChatListDelegate::ChatListDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
-void ChatDelegate::setStyle(const Style &style)
+void ChatListDelegate::setStyle(const Style &style)
 {
     m_style = style;
 }
 
-ChatDelegate::Style ChatDelegate::style() const
+ChatListDelegate::Style ChatListDelegate::style() const
 {
     return m_style;
 }
 
-QSize ChatDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+QSize ChatListDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
     Q_UNUSED(index);
     return QSize(option.rect.width(), m_style.itemHeight);
 }
 
-void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
 

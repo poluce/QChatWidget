@@ -7,18 +7,18 @@ TARGET = QChatWidget
 
 INCLUDEPATH += ../src
 
-include(../src/chatwidget/chatwidget.pri)
+include(../src/chatwidget/chat_widget.pri)
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
 # 可选：make install 时导出头文件/库
 HEADERS_INSTALL.files = \
-    ../src/chatwidget/chatmodel.h \
-    ../src/chatwidget/chatdelegate.h \
-    ../src/chatwidget/chatviewwidget.h \
-    ../src/chatwidget/chatinputwidget.h \
-    ../src/chatwidget/qchatwidget.h \
-    ../src/chatwidget/markdownutils.h
+    ../src/chatwidget/chat_widget_model.h \
+    ../src/chatwidget/chat_widget_delegate.h \
+    ../src/chatwidget/chat_widget_view.h \
+    ../src/chatwidget/chat_widget_input.h \
+    ../src/chatwidget/q_chat_widget.h \
+    ../src/chatwidget/chat_widget_markdown_utils.h
 HEADERS_INSTALL.path = $$OUT_PWD/include
 
 target.path = $$OUT_PWD/lib

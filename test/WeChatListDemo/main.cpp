@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QVBoxLayout>
-#include "ChatListWidget.h"
-#include "ChatRoles.h"
+#include "chat_list_widget.h"
+#include "chat_list_roles.h"
 
 int main(int argc, char *argv[]) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))

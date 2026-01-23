@@ -1,5 +1,5 @@
-#ifndef CHATLISTFILTERMODEL_H
-#define CHATLISTFILTERMODEL_H
+#ifndef CHAT_LIST_FILTER_MODEL_H
+#define CHAT_LIST_FILTER_MODEL_H
 
 #include <QSortFilterProxyModel>
 
@@ -20,4 +20,4 @@ private:
     QList<int> m_roles;
 };
 
-#endif // CHATLISTFILTERMODEL_H
+#endif // CHAT_LIST_FILTER_MODEL_H

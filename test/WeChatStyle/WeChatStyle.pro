@@ -14,7 +14,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp
 
-include(../../src/chatwidget/chatwidget.pri)
+include(../../src/chatwidget/chat_widget.pri)
 
 # 头文件
 HEADERS += \

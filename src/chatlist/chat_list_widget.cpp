@@ -1,7 +1,7 @@
-#include "ChatListWidget.h"
-#include "ChatListView.h"
-#include "ChatListFilterModel.h"
-#include "ChatRoles.h"
+#include "chat_list_widget.h"
+#include "chat_list_view.h"
+#include "chat_list_filter_model.h"
+#include "chat_list_roles.h"
 #include <QLineEdit>
 #include <QVBoxLayout>
 #include <QRegularExpression>

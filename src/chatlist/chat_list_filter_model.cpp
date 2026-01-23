@@ -1,4 +1,4 @@
-#include "ChatListFilterModel.h"
+#include "chat_list_filter_model.h"
 #include <QRegularExpression>
 #include <QAbstractItemModel>
 
