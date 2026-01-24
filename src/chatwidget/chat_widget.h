@@ -5,8 +5,12 @@
 #include <QString>
 #include <QWidget>
 
+class ChatWidgetView;
+class ChatWidgetInputBase;
+class QTimer;
 
-class ChatWidget : public QWidget {
+class ChatWidget : public QWidget
+{
   Q_OBJECT
 
 public:
@@ -29,6 +33,9 @@ public:
   class ChatWidgetInputBase *inputWidget() const;
   void setSendingState(bool sending);
 
+  // API: 模拟 AI 自动流式回复（组件内部管理定时器）
+  void startSimulatedStreaming(const QString &content, int interval = 30);
+
 signals:
   // API: 消息发送信号
   void messageSent(const QString &content);
@@ -36,6 +43,7 @@ signals:
 
 private slots:
   void onInputMessageSent(const QString &content);
+  void onStreamingTimeout();
 
 private:
   void setupUi();
@@ -43,6 +51,11 @@ private:
   class QVBoxLayout *m_mainLayout;
   class ChatWidgetView *m_viewWidget;
   class ChatWidgetInputBase *m_inputWidget;
+  bool m_isSending = false;
+
+  QTimer *m_streamingTimer = nullptr;
+  QString m_streamingContent;
+  int m_streamingIndex = 0;
 };
 
 #endif // CHAT_WIDGET_H
