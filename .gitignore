@@ -43,3 +43,4 @@
 build/
 build-*/
 .qtcreator/WeChatStyle.pro.user
+*.pro.user
