@@ -58,6 +58,9 @@ void ModelConfigImportPage::setProviders(const QList<ModelConfigProvider> &provi
     }
     
     updateListWidgetWidth(); // 批量添加后统一调整
+    setDirty(false);
+    clearFieldErrors();
+    setTestStatus(TestStatus::Idle);
 }
 
 void ModelConfigImportPage::setConfigData(const QVariantMap &data)
@@ -77,6 +80,9 @@ void ModelConfigImportPage::setConfigData(const QVariantMap &data)
             break;
         }
     }
+    setDirty(false);
+    clearFieldErrors();
+    setTestStatus(TestStatus::Idle);
 }
 
 QVariantMap ModelConfigImportPage::configData() const
@@ -121,9 +127,22 @@ void ModelConfigImportPage::setupUi()
     m_testBtn->setObjectName("testBtn");
     m_cancelBtn = new QPushButton(tr("取消"), rightContainer);
     m_cancelBtn->setObjectName("cancelBtn");
+    m_importFileBtn = new QPushButton(tr("从文件导入"), rightContainer);
+    m_importFileBtn->setObjectName("importFileBtn");
+    m_exportBtn = new QPushButton(tr("导出配置"), rightContainer);
+    m_exportBtn->setObjectName("exportBtn");
+    m_resetBtn = new QPushButton(tr("重置为默认"), rightContainer);
+    m_resetBtn->setObjectName("resetBtn");
+    m_testStatusLabel = new QLabel(tr("未验证"), rightContainer);
+    m_testStatusLabel->setObjectName("testStatusLabel");
+    setTestStatus(TestStatus::Idle);
 
     QHBoxLayout *bottomLayout = new QHBoxLayout();
+    bottomLayout->addWidget(m_testStatusLabel);
     bottomLayout->addStretch();
+    bottomLayout->addWidget(m_importFileBtn);
+    bottomLayout->addWidget(m_exportBtn);
+    bottomLayout->addWidget(m_resetBtn);
     bottomLayout->addWidget(m_testBtn);
     bottomLayout->addWidget(m_cancelBtn);
     bottomLayout->addWidget(m_importBtn);
@@ -145,6 +164,9 @@ void ModelConfigImportPage::setupUi()
     connect(m_importBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onImportClicked);
     connect(m_cancelBtn, &QPushButton::clicked, this, &ModelConfigImportPage::cancelled);
     connect(m_testBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onTestConnectionClicked);
+    connect(m_importFileBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onImportFromFileClicked);
+    connect(m_exportBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onExportClicked);
+    connect(m_resetBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onResetClicked);
 }
 
 QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider &provider)
@@ -168,6 +190,19 @@ QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider &prov
         
         layout->addRow(f.label + ":", edit);
         fieldWidgets.inputs.insert(f.key, edit);
+
+        QLabel *errorLabel = new QLabel();
+        errorLabel->setObjectName("fieldError");
+        errorLabel->setVisible(false);
+        errorLabel->setWordWrap(true);
+        layout->addRow(QString(), errorLabel);
+        fieldWidgets.errors.insert(f.key, errorLabel);
+
+        const QString fieldKey = f.key;
+        connect(edit, &QLineEdit::textChanged, this, [this, fieldKey]() {
+            setDirty(true);
+            setFieldError(fieldKey, QString());
+        });
     }
 
     int index = m_detailStack->count();
@@ -196,8 +231,38 @@ void ModelConfigImportPage::onImportClicked()
 
 void ModelConfigImportPage::onTestConnectionClicked()
 {
-    // TODO: 实现实际的连接测试逻辑,或发出信号让调用方处理
-    QMessageBox::information(this, tr("验证"), tr("正在尝试连接..."));
+    QVariantMap config = collectCurrentConfig();
+    if (config.isEmpty()) return;
+    setTestStatus(TestStatus::Testing);
+    emit testConnectionRequested(config);
+}
+
+void ModelConfigImportPage::onImportFromFileClicked()
+{
+    emit importFromFileRequested();
+}
+
+void ModelConfigImportPage::onExportClicked()
+{
+    QVariantMap config = collectCurrentConfig();
+    if (config.isEmpty()) return;
+    emit exportRequested(config);
+}
+
+void ModelConfigImportPage::onResetClicked()
+{
+    int index = m_providerList->currentRow();
+    if (index < 0 || index >= m_providers.size()) return;
+    const auto &provider = m_providers[index];
+    const auto &widgets = m_fieldWidgetsMap[index];
+    for (const auto &f : provider.fields) {
+        if (widgets.inputs.contains(f.key)) {
+            widgets.inputs[f.key]->setText(f.defaultValue);
+        }
+    }
+    clearFieldErrors();
+    setDirty(true);
+    emit resetRequested(provider.id);
 }
 
 QVariantMap ModelConfigImportPage::collectCurrentConfig() const
@@ -237,4 +302,84 @@ void ModelConfigImportPage::updateListWidgetWidth()
     // 预留空间：考虑图标、Padding (15px * 2)、外边距 (8px * 2) 以及滚动条预留
     // 按照用户建议预留 60px 是稳健的方案
     m_providerList->setMinimumWidth(maxWidth + 60);
+}
+
+void ModelConfigImportPage::setTestStatus(TestStatus status, const QString &message)
+{
+    m_testStatus = status;
+    if (!m_testStatusLabel) return;
+    QString text;
+    QString statusKey;
+    switch (status) {
+        case TestStatus::Idle:
+            text = tr("未验证");
+            statusKey = "idle";
+            break;
+        case TestStatus::Testing:
+            text = tr("验证中...");
+            statusKey = "testing";
+            break;
+        case TestStatus::Success:
+            text = tr("验证成功");
+            statusKey = "success";
+            break;
+        case TestStatus::Failed:
+            text = tr("验证失败");
+            statusKey = "failed";
+            break;
+    }
+    if (!message.trimmed().isEmpty()) {
+        text += tr("：") + message;
+    }
+    m_testStatusLabel->setText(text);
+    m_testStatusLabel->setProperty("status", statusKey);
+    m_testStatusLabel->style()->unpolish(m_testStatusLabel);
+    m_testStatusLabel->style()->polish(m_testStatusLabel);
+}
+
+void ModelConfigImportPage::clearFieldErrors()
+{
+    int index = m_providerList->currentRow();
+    if (index < 0 || index >= m_providers.size()) return;
+    auto &widgets = m_fieldWidgetsMap[index];
+    for (auto it = widgets.errors.begin(); it != widgets.errors.end(); ++it) {
+        it.value()->clear();
+        it.value()->setVisible(false);
+    }
+}
+
+void ModelConfigImportPage::setFieldError(const QString &fieldKey, const QString &message)
+{
+    setFieldError(QString(), fieldKey, message);
+}
+
+void ModelConfigImportPage::setFieldError(const QString &providerId,
+                                          const QString &fieldKey,
+                                          const QString &message)
+{
+    int index = providerId.isEmpty() ? m_providerList->currentRow() : providerIndexForId(providerId);
+    if (index < 0 || index >= m_providers.size()) return;
+    auto &widgets = m_fieldWidgetsMap[index];
+    QLabel *label = widgets.errors.value(fieldKey, nullptr);
+    if (!label) return;
+    label->setText(message);
+    label->setVisible(!message.trimmed().isEmpty());
+}
+
+void ModelConfigImportPage::setDirty(bool dirty)
+{
+    if (m_dirty == dirty) return;
+    m_dirty = dirty;
+    emit dirtyChanged(m_dirty);
+}
+
+int ModelConfigImportPage::providerIndexForId(const QString &providerId) const
+{
+    if (providerId.isEmpty()) return -1;
+    for (int i = 0; i < m_providers.size(); ++i) {
+        if (m_providers[i].id == providerId) {
+            return i;
+        }
+    }
+    return -1;
 }

@@ -78,7 +78,10 @@ QLineEdit:focus {
 
 /* 测试和取消按钮 - 次要按钮样式 */
 #testBtn,
-#cancelBtn {
+#cancelBtn,
+#importFileBtn,
+#exportBtn,
+#resetBtn {
     background: #f4f6f9;
     border: 1px solid #e1e4ea;
     border-radius: 12px;
@@ -89,13 +92,42 @@ QLineEdit:focus {
 }
 
 #testBtn:hover,
-#cancelBtn:hover {
+#cancelBtn:hover,
+#importFileBtn:hover,
+#exportBtn:hover,
+#resetBtn:hover {
     background: #eef2f7;
 }
 
 #testBtn:pressed,
-#cancelBtn:pressed {
+#cancelBtn:pressed,
+#importFileBtn:pressed,
+#exportBtn:pressed,
+#resetBtn:pressed {
     background: #e2e8f0;
+}
+
+/* 字段错误提示 */
+#fieldError {
+    color: #ef4444;
+    font-size: 12px;
+}
+
+/* 测试状态提示 */
+#testStatusLabel[status="idle"] {
+    color: #6b7280;
+}
+
+#testStatusLabel[status="testing"] {
+    color: #2563eb;
+}
+
+#testStatusLabel[status="success"] {
+    color: #16a34a;
+}
+
+#testStatusLabel[status="failed"] {
+    color: #dc2626;
 }
 
 /* 标签 - 继承 global.qss 中的 QLabel 样式 */

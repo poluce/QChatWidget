@@ -9,6 +9,7 @@ class QStackedWidget;
 class QLineEdit;
 class QPushButton;
 class QFormLayout;
+class QLabel;
 
 /**
  * @brief 厂商字段定义
@@ -45,6 +46,14 @@ class ModelConfigImportPage : public QWidget
 {
     Q_OBJECT
 public:
+    enum class TestStatus {
+        Idle,
+        Testing,
+        Success,
+        Failed
+    };
+    Q_ENUM(TestStatus)
+
     explicit ModelConfigImportPage(QWidget *parent = nullptr);
 
     /**
@@ -72,19 +81,38 @@ public:
      */
     void applyStyleSheet(const QString &styleSheet = QString());
 
+    /**
+     * @brief UI 状态控制（无业务逻辑）
+     */
+    void setTestStatus(TestStatus status, const QString &message = QString());
+    void clearFieldErrors();
+    void setFieldError(const QString &fieldKey, const QString &message);
+    void setFieldError(const QString &providerId, const QString &fieldKey, const QString &message);
+    bool isDirty() const { return m_dirty; }
+
 signals:
     void importRequested(const QVariantMap &config);
     void cancelled();
+    void testConnectionRequested(const QVariantMap &config);
+    void importFromFileRequested();
+    void exportRequested(const QVariantMap &config);
+    void resetRequested(const QString &providerId);
+    void dirtyChanged(bool dirty);
 
 private slots:
     void onImportClicked();
     void onTestConnectionClicked();
+    void onImportFromFileClicked();
+    void onExportClicked();
+    void onResetClicked();
 
 private:
     void setupUi();
     QWidget* createFormWidget(const ModelConfigProvider &provider);
     QVariantMap collectCurrentConfig() const;
     void updateListWidgetWidth(); // 动态计算并更新列表宽度
+    void setDirty(bool dirty);
+    int providerIndexForId(const QString &providerId) const;
 
     QListWidget *m_providerList = nullptr;
     QStackedWidget *m_detailStack = nullptr;
@@ -93,6 +121,7 @@ private:
     struct FieldWidgets {
         QString providerId;
         QHash<QString, QLineEdit*> inputs; // Key 是字段的 key
+        QHash<QString, QLabel*> errors;    // Key 是字段的 key
     };
     QHash<int, FieldWidgets> m_fieldWidgetsMap;
     QList<ModelConfigProvider> m_providers;
@@ -100,6 +129,12 @@ private:
     QPushButton *m_importBtn = nullptr;
     QPushButton *m_testBtn = nullptr;
     QPushButton *m_cancelBtn = nullptr;
+    QPushButton *m_importFileBtn = nullptr;
+    QPushButton *m_exportBtn = nullptr;
+    QPushButton *m_resetBtn = nullptr;
+    QLabel *m_testStatusLabel = nullptr;
+    TestStatus m_testStatus = TestStatus::Idle;
+    bool m_dirty = false;
 };
 
 #endif // MODEL_CONFIG_IMPORT_PAGE_H

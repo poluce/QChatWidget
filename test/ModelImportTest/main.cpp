@@ -1,6 +1,7 @@
 #include <QApplication>
 #include "modelconfig/model_config_import_page.h"
 #include <QDebug>
+#include <QTimer>
 
 int main(int argc, char *argv[])
 {
@@ -52,6 +53,34 @@ int main(int argc, char *argv[])
 
     QObject::connect(&w, &ModelConfigImportPage::cancelled, []() {
         qDebug() << "Import Cancelled";
+    });
+
+    QObject::connect(&w, &ModelConfigImportPage::testConnectionRequested,
+                     [&w](const QVariantMap &config) {
+        qDebug() << "Test Connection Requested:" << config;
+        // UI-only demo: 模拟异步验证结果回调
+        QTimer::singleShot(800, [&w]() {
+            w.setTestStatus(ModelConfigImportPage::TestStatus::Success,
+                            QStringLiteral("模拟成功"));
+        });
+    });
+
+    QObject::connect(&w, &ModelConfigImportPage::importFromFileRequested, []() {
+        qDebug() << "Import From File Requested";
+    });
+
+    QObject::connect(&w, &ModelConfigImportPage::exportRequested,
+                     [](const QVariantMap &config) {
+        qDebug() << "Export Requested:" << config;
+    });
+
+    QObject::connect(&w, &ModelConfigImportPage::resetRequested,
+                     [](const QString &providerId) {
+        qDebug() << "Reset Requested for provider:" << providerId;
+    });
+
+    QObject::connect(&w, &ModelConfigImportPage::dirtyChanged, [](bool dirty) {
+        qDebug() << "Dirty Changed:" << dirty;
     });
 
     w.show();
