@@ -1,0 +1,88 @@
+QWidget {
+    background-color: #F9FAFB;
+    font-family: 'Segoe UI', 'Microsoft YaHei';
+}
+
+QListWidget#providerList {
+    background-color: #FFFFFF;
+    border: none;
+    border-right: 1px solid #E5E7EB;
+    outline: none;
+}
+
+QListWidget#providerList::item {
+    height: 40px;
+    padding-left: 15px;
+    border-radius: 6px;
+    margin: 2px 5px;
+    color: #4B5563;
+}
+
+QListWidget#providerList::item:selected {
+    background: #EEF2FF;
+    color: #4F46E5;
+    font-weight: bold;
+}
+
+QListWidget#providerList::item:hover:!selected {
+    background: #F3F4F6;
+}
+
+#detailStack {
+    background: #FFFFFF;
+    border-radius: 8px;
+}
+
+QLineEdit {
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    padding: 8px;
+    background: #FFFFFF;
+}
+
+QLineEdit:focus {
+    border: 2px solid #6366F1;
+}
+
+#importBtn {
+    background: #4b7bec;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-weight: 500;
+    min-width: 80px;
+}
+
+#importBtn:hover {
+    background: #3b6fe0;
+}
+
+#importBtn:pressed {
+    background: #2f62d6;
+}
+
+#testBtn,
+#cancelBtn {
+    background: #f4f6f9;
+    border: 1px solid #e1e4ea;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-weight: 500;
+    color: #374151;
+    min-width: 80px;
+}
+
+#testBtn:hover,
+#cancelBtn:hover {
+    background: #eef2f7;
+}
+
+#testBtn:pressed,
+#cancelBtn:pressed {
+    background: #e2e8f0;
+}
+
+QLabel {
+    color: #111827;
+}

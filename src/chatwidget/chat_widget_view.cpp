@@ -59,3 +59,8 @@ void ChatWidgetView::setDelegateStyle(const ChatWidgetDelegate::Style &style) {
 ChatWidgetDelegate::Style ChatWidgetView::delegateStyle() const {
   return m_delegate->style();
 }
+
+void ChatWidgetView::removeLastMessage()
+{
+    m_model->removeLastMessage();
+}

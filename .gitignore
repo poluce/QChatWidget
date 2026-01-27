@@ -40,7 +40,17 @@
 # debug information files
 *.dwo
 
+# Qt 特定文件
+*.pro.user
+*.user
+.qmake.stash
+Makefile*
+object_script.*
+
+# 构建目录
 build/
 build-*/
+**/build/
+debug/
+release/
 .qtcreator/WeChatStyle.pro.user
-*.pro.user
