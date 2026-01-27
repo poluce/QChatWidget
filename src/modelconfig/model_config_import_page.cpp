@@ -1,4 +1,5 @@
 #include "model_config_import_page.h"
+#include "qss_utils.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QListWidget>
@@ -8,7 +9,6 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QMessageBox>
-#include <QFile>
 #include <QSplitter>
 
 ModelConfigImportPage::ModelConfigImportPage(QWidget *parent) : QWidget(parent)
@@ -20,16 +20,10 @@ ModelConfigImportPage::ModelConfigImportPage(QWidget *parent) : QWidget(parent)
 
 void ModelConfigImportPage::applyStyleSheet(const QString &styleSheet)
 {
-    if (!styleSheet.isEmpty()) {
-        this->setStyleSheet(styleSheet);
-        return;
-    }
-
-    QFile file(":/styles/model_config_import_page.qss");
-    if (file.open(QFile::ReadOnly)) {
-        this->setStyleSheet(QLatin1String(file.readAll()));
-        file.close();
-    }
+    const QString combinedStyle = QssUtils::buildCombinedStyleSheet(
+        "model_config_import_page.qss",
+        styleSheet);
+    this->setStyleSheet(combinedStyle);
 }
 
 void ModelConfigImportPage::addProvider(const ModelConfigProvider &provider)

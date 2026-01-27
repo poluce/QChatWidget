@@ -1,12 +1,22 @@
+/* ============================================================================
+ * ModelConfig 页面特有样式
+ * ============================================================================
+ * 说明: 本文件只包含 ModelConfig 页面特有的样式
+ *       通用样式已在 global.qss 中定义
+ * ============================================================================
+ */
+
+/* 页面根容器 - 浅灰背景 */
 QWidget {
-    background-color: #F9FAFB;
+    background-color: #f9fafb;
     font-family: 'Segoe UI', 'Microsoft YaHei';
 }
 
+/* Provider 列表 - 特殊样式 */
 QListWidget#providerList {
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     border: none;
-    border-right: 1px solid #E5E7EB;
+    border-right: 1px solid #e5e7eb;
     outline: none;
 }
 
@@ -15,35 +25,39 @@ QListWidget#providerList::item {
     padding-left: 15px;
     border-radius: 6px;
     margin: 2px 5px;
-    color: #4B5563;
+    color: #4b5563;
 }
 
+/* Provider 列表选中项 - 使用特殊的紫色主题 */
 QListWidget#providerList::item:selected {
-    background: #EEF2FF;
-    color: #4F46E5;
+    background: #eef2ff;
+    color: #4f46e5;
     font-weight: bold;
 }
 
 QListWidget#providerList::item:hover:!selected {
-    background: #F3F4F6;
+    background: #f3f4f6;
 }
 
+/* 详情区域容器 */
 #detailStack {
-    background: #FFFFFF;
+    background: #ffffff;
     border-radius: 8px;
 }
 
+/* 输入框 - 使用特殊的紫色 focus 边框 */
 QLineEdit {
-    border: 1px solid #D1D5DB;
+    border: 1px solid #d1d5db;
     border-radius: 6px;
     padding: 8px;
-    background: #FFFFFF;
+    background: #ffffff;
 }
 
 QLineEdit:focus {
-    border: 2px solid #6366F1;
+    border: 2px solid #6366f1;
 }
 
+/* 导入按钮 - 主要按钮样式 */
 #importBtn {
     background: #4b7bec;
     color: white;
@@ -62,6 +76,7 @@ QLineEdit:focus {
     background: #2f62d6;
 }
 
+/* 测试和取消按钮 - 次要按钮样式 */
 #testBtn,
 #cancelBtn {
     background: #f4f6f9;
@@ -83,6 +98,4 @@ QLineEdit:focus {
     background: #e2e8f0;
 }
 
-QLabel {
-    color: #111827;
-}
+/* 标签 - 继承 global.qss 中的 QLabel 样式 */

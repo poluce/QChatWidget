@@ -11,3 +11,5 @@ SOURCES += \
 !contains(RESOURCES, $$PWD/../../resources/styles.qrc) {
     RESOURCES += $$PWD/../../resources/styles.qrc
 }
+
+include($$PWD/../common/qss_utils.pri)

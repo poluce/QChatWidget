@@ -32,3 +32,4 @@ HEADERS += \
 }
 
 include($$PWD/../common/theme_manager.pri)
+include($$PWD/../common/qss_utils.pri)

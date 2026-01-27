@@ -1,69 +1,9 @@
 #include "chat_widget.h"
 #include "chat_widget_input.h"
 #include "chat_widget_view.h"
-#include <QCoreApplication>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
+#include "qss_utils.h"
 #include <QTimer>
 #include <QVBoxLayout>
-
-namespace
-{
-  QString resolveStyleSheetPath(const QString &fileNameOrPath)
-  {
-    if (fileNameOrPath.startsWith(":/"))
-    {
-      return fileNameOrPath;
-    }
-    if (QFile::exists(fileNameOrPath))
-    {
-      return QFileInfo(fileNameOrPath).absoluteFilePath();
-    }
-
-    const QString fileName = QFileInfo(fileNameOrPath).fileName();
-    if (fileName.isEmpty())
-    {
-      return QString();
-    }
-
-    const QString appDir = QCoreApplication::applicationDirPath();
-    const QStringList candidates = {
-        QDir(appDir).filePath("resources/styles/" + fileName),
-        QDir(appDir).filePath("../resources/styles/" + fileName),
-        QDir(QDir::currentPath()).filePath("resources/styles/" + fileName),
-        QDir(QDir::currentPath()).filePath("../resources/styles/" + fileName)};
-
-    for (const QString &path : candidates)
-    {
-      if (QFile::exists(path))
-      {
-        return path;
-      }
-    }
-    return QString();
-  }
-
-  bool applyStyleSheetFromFile(QWidget *target, const QString &fileNameOrPath)
-  {
-    if (!target)
-    {
-      return false;
-    }
-
-    const QString resolved = resolveStyleSheetPath(fileNameOrPath);
-    const QString fileName = QFileInfo(fileNameOrPath).fileName();
-    QFile file(resolved.isEmpty() ? QString(":/styles/%1").arg(fileName)
-                                  : resolved);
-    if (!file.open(QFile::ReadOnly | QFile::Text))
-    {
-      return false;
-    }
-
-    target->setStyleSheet(QString::fromUtf8(file.readAll()));
-    return true;
-  }
-} // namespace
 
 ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent)
 {
@@ -114,7 +54,7 @@ bool ChatWidget::applyStyleSheetFile(const QString &fileNameOrPath)
   {
     return false;
   }
-  return applyStyleSheetFromFile(this, fileNameOrPath);
+  return QssUtils::applyStyleSheetFromFile(this, fileNameOrPath);
 }
 
 void ChatWidget::setDelegateStyle(const ChatWidgetDelegate::Style &style)
