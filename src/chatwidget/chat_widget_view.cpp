@@ -49,8 +49,6 @@ void ChatWidgetView::streamOutput(const QString &content) {
   m_chatView->scrollToBottom();
 }
 
-void ChatWidgetView::removeLastMessage() { m_model->removeLastMessage(); }
-
 void ChatWidgetView::setDelegateStyle(const ChatWidgetDelegate::Style &style) {
   m_delegate->setStyle(style);
   m_chatView->viewport()->update();
