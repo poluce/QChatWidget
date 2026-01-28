@@ -67,6 +67,27 @@ void ChatListWidget::setupUi()
     connect(m_listView, &QListView::activated, this, &ChatListWidget::activated);
     connect(m_listView, &QListView::entered, this, &ChatListWidget::entered);
     connect(m_listView, &QListView::viewportEntered, this, &ChatListWidget::viewportEntered);
+
+    m_listView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_listView, &QWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
+        const QModelIndex index = m_listView->indexAt(pos);
+        if (!index.isValid()) {
+            return;
+        }
+        m_listView->setCurrentIndex(index);
+        m_contextIndex = index;
+        if (!m_contextMenu) {
+            m_contextMenu = new QMenu(m_listView);
+            m_removeAction = m_contextMenu->addAction(QStringLiteral("删除"));
+            connect(m_removeAction, &QAction::triggered, this, [this]() {
+                if (m_contextIndex.isValid()) {
+                    removeChatItem(m_contextIndex);
+                }
+            });
+        }
+        m_contextMenu->exec(m_listView->viewport()->mapToGlobal(pos));
+    });
+
     wireSelectionSignals();
 }
 
@@ -269,6 +290,16 @@ int ChatListWidget::updateChatItemsByName(const QString &name, const QHash<int, 
 bool ChatListWidget::removeChatItem(int row)
 {
     return m_listView->removeChatItem(row);
+}
+
+bool ChatListWidget::removeChatItem(const QModelIndex &index)
+{
+    return m_listView->removeChatItem(index);
+}
+
+bool ChatListWidget::removeCurrentChat()
+{
+    return m_listView->removeChatItem(m_listView->currentIndex());
 }
 
 bool ChatListWidget::removeChatItemByName(const QString &name)

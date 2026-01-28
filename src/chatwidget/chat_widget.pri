@@ -27,8 +27,10 @@ HEADERS += \
     $$MD4C_DIR/md4c-html.h \
     $$MD4C_DIR/entity.h
 
-!contains(RESOURCES, $$PWD/../../resources/styles.qrc) {
-    RESOURCES += $$PWD/../../resources/styles.qrc
+STYLES_QRC = $$clean_path($$PWD/../../resources/styles.qrc)
+isEmpty(QCHAT_STYLES_QRC_INCLUDED) {
+    QCHAT_STYLES_QRC_INCLUDED = 1
+    RESOURCES += $$STYLES_QRC
 }
 
 include($$PWD/../common/theme_manager.pri)

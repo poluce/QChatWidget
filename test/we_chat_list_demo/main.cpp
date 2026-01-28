@@ -44,9 +44,11 @@ int main(int argc, char *argv[]) {
 
     // Header actions 演示
     QAction *actionAdd = chatWidget->addHeaderAction("新建会话", "add");
+    QAction *actionRemove = chatWidget->addHeaderAction("删除当前会话", "remove");
     QAction *actionClear = chatWidget->addHeaderAction("清空列表", "clear");
     QAction *actionToggleSearch = chatWidget->addHeaderAction("显示/隐藏搜索", "toggle_search");
     Q_UNUSED(actionAdd);
+    Q_UNUSED(actionRemove);
     Q_UNUSED(actionClear);
     Q_UNUSED(actionToggleSearch);
 
@@ -57,6 +59,10 @@ int main(int argc, char *argv[]) {
         if (key == "add") {
             addChat(QString("新会话 %1").arg(QDateTime::currentDateTime().toString("hh:mm:ss")),
                     "Hello", "刚刚", QColor(0, 153, 255), 0);
+        } else if (key == "remove") {
+            if (!chatWidget->removeCurrentChat()) {
+                qDebug() << "No chat selected to remove";
+            }
         } else if (key == "clear") {
             chatWidget->clearChats();
         } else if (key == "toggle_search") {

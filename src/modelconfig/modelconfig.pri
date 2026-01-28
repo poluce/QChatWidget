@@ -8,8 +8,10 @@ HEADERS += \
 SOURCES += \
     $$MODELCONFIG_DIR/model_config_import_page.cpp
 
-!contains(RESOURCES, $$PWD/../../resources/styles.qrc) {
-    RESOURCES += $$PWD/../../resources/styles.qrc
+STYLES_QRC = $$clean_path($$PWD/../../resources/styles.qrc)
+isEmpty(QCHAT_STYLES_QRC_INCLUDED) {
+    QCHAT_STYLES_QRC_INCLUDED = 1
+    RESOURCES += $$STYLES_QRC
 }
 
 include($$PWD/../common/qss_utils.pri)

@@ -69,6 +69,8 @@ public:
     int updateChatItemsByName(const QString &name, int role, const QVariant &value);
     int updateChatItemsByName(const QString &name, const QHash<int, QVariant> &values);
     bool removeChatItem(int row);
+    bool removeChatItem(const QModelIndex &index);
+    bool removeCurrentChat();
     bool removeChatItemByName(const QString &name);
     int removeChatItemsByName(const QString &name);
     void clearChats();
@@ -99,6 +101,9 @@ private:
     ChatListView *m_listView;
     QToolButton *m_moreButton;
     QMenu *m_moreMenu;
+    QMenu *m_contextMenu = nullptr;
+    QAction *m_removeAction = nullptr;
+    QModelIndex m_contextIndex;
     class ChatListFilterModel *m_filterModel;
     class QItemSelectionModel *m_selectionModel = nullptr;
     bool m_filterEnabled = false;

@@ -6,6 +6,7 @@
 #include <QVariant>
 #include <QHash>
 #include <QList>
+#include <QModelIndex>
 #include "chat_list_roles.h"
 #include "chat_list_delegate.h"
 
@@ -65,6 +66,7 @@ public:
     int updateChatItemsByName(const QString &name, int role, const QVariant &value);
     int updateChatItemsByName(const QString &name, const QHash<int, QVariant> &values);
     bool removeChatItem(int row);
+    bool removeChatItem(const QModelIndex &index);
     bool removeChatItemByName(const QString &name);
     int removeChatItemsByName(const QString &name);
     void clearChats();

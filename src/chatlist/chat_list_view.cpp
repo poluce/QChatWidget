@@ -352,6 +352,27 @@ bool ChatListView::removeChatItem(int row)
     return model->removeRow(row);
 }
 
+bool ChatListView::removeChatItem(const QModelIndex &index)
+{
+    if (!index.isValid()) {
+        return false;
+    }
+    QModelIndex sourceIndex = index;
+    if (auto *proxy = qobject_cast<QSortFilterProxyModel *>(model())) {
+        if (index.model() == proxy) {
+            sourceIndex = proxy->mapToSource(index);
+        }
+    }
+    if (!sourceIndex.isValid()) {
+        return false;
+    }
+    QStandardItemModel *standard = ensureStandardModel();
+    if (sourceIndex.row() < 0 || sourceIndex.row() >= standard->rowCount()) {
+        return false;
+    }
+    return standard->removeRow(sourceIndex.row());
+}
+
 bool ChatListView::removeChatItemByName(const QString &name)
 {
     const int row = findRowByName(name);
