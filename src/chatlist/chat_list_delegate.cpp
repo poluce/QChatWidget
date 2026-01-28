@@ -1,6 +1,7 @@
 #include "chat_list_delegate.h"
 #include <QPainter>
 #include <QPainterPath>
+#include <QFontMetrics>
 
 ChatListDelegate::ChatListDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
@@ -16,7 +17,14 @@ ChatListDelegate::Style ChatListDelegate::style() const
 
 QSize ChatListDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
     Q_UNUSED(index);
-    return QSize(option.rect.width(), m_style.itemHeight);
+    const QFontMetrics fmName(m_style.nameFont);
+    const QFontMetrics fmMsg(m_style.messageFont);
+    const int textSpacing = qMax(4, fmMsg.leading());
+    const int textBlockHeight = fmName.height() + fmMsg.height() + textSpacing;
+    const int contentHeight = qMax(m_style.avatarSize, textBlockHeight);
+    const int minHeight = contentHeight + 2 * m_style.margin;
+    const int height = (m_style.itemHeight > 0) ? qMax(m_style.itemHeight, minHeight) : minHeight;
+    return QSize(option.rect.width(), height);
 }
 
 void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -44,9 +52,19 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     int avatarSize = m_style.avatarSize;
     int margin = m_style.margin;
     int textLeftMargin = margin + avatarSize + margin;
+    const QFontMetrics fmName(m_style.nameFont);
+    const QFontMetrics fmMsg(m_style.messageFont);
+    const QFontMetrics fmTime(m_style.timeFont);
+    const int textSpacing = qMax(4, fmMsg.leading());
+    const int textBlockHeight = fmName.height() + fmMsg.height() + textSpacing;
+    const int contentHeight = qMax(avatarSize, textBlockHeight);
+    const int contentTop = rect.top() + (rect.height() - contentHeight) / 2;
 
     // 4. 绘制头像
-    QRect avatarRect(rect.left() + margin, rect.top() + (rect.height() - avatarSize) / 2, avatarSize, avatarSize);
+    QRect avatarRect(rect.left() + margin,
+                     contentTop + (contentHeight - avatarSize) / 2,
+                     avatarSize,
+                     avatarSize);
     if (m_style.avatarShape == AvatarSquare) {
         painter->fillRect(avatarRect, avatarColor);
     } else {
@@ -82,25 +100,35 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->setFont(nameFont);
     
     QFont timeFont = m_style.timeFont;
-    QFontMetrics fmTime(timeFont);
     int timeWidth = fmTime.horizontalAdvance(time) + margin;
 
-    QRect nameRect(textLeftMargin, rect.top() + 14, rect.width() - textLeftMargin - timeWidth, 25);
+    const int nameWidth = qMax(0, rect.width() - textLeftMargin - timeWidth - margin);
+    QRect nameRect(rect.left() + textLeftMargin,
+                   contentTop,
+                   nameWidth,
+                   fmName.height());
     QString elidedName = painter->fontMetrics().elidedText(name, Qt::ElideRight, nameRect.width());
     painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, elidedName);
 
     // 7. 绘制时间
     painter->setPen(m_style.timeColor);
     painter->setFont(timeFont);
-    QRect timeRect(rect.right() - timeWidth, rect.top() + 14, timeWidth - margin, 25);
+    QRect timeRect(rect.right() - timeWidth,
+                   contentTop,
+                   timeWidth - margin,
+                   fmTime.height());
     painter->drawText(timeRect, Qt::AlignRight | Qt::AlignVCenter, time);
 
     // 8. 绘制消息内容
     painter->setPen(m_style.messageColor);
     QFont msgFont = m_style.messageFont;
     painter->setFont(msgFont);
-    
-    QRect msgRect(textLeftMargin, rect.bottom() - 35, rect.width() - textLeftMargin - margin, 20);
+
+    const int msgWidth = qMax(0, rect.width() - textLeftMargin - margin);
+    QRect msgRect(rect.left() + textLeftMargin,
+                  contentTop + fmName.height() + textSpacing,
+                  msgWidth,
+                  fmMsg.height());
     QString elidedMsg = painter->fontMetrics().elidedText(message, Qt::ElideRight, msgRect.width());
     painter->drawText(msgRect, Qt::AlignLeft | Qt::AlignVCenter, elidedMsg);
 
