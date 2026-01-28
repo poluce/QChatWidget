@@ -100,6 +100,10 @@ void ChatWidget::onInputMessageSent(const QString &content)
 
 void ChatWidget::removeLastMessage() { m_viewWidget->removeLastMessage(); }
 
+void ChatWidget::clearMessages() { m_viewWidget->clearMessages(); }
+
+int ChatWidget::messageCount() const { return m_viewWidget->messageCount(); }
+
 void ChatWidget::setSendingState(bool sending)
 {
   m_isSending = sending; // 更新组件全局状态锁

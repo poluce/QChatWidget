@@ -19,6 +19,8 @@ public:
     void addMessage(const QString &content, bool isMine, const QString &sender = "User");
     void streamOutput(const QString &content);
     void removeLastMessage();
+    void clearMessages();
+    int messageCount() const;
 
 
     void setDelegateStyle(const ChatWidgetDelegate::Style &style);

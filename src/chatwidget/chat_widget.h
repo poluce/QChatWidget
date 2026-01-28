@@ -26,6 +26,8 @@ public:
 
   // API: 移除最后一条消息
   void removeLastMessage();
+  void clearMessages();
+  int messageCount() const;
   bool applyStyleSheetFile(const QString &fileNameOrPath);
   void setDelegateStyle(const ChatWidgetDelegate::Style &style);
   ChatWidgetDelegate::Style delegateStyle() const;

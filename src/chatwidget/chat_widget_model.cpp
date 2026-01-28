@@ -66,3 +66,17 @@ void ChatWidgetModel::removeLastMessage()
     m_messages.removeAt(lastIdx);
     endRemoveRows();
 }
+
+void ChatWidgetModel::clearMessages()
+{
+    if (m_messages.isEmpty())
+        return;
+    beginRemoveRows(QModelIndex(), 0, m_messages.size() - 1);
+    m_messages.clear();
+    endRemoveRows();
+}
+
+int ChatWidgetModel::messageCount() const
+{
+    return m_messages.size();
+}

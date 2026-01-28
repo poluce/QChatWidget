@@ -37,6 +37,8 @@ public:
     void addMessage(const ChatWidgetMessage &message);
     void appendContentToLastMessage(const QString &content);
     void removeLastMessage();
+    void clearMessages();
+    int messageCount() const;
 
 private:
     QList<ChatWidgetMessage> m_messages;

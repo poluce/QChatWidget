@@ -62,3 +62,13 @@ void ChatWidgetView::removeLastMessage()
 {
     m_model->removeLastMessage();
 }
+
+void ChatWidgetView::clearMessages()
+{
+    m_model->clearMessages();
+}
+
+int ChatWidgetView::messageCount() const
+{
+    return m_model->messageCount();
+}
