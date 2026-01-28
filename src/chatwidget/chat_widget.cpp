@@ -119,6 +119,29 @@ void ChatWidget::setSendingState(bool sending)
   }
 }
 
+void ChatWidget::setEmptyStateVisible(bool visible, const QString &message)
+{
+  Q_UNUSED(message);
+  if (m_viewWidget)
+  {
+    m_viewWidget->setVisible(!visible);
+  }
+  if (m_inputWidget)
+  {
+    m_inputWidget->setVisible(!visible);
+    m_inputWidget->setEnabled(!visible);
+  }
+  if (visible)
+  {
+    setSendingState(false);
+  }
+}
+
+bool ChatWidget::isEmptyStateVisible() const
+{
+  return m_viewWidget && !m_viewWidget->isVisible();
+}
+
 void ChatWidget::startSimulatedStreaming(const QString &content, int interval)
 {
   m_streamingContent = content;

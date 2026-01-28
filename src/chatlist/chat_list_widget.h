@@ -82,6 +82,7 @@ signals:
                            const QString &time,
                            const QColor &avatarColor,
                            int unreadCount);
+    void chatItemRemoved(int row);
     void headerActionTriggered(QAction *action);
     void clicked(const QModelIndex &index);
     void doubleClicked(const QModelIndex &index);

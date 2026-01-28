@@ -34,6 +34,8 @@ public:
   void setInputWidget(class ChatWidgetInputBase *widget);
   class ChatWidgetInputBase *inputWidget() const;
   void setSendingState(bool sending);
+  void setEmptyStateVisible(bool visible, const QString &message = QString());
+  bool isEmptyStateVisible() const;
 
   // API: 模拟 AI 自动流式回复（组件内部管理定时器）
   void startSimulatedStreaming(const QString &content, int interval = 30);

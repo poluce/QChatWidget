@@ -10,6 +10,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QRegularExpression>
+#include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QItemSelectionModel>
 
@@ -81,7 +82,19 @@ void ChatListWidget::setupUi()
             m_removeAction = m_contextMenu->addAction(QStringLiteral("删除"));
             connect(m_removeAction, &QAction::triggered, this, [this]() {
                 if (m_contextIndex.isValid()) {
-                    removeChatItem(m_contextIndex);
+                    int sourceRow = -1;
+                    QModelIndex sourceIndex = m_contextIndex;
+                    if (auto *proxy = qobject_cast<QSortFilterProxyModel *>(m_listView->model())) {
+                        if (m_contextIndex.model() == proxy) {
+                            sourceIndex = proxy->mapToSource(m_contextIndex);
+                        }
+                    }
+                    if (sourceIndex.isValid()) {
+                        sourceRow = sourceIndex.row();
+                    }
+                    if (removeChatItem(m_contextIndex)) {
+                        emit chatItemRemoved(sourceRow);
+                    }
                 }
             });
         }
