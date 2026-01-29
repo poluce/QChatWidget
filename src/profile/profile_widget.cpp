@@ -1,6 +1,7 @@
-#include "ProfileWidget.h"
+#include "profile_widget.h"
+#include "qss_utils.h"
 
-#include <QDebug>
+#include <QColor>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -17,11 +18,13 @@
 // DetailItemWidget 实现
 // ==========================================
 DetailItemWidget::DetailItemWidget(const QString& key, QWidget* parent)
-    : QWidget(parent), m_key(key) { }
+    : QWidget(parent), m_key(key)
+{
+}
 
 void DetailItemWidget::mouseReleaseEvent(QMouseEvent* event)
 {
-    if (rect().contains(event->pos())) {
+    if (event->button() == Qt::LeftButton && rect().contains(event->pos())) {
         emit itemClicked(m_key);
     }
     QWidget::mouseReleaseEvent(event);
@@ -32,6 +35,11 @@ void DetailItemWidget::mouseReleaseEvent(QMouseEvent* event)
 // ==========================================
 
 namespace {
+constexpr int kAvatarSize = 64;
+constexpr int kDetailTitleWidth = 70;
+constexpr int kHeaderGapHeight = 10;
+constexpr int kBottomButtonHeight = 45;
+
 QPixmap buildRoundedAvatar(const QPixmap& source, int size)
 {
     QPixmap scaled = source.scaled(size, size, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
@@ -51,13 +59,9 @@ QPixmap buildRoundedAvatar(const QPixmap& source, int size)
 ProfileWidget::ProfileWidget(QWidget* parent) : QWidget(parent)
 {
     setupUi();
-    setupStyle();
 
     connect(m_msgButton, &QPushButton::clicked, this, &ProfileWidget::messageClicked);
     connect(m_moreButton, &QToolButton::clicked, this, &ProfileWidget::moreOptionsClicked);
-
-    this->setFixedSize(360, 640);
-    this->setWindowTitle("个人信息");
 }
 
 void ProfileWidget::setupUi()
@@ -66,7 +70,14 @@ void ProfileWidget::setupUi()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
-    // 固定内容区域
+    mainLayout->addWidget(createContentWidget(), 1);
+    mainLayout->addWidget(createBottomBar());
+
+    updateHeaderLabels();
+}
+
+QWidget* ProfileWidget::createContentWidget()
+{
     QWidget* contentWidget = new QWidget(this);
     contentWidget->setObjectName("ContentWidget");
     contentWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -74,7 +85,20 @@ void ProfileWidget::setupUi()
     contentLayout->setContentsMargins(0, 0, 0, 20);
     contentLayout->setSpacing(0);
 
-    // --- Header ---
+    QFrame* headerGap = new QFrame();
+    headerGap->setFixedHeight(kHeaderGapHeight);
+    headerGap->setObjectName("GapFrame");
+
+    contentLayout->addWidget(createHeaderWidget());
+    contentLayout->addWidget(headerGap);
+    contentLayout->addWidget(createGroupTitle());
+    contentLayout->addWidget(createDetailGroupWidget());
+    contentLayout->addStretch();
+    return contentWidget;
+}
+
+QWidget* ProfileWidget::createHeaderWidget()
+{
     QWidget* headerWidget = new QWidget();
     headerWidget->setObjectName("HeaderWidget");
     headerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -84,25 +108,25 @@ void ProfileWidget::setupUi()
     headerLayout->setAlignment(Qt::AlignVCenter);
 
     m_avatarLabel = new QLabel();
-    m_avatarLabel->setFixedSize(64, 64);
+    m_avatarLabel->setFixedSize(kAvatarSize, kAvatarSize);
     m_avatarLabel->setScaledContents(true);
     m_avatarLabel->setObjectName("AvatarLabel");
-    QPixmap defaultAvatar(64, 64);
-    defaultAvatar.fill(QColor(220, 220, 220));
-    m_avatarLabel->setPixmap(buildRoundedAvatar(defaultAvatar, 64));
+    m_defaultAvatar = QPixmap(kAvatarSize, kAvatarSize);
+    m_defaultAvatar.fill(QColor(220, 220, 220));
+    m_avatarLabel->setPixmap(buildRoundedAvatar(m_defaultAvatar, kAvatarSize));
 
     QVBoxLayout* infoLayout = new QVBoxLayout();
     infoLayout->setSpacing(5);
     infoLayout->setContentsMargins(0, 0, 0, 0);
     infoLayout->setAlignment(Qt::AlignVCenter);
 
-    m_nameLabel = new QLabel("agentname");
+    m_nameLabel = new QLabel(m_defaultUserName);
     m_nameLabel->setObjectName("NameLabel");
     m_nameLabel->setWordWrap(false);
     m_nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_nameLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
-    m_idLabel = new QLabel("TmId: --");
+    m_idLabel = new QLabel(QStringLiteral("TmId: %1").arg(m_defaultTmId));
     m_idLabel->setObjectName("IdLabel");
     m_idLabel->setWordWrap(false);
     m_idLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -121,46 +145,44 @@ void ProfileWidget::setupUi()
     headerLayout->addLayout(infoLayout, 1);
     headerLayout->addWidget(m_moreButton, 0, Qt::AlignTop);
 
-    QFrame* headerGap = new QFrame();
-    headerGap->setFixedHeight(10);
-    headerGap->setObjectName("GapFrame");
+    return headerWidget;
+}
 
-    // --- Detail Group ---
+QLabel* ProfileWidget::createGroupTitle() const
+{
     QLabel* groupTitle = new QLabel(QStringLiteral("详细信息"));
     groupTitle->setObjectName("DetailGroupTitle");
     groupTitle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    return groupTitle;
+}
 
+QWidget* ProfileWidget::createDetailGroupWidget()
+{
     QFrame* detailGroup = new QFrame();
     detailGroup->setObjectName("DetailGroup");
-    detailGroup->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    detailGroup->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_detailListLayout = new QVBoxLayout(detailGroup);
     m_detailListLayout->setContentsMargins(16, 8, 16, 8);
     m_detailListLayout->setSpacing(0);
+    return detailGroup;
+}
 
-    contentLayout->addWidget(headerWidget);
-    contentLayout->addWidget(headerGap);
-    contentLayout->addWidget(groupTitle);
-    contentLayout->addWidget(detailGroup);
-    contentLayout->addStretch();
-
-    mainLayout->addWidget(contentWidget, 1);
-
-    // --- Bottom Bar ---
+QWidget* ProfileWidget::createBottomBar()
+{
     QWidget* bottomBar = new QWidget();
     bottomBar->setObjectName("BottomBar");
     QHBoxLayout* bottomLayout = new QHBoxLayout(bottomBar);
     bottomLayout->setContentsMargins(20, 15, 20, 15);
 
     m_msgButton = new QPushButton();
-    m_msgButton->setText(" 发消息");
-    m_msgButton->setIcon(
-        this->style()->standardIcon(QStyle::SP_DialogApplyButton));
+    m_msgButton->setText(QStringLiteral(" 发消息"));
+    m_msgButton->setIcon(this->style()->standardIcon(QStyle::SP_DialogApplyButton));
     m_msgButton->setCursor(Qt::PointingHandCursor);
     m_msgButton->setObjectName("MsgButton");
-    m_msgButton->setFixedHeight(45);
+    m_msgButton->setFixedHeight(kBottomButtonHeight);
 
     bottomLayout->addWidget(m_msgButton);
-    mainLayout->addWidget(bottomBar);
+    return bottomBar;
 }
 
 void ProfileWidget::addDetailItem(const QString& title, const QString& content, bool isEditable)
@@ -210,15 +232,15 @@ QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& 
     layout->setAlignment(Qt::AlignTop);
 
     QLabel* titleLbl = new QLabel(title);
-    titleLbl->setFixedWidth(70);
+    titleLbl->setFixedWidth(kDetailTitleWidth);
     titleLbl->setObjectName("DetailTitle");
 
     QLabel* contentLbl = new QLabel(content);
     contentLbl->setObjectName("DetailContent");
     contentLbl->setWordWrap(true);
     if (title == QStringLiteral("角色描述")) {
-        int maxLines = 2;
-        int maxHeight = contentLbl->fontMetrics().lineSpacing() * maxLines + 4;
+        const int maxLines = 2;
+        const int maxHeight = contentLbl->fontMetrics().lineSpacing() * maxLines + 4;
         contentLbl->setMaximumHeight(maxHeight);
         contentLbl->setToolTip(content);
     }
@@ -231,9 +253,8 @@ QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& 
     layout->addWidget(contentLbl);
 
     if (isEditable) {
-        QLabel* arrowLbl = new QLabel(">");
-        arrowLbl->setStyleSheet(
-            "color: #CCCCCC; font-weight: bold; font-family: consolas;");
+        QLabel* arrowLbl = new QLabel(QStringLiteral(">"));
+        arrowLbl->setStyleSheet(QStringLiteral("color: #CCCCCC; font-weight: bold; font-family: consolas;"));
         arrowLbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         layout->addWidget(arrowLbl);
     }
@@ -253,9 +274,9 @@ QFrame* ProfileWidget::createSeparatorFrame()
 
 void ProfileWidget::setAvatar(const QPixmap& pixmap)
 {
-    if (!pixmap.isNull()) {
-        m_avatarLabel->setPixmap(buildRoundedAvatar(pixmap, 64));
-    }
+    const QPixmap& source = pixmap.isNull() ? m_defaultAvatar : pixmap;
+    if (m_avatarLabel)
+        m_avatarLabel->setPixmap(buildRoundedAvatar(source, kAvatarSize));
 }
 
 void ProfileWidget::setUserName(const QString& name)
@@ -282,12 +303,13 @@ void ProfileWidget::updateHeaderLabels()
         return;
     }
 
-    QString nameText = m_userNameRaw.isEmpty() ? m_nameLabel->text() : m_userNameRaw;
-    QString idText = m_tmIdRaw.isEmpty() ? QStringLiteral("TmId: --")
-                                         : QStringLiteral("TmId: ") + m_tmIdRaw;
+    const QString userName = m_userNameRaw.trimmed().isEmpty() ? m_defaultUserName : m_userNameRaw;
+    const QString tmId = m_tmIdRaw.trimmed().isEmpty() ? m_defaultTmId : m_tmIdRaw;
+    QString nameText = userName;
+    QString idText = QStringLiteral("TmId: ") + tmId;
 
-    int nameWidth = m_nameLabel->width();
-    int idWidth = m_idLabel->width();
+    const int nameWidth = m_nameLabel->width();
+    const int idWidth = m_idLabel->width();
     if (nameWidth > 0) {
         nameText = m_nameLabel->fontMetrics().elidedText(nameText, Qt::ElideRight, nameWidth);
     }
@@ -299,28 +321,15 @@ void ProfileWidget::updateHeaderLabels()
     m_idLabel->setText(idText);
 }
 
-void ProfileWidget::setupStyle()
+void ProfileWidget::applyDefaultStyle()
 {
-    QString qss = R"(
-        ProfileWidget, #ContentWidget { background-color: #F6F7FA; }
-        #HeaderWidget { background-color: #FFFFFF; }
-        #AvatarLabel { border-radius: 32px; border: 1px solid #E5E5E5; }
-        #NameLabel { font-family: "Microsoft YaHei"; font-size: 20px; font-weight: bold; color: #111111; }
-        #IdLabel { font-family: "Microsoft YaHei"; font-size: 13px; color: #8A8A8A; }
-        #MoreButton { border: none; background: transparent; font-size: 18px; color: #333333; font-weight: bold; }
-        #MoreButton:hover { background-color: #F0F0F0; border-radius: 4px; }
-        #GapFrame { background-color: #F6F7FA; border: none; }
-        #DetailGroupTitle { color: #8A8A8A; font-size: 12px; padding-left: 20px; padding-top: 6px; padding-bottom: 6px; }
-        #DetailGroup { background-color: #FFFFFF; border: 1px solid #ECECEC; border-radius: 8px; margin-left: 20px; margin-right: 20px; }
-        #DetailTitle { font-size: 16px; color: #333333; }
-        #DetailContent { font-size: 15px; color: #6F6F6F; line-height: 1.5; }
-        #DetailSeparator { color: #EDEDED; }
-        #BottomBar { background-color: #FFFFFF; border-top: 1px solid #E5E5E5; }
-        #MsgButton { 
-            background-color: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 5px; 
-            color: #576B95; font-size: 16px; font-weight: bold; 
-        }
-        #MsgButton:pressed { background-color: #F2F2F2; }
-    )";
-    this->setStyleSheet(qss);
+    applyStyleSheetFile(QStringLiteral("profile_widget.qss"));
+}
+
+bool ProfileWidget::applyStyleSheetFile(const QString& fileNameOrPath)
+{
+    if (fileNameOrPath.trimmed().isEmpty()) {
+        return false;
+    }
+    return QssUtils::applyStyleSheetFromFile(this, fileNameOrPath);
 }

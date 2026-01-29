@@ -4,7 +4,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QTimer>
-#include "profile/ProfileWidget.h"
+#include "profile/profile_widget.h"
 
 static QPixmap buildAvatarPixmap(int size, const QString &text, const QColor &color) {
     QPixmap avatar(size, size);
@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     ProfileWidget profile;
     profile.setWindowTitle("ProfileWidget Playground");
     profile.resize(360, 640);
+    profile.applyDefaultStyle();
 
     profile.setUserName(QStringLiteral("王小明"));
     profile.setTmId(QStringLiteral("foiajfoasj"));

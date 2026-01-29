@@ -1,6 +1,8 @@
-#ifndef PROFILEWIDGET_H
-#define PROFILEWIDGET_H
+#ifndef PROFILE_WIDGET_H
+#define PROFILE_WIDGET_H
 
+#include <QPixmap>
+#include <QString>
 #include <QWidget>
 
 class QLabel;
@@ -9,6 +11,7 @@ class QToolButton;
 class QVBoxLayout;
 class QFrame;
 class QResizeEvent;
+class QMouseEvent;
 
 // ==========================================
 // 内部辅助类：可点击的列表项
@@ -17,6 +20,7 @@ class DetailItemWidget : public QWidget {
     Q_OBJECT
 public:
     explicit DetailItemWidget(const QString& key, QWidget* parent = nullptr);
+
 signals:
     void itemClicked(const QString& key);
 
@@ -40,6 +44,8 @@ public:
     void setAvatar(const QPixmap& pixmap);
     void setUserName(const QString& name);
     void setTmId(const QString& uuid);
+    void applyDefaultStyle();
+    bool applyStyleSheetFile(const QString& fileNameOrPath);
 
     // --- 详情列表接口 ---
     // isEditable: true 表示显示为可点击样式
@@ -54,8 +60,12 @@ signals:
 
 private:
     void setupUi();
-    void setupStyle();
     void updateHeaderLabels();
+    QWidget* createContentWidget();
+    QWidget* createHeaderWidget();
+    QLabel* createGroupTitle() const;
+    QWidget* createDetailGroupWidget();
+    QWidget* createBottomBar();
 
     // 内部辅助函数
     QFrame* createSeparatorFrame();
@@ -66,16 +76,19 @@ protected:
 
 private:
     // UI 控件
-    QLabel* m_avatarLabel;
-    QLabel* m_nameLabel;
-    QLabel* m_idLabel;
-    QPushButton* m_msgButton;
-    QToolButton* m_moreButton;
+    QLabel* m_avatarLabel = nullptr;
+    QLabel* m_nameLabel = nullptr;
+    QLabel* m_idLabel = nullptr;
+    QPushButton* m_msgButton = nullptr;
+    QToolButton* m_moreButton = nullptr;
 
-    QVBoxLayout* m_detailListLayout;
+    QVBoxLayout* m_detailListLayout = nullptr;
 
+    QPixmap m_defaultAvatar;
+    QString m_defaultUserName = QStringLiteral("agentname");
+    QString m_defaultTmId = QStringLiteral("--");
     QString m_userNameRaw;
     QString m_tmIdRaw;
 };
 
-#endif // PROFILEWIDGET_H
+#endif // PROFILE_WIDGET_H
