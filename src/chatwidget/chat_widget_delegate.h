@@ -1,12 +1,11 @@
 #ifndef CHAT_WIDGET_DELEGATE_H
 #define CHAT_WIDGET_DELEGATE_H
 
-#include <QStyledItemDelegate>
 #include <QColor>
 #include <QFont>
+#include <QStyledItemDelegate>
 
-class ChatWidgetDelegate : public QStyledItemDelegate
-{
+class ChatWidgetDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     struct Style {
@@ -27,13 +26,13 @@ public:
         QFont avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
     };
 
-    explicit ChatWidgetDelegate(QObject *parent = nullptr);
+    explicit ChatWidgetDelegate(QObject* parent = nullptr);
 
-    void setStyle(const Style &style);
+    void setStyle(const Style& style);
     Style style() const;
 
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
 private:
     Style m_style;

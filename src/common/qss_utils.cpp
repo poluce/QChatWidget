@@ -7,7 +7,7 @@
 #include <QWidget>
 
 namespace QssUtils {
-QString resolveStyleSheetPath(const QString &fileNameOrPath)
+QString resolveStyleSheetPath(const QString& fileNameOrPath)
 {
     if (fileNameOrPath.startsWith(":/")) {
         return fileNameOrPath;
@@ -29,7 +29,7 @@ QString resolveStyleSheetPath(const QString &fileNameOrPath)
         QDir(QDir::currentPath()).filePath("../resources/styles/" + fileName)
     };
 
-    for (const QString &path : candidates) {
+    for (const QString& path : candidates) {
         if (QFile::exists(path)) {
             return path;
         }
@@ -37,7 +37,7 @@ QString resolveStyleSheetPath(const QString &fileNameOrPath)
     return QString();
 }
 
-QString loadStyleSheetFile(const QString &fileNameOrPath)
+QString loadStyleSheetFile(const QString& fileNameOrPath)
 {
     if (fileNameOrPath.trimmed().isEmpty()) {
         return QString();
@@ -64,9 +64,7 @@ QString loadStyleSheetFile(const QString &fileNameOrPath)
     return content;
 }
 
-QString buildCombinedStyleSheet(const QString &specificFileNameOrPath,
-                                const QString &inlineStyle,
-                                const QString &globalFileName)
+QString buildCombinedStyleSheet(const QString& specificFileNameOrPath, const QString& inlineStyle, const QString& globalFileName)
 {
     QString combined = loadStyleSheetFile(globalFileName);
 
@@ -88,9 +86,7 @@ QString buildCombinedStyleSheet(const QString &specificFileNameOrPath,
     return combined;
 }
 
-bool applyStyleSheetFromFile(QWidget *target,
-                             const QString &fileNameOrPath,
-                             const QString &globalFileName)
+bool applyStyleSheetFromFile(QWidget* target, const QString& fileNameOrPath, const QString& globalFileName)
 {
     if (!target) {
         return false;

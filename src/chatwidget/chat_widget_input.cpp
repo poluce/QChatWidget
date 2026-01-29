@@ -1,17 +1,17 @@
 #include "chat_widget_input.h"
-#include <QLineEdit>
-#include <QPushButton>
-#include <QToolButton>
-#include <QMenu>
-#include <QListWidget>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QFileDialog>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QMenu>
+#include <QPushButton>
 #include <QResizeEvent>
+#include <QToolButton>
+#include <QVBoxLayout>
 
-ChatWidgetInput::ChatWidgetInput(QWidget *parent)
+ChatWidgetInput::ChatWidgetInput(QWidget* parent)
     : ChatWidgetInputBase(parent)
 {
     setupUi();
@@ -21,7 +21,7 @@ ChatWidgetInput::~ChatWidgetInput()
 {
 }
 
-void ChatWidgetInput::resizeEvent(QResizeEvent *event)
+void ChatWidgetInput::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
     if (m_commandMenu->isVisible()) {
@@ -66,19 +66,19 @@ void ChatWidgetInput::setupUi()
     m_commandMenu->setSelectionMode(QAbstractItemView::SingleSelection);
     m_commandMenu->setSpacing(2);
 
-    QGraphicsDropShadowEffect *barShadow = new QGraphicsDropShadowEffect(this);
+    QGraphicsDropShadowEffect* barShadow = new QGraphicsDropShadowEffect(this);
     barShadow->setBlurRadius(18);
     barShadow->setOffset(0, 3);
     barShadow->setColor(QColor(0, 0, 0, 45));
     m_inputBar->setGraphicsEffect(barShadow);
 
-    QGraphicsDropShadowEffect *menuShadow = new QGraphicsDropShadowEffect(this);
+    QGraphicsDropShadowEffect* menuShadow = new QGraphicsDropShadowEffect(this);
     menuShadow->setBlurRadius(18);
     menuShadow->setOffset(0, 4);
     menuShadow->setColor(QColor(0, 0, 0, 45));
     m_commandMenu->setGraphicsEffect(menuShadow);
 
-    QHBoxLayout *inputLayout = new QHBoxLayout(m_inputBar);
+    QHBoxLayout* inputLayout = new QHBoxLayout(m_inputBar);
     inputLayout->setContentsMargins(10, 6, 10, 6);
     inputLayout->setSpacing(8);
     inputLayout->addWidget(m_plusButton);
@@ -86,7 +86,7 @@ void ChatWidgetInput::setupUi()
     inputLayout->addWidget(m_voiceButton);
     inputLayout->addWidget(m_sendButton);
 
-    QVBoxLayout *rootLayout = new QVBoxLayout(this);
+    QVBoxLayout* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(10, 8, 10, 12);
     rootLayout->addWidget(m_inputBar);
 
@@ -107,7 +107,8 @@ void ChatWidgetInput::onSendClicked()
     }
 
     const QString text = m_inputEdit->text().trimmed();
-    if (text.isEmpty()) return;
+    if (text.isEmpty())
+        return;
 
     if (tryApplyCommand(text)) {
         return;
@@ -118,21 +119,22 @@ void ChatWidgetInput::onSendClicked()
     setSending(true);
 }
 
-void ChatWidgetInput::onInputTextChanged(const QString &text)
+void ChatWidgetInput::onInputTextChanged(const QString& text)
 {
     updateCommandMenu(text);
 }
 
-void ChatWidgetInput::onCommandClicked(QListWidgetItem *item)
+void ChatWidgetInput::onCommandClicked(QListWidgetItem* item)
 {
-    if (!item) return;
+    if (!item)
+        return;
     const QString cmd = item->data(Qt::UserRole).toString();
     if (!cmd.isEmpty()) {
         tryApplyCommand(cmd);
     }
 }
 
-void ChatWidgetInput::updateCommandMenu(const QString &text)
+void ChatWidgetInput::updateCommandMenu(const QString& text)
 {
     if (!text.startsWith("/")) {
         m_commandMenu->hide();
@@ -141,20 +143,20 @@ void ChatWidgetInput::updateCommandMenu(const QString &text)
 
     const QString keyword = text.mid(1).trimmed();
     struct CommandItem {
-        const char *cmd;
-        const char *label;
+        const char* cmd;
+        const char* label;
     };
 
     const CommandItem commands[] = {
-        { "/trans",  "/trans  翻译模式" },
+        { "/trans", "/trans  翻译模式" },
         { "/normal", "/normal 普通模式" }
     };
 
     m_commandMenu->clear();
-    for (const auto &c : commands) {
+    for (const auto& c : commands) {
         const QString cmd = QString::fromUtf8(c.cmd);
         if (keyword.isEmpty() || cmd.mid(1).startsWith(keyword, Qt::CaseInsensitive)) {
-            QListWidgetItem *item = new QListWidgetItem(QString::fromUtf8(c.label));
+            QListWidgetItem* item = new QListWidgetItem(QString::fromUtf8(c.label));
             item->setData(Qt::UserRole, cmd);
             m_commandMenu->addItem(item);
         }
@@ -170,7 +172,7 @@ void ChatWidgetInput::updateCommandMenu(const QString &text)
     m_commandMenu->show();
 }
 
-bool ChatWidgetInput::tryApplyCommand(const QString &text)
+bool ChatWidgetInput::tryApplyCommand(const QString& text)
 {
     const QString trimmed = text.trimmed();
     const QString command = trimmed.split(' ', Qt::SkipEmptyParts).value(0);
@@ -237,9 +239,7 @@ void ChatWidgetInput::onVoiceClicked()
         emit voiceStartRequested();
     } else {
         m_voiceButton->setText("语音");
-        m_inputEdit->setPlaceholderText(m_inputMode == TranslateMode
-                                            ? "翻译模式：输入要翻译的内容..."
-                                            : "输入消息...");
+        m_inputEdit->setPlaceholderText(m_inputMode == TranslateMode ? "翻译模式：输入要翻译的内容..." : "输入消息...");
         emit voiceStopRequested();
     }
 }

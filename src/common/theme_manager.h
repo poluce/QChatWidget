@@ -1,12 +1,11 @@
 #ifndef THEME_MANAGER_H
 #define THEME_MANAGER_H
 
-#include <QObject>
 #include <QColor>
 #include <QFont>
+#include <QObject>
 
-class ThemeManager : public QObject
-{
+class ThemeManager : public QObject {
     Q_OBJECT
 public:
     enum Theme {
@@ -15,7 +14,7 @@ public:
     };
     Q_ENUM(Theme)
 
-    static ThemeManager *instance();
+    static ThemeManager* instance();
 
     Theme currentTheme() const;
     void setTheme(Theme theme);
@@ -73,7 +72,7 @@ signals:
     void themeChanged(Theme theme);
 
 private:
-    explicit ThemeManager(QObject *parent = nullptr);
+    explicit ThemeManager(QObject* parent = nullptr);
     ~ThemeManager() override = default;
 
     void initLightTheme();

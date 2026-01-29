@@ -1,31 +1,37 @@
 #include "chat_widget_model.h"
 
-ChatWidgetModel::ChatWidgetModel(QObject *parent)
+ChatWidgetModel::ChatWidgetModel(QObject* parent)
     : QAbstractListModel(parent)
 {
 }
 
-int ChatWidgetModel::rowCount(const QModelIndex &parent) const
+int ChatWidgetModel::rowCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
         return 0;
     return m_messages.count();
 }
 
-QVariant ChatWidgetModel::data(const QModelIndex &index, int role) const
+QVariant ChatWidgetModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid() || index.row() < 0 || index.row() >= m_messages.count())
         return QVariant();
 
-    const ChatWidgetMessage &msg = m_messages[index.row()];
+    const ChatWidgetMessage& msg = m_messages[index.row()];
 
     switch (role) {
-    case ChatWidgetSenderRole:    return msg.sender;
-    case ChatWidgetContentRole:   return msg.content;
-    case ChatWidgetAvatarRole:    return msg.avatarPath;
-    case ChatWidgetTimestampRole: return msg.timestamp;
-    case ChatWidgetIsMineRole:    return msg.isMine;
-    default:            return QVariant();
+    case ChatWidgetSenderRole:
+        return msg.sender;
+    case ChatWidgetContentRole:
+        return msg.content;
+    case ChatWidgetAvatarRole:
+        return msg.avatarPath;
+    case ChatWidgetTimestampRole:
+        return msg.timestamp;
+    case ChatWidgetIsMineRole:
+        return msg.isMine;
+    default:
+        return QVariant();
     }
 }
 
@@ -39,20 +45,21 @@ QHash<int, QByteArray> ChatWidgetModel::roleNames() const
     return roles;
 }
 
-void ChatWidgetModel::addMessage(const ChatWidgetMessage &message)
+void ChatWidgetModel::addMessage(const ChatWidgetMessage& message)
 {
     beginInsertRows(QModelIndex(), m_messages.count(), m_messages.count());
     m_messages.append(message);
     endInsertRows();
 }
 
-void ChatWidgetModel::appendContentToLastMessage(const QString &content)
+void ChatWidgetModel::appendContentToLastMessage(const QString& content)
 {
-    if (m_messages.isEmpty()) return;
+    if (m_messages.isEmpty())
+        return;
 
     m_messages.last().content.append(content);
     QModelIndex idx = index(m_messages.count() - 1, 0);
-    emit dataChanged(idx, idx, {ChatWidgetContentRole});
+    emit dataChanged(idx, idx, { ChatWidgetContentRole });
 }
 
 void ChatWidgetModel::removeLastMessage()

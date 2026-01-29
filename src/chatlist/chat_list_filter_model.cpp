@@ -1,13 +1,13 @@
 #include "chat_list_filter_model.h"
-#include <QRegularExpression>
 #include <QAbstractItemModel>
+#include <QRegularExpression>
 
-ChatListFilterModel::ChatListFilterModel(QObject *parent)
+ChatListFilterModel::ChatListFilterModel(QObject* parent)
     : QSortFilterProxyModel(parent)
 {
 }
 
-void ChatListFilterModel::setSearchRoles(const QList<int> &roles)
+void ChatListFilterModel::setSearchRoles(const QList<int>& roles)
 {
     m_roles = roles;
     invalidateFilter();
@@ -18,7 +18,7 @@ QList<int> ChatListFilterModel::searchRoles() const
     return m_roles;
 }
 
-bool ChatListFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+bool ChatListFilterModel::filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
 {
     const QRegularExpression re = filterRegularExpression();
     if (!re.isValid() || re.pattern().isEmpty()) {

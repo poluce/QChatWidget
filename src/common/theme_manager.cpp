@@ -1,12 +1,12 @@
 #include "theme_manager.h"
 
-ThemeManager *ThemeManager::instance()
+ThemeManager* ThemeManager::instance()
 {
     static ThemeManager s_instance;
     return &s_instance;
 }
 
-ThemeManager::ThemeManager(QObject *parent)
+ThemeManager::ThemeManager(QObject* parent)
     : QObject(parent)
 {
     initLightTheme();

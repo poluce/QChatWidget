@@ -3,10 +3,9 @@
 
 #include <QString>
 
-class ChatWidgetMarkdownUtils
-{
+class ChatWidgetMarkdownUtils {
 public:
-    static QString renderMarkdown(const QString &input);
+    static QString renderMarkdown(const QString& input);
 };
 
 #endif // CHAT_WIDGET_MARKDOWN_UTILS_H

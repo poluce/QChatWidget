@@ -1,16 +1,16 @@
 #include "chat_widget_delegate.h"
-#include "chat_widget_model.h"
 #include "chat_widget_markdown_utils.h"
+#include "chat_widget_model.h"
+#include <QAbstractTextDocumentLayout>
 #include <QPainter>
 #include <QTextDocument>
-#include <QAbstractTextDocumentLayout>
 
-ChatWidgetDelegate::ChatWidgetDelegate(QObject *parent)
+ChatWidgetDelegate::ChatWidgetDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
 }
 
-void ChatWidgetDelegate::setStyle(const Style &style)
+void ChatWidgetDelegate::setStyle(const Style& style)
 {
     m_style = style;
 }
@@ -20,13 +20,14 @@ ChatWidgetDelegate::Style ChatWidgetDelegate::style() const
     return m_style;
 }
 
-QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
     QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
 
     int maxWidth = option.rect.width() * 0.6;
-    if (maxWidth <= 0) maxWidth = 400;
+    if (maxWidth <= 0)
+        maxWidth = 400;
 
     QTextDocument doc;
     doc.setDefaultFont(m_style.messageFont);
@@ -39,7 +40,7 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
     return QSize(option.rect.width(), qMax(totalHeight, m_style.avatarSize + m_style.margin * 2));
 }
 
-void ChatWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
@@ -50,7 +51,8 @@ void ChatWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     QRect rect = option.rect;
     int maxWidth = rect.width() * 0.6;
-    if (maxWidth <= 0) maxWidth = 400;
+    if (maxWidth <= 0)
+        maxWidth = 400;
 
     QTextDocument doc;
     doc.setDefaultFont(m_style.messageFont);
@@ -62,13 +64,9 @@ void ChatWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     // 绘制头像
     QRect avatarRect;
     if (isMine) {
-        avatarRect = QRect(rect.right() - m_style.margin - m_style.avatarSize,
-                           rect.top() + m_style.margin,
-                           m_style.avatarSize, m_style.avatarSize);
+        avatarRect = QRect(rect.right() - m_style.margin - m_style.avatarSize, rect.top() + m_style.margin, m_style.avatarSize, m_style.avatarSize);
     } else {
-        avatarRect = QRect(rect.left() + m_style.margin,
-                           rect.top() + m_style.margin,
-                           m_style.avatarSize, m_style.avatarSize);
+        avatarRect = QRect(rect.left() + m_style.margin, rect.top() + m_style.margin, m_style.avatarSize, m_style.avatarSize);
     }
 
     painter->setPen(Qt::NoPen);
@@ -85,16 +83,10 @@ void ChatWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     int bubbleHeight = docSize.height() + m_style.bubblePadding * 2;
 
     if (isMine) {
-        bubbleRect = QRect(avatarRect.left() - m_style.margin - bubbleWidth,
-                           rect.top() + m_style.margin,
-                           bubbleWidth,
-                           bubbleHeight);
+        bubbleRect = QRect(avatarRect.left() - m_style.margin - bubbleWidth, rect.top() + m_style.margin, bubbleWidth, bubbleHeight);
         painter->setBrush(m_style.myBubbleColor);
     } else {
-        bubbleRect = QRect(avatarRect.right() + m_style.margin,
-                           rect.top() + m_style.margin,
-                           bubbleWidth,
-                           bubbleHeight);
+        bubbleRect = QRect(avatarRect.right() + m_style.margin, rect.top() + m_style.margin, bubbleWidth, bubbleHeight);
         painter->setBrush(m_style.otherBubbleColor);
     }
 

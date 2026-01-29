@@ -1,10 +1,10 @@
 #ifndef CHAT_LIST_DELEGATE_H
 #define CHAT_LIST_DELEGATE_H
 
-#include <QStyledItemDelegate>
+#include "chat_list_roles.h"
 #include <QColor>
 #include <QFont>
-#include "chat_list_roles.h"
+#include <QStyledItemDelegate>
 
 class ChatListDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -42,13 +42,13 @@ public:
         bool showUnreadBadge = true;
     };
 
-    explicit ChatListDelegate(QObject *parent = nullptr);
+    explicit ChatListDelegate(QObject* parent = nullptr);
 
-    void setStyle(const Style &style);
+    void setStyle(const Style& style);
     Style style() const;
 
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
 private:
     Style m_style;
