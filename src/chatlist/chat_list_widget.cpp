@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QMenu>
 #include <QAction>
+#include <QInputDialog>
 #include <QRegularExpression>
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
@@ -77,28 +78,9 @@ void ChatListWidget::setupUi()
         }
         m_listView->setCurrentIndex(index);
         m_contextIndex = index;
-        if (!m_contextMenu) {
-            m_contextMenu = new QMenu(m_listView);
-            m_removeAction = m_contextMenu->addAction(QStringLiteral("删除"));
-            connect(m_removeAction, &QAction::triggered, this, [this]() {
-                if (m_contextIndex.isValid()) {
-                    int sourceRow = -1;
-                    QModelIndex sourceIndex = m_contextIndex;
-                    if (auto *proxy = qobject_cast<QSortFilterProxyModel *>(m_listView->model())) {
-                        if (m_contextIndex.model() == proxy) {
-                            sourceIndex = proxy->mapToSource(m_contextIndex);
-                        }
-                    }
-                    if (sourceIndex.isValid()) {
-                        sourceRow = sourceIndex.row();
-                    }
-                    if (removeChatItem(m_contextIndex)) {
-                        emit chatItemRemoved(sourceRow);
-                    }
-                }
-            });
-        }
-        m_contextMenu->exec(m_listView->viewport()->mapToGlobal(pos));
+        ensureContextMenu();
+        if (m_contextMenu)
+            m_contextMenu->exec(m_listView->viewport()->mapToGlobal(pos));
     });
 
     wireSelectionSignals();
@@ -121,6 +103,68 @@ void ChatListWidget::applyDefaultStyle()
     m_listView->setShowSeparator(true);
     m_listView->setHoverColor(QColor(236, 238, 242));
     m_listView->setSelectedColor(QColor(220, 224, 230));
+}
+
+void ChatListWidget::ensureContextMenu()
+{
+    if (m_contextMenu)
+        return;
+    m_contextMenu = new QMenu(m_listView);
+    m_renameAction = m_contextMenu->addAction(QStringLiteral("重命名"));
+    connect(m_renameAction, &QAction::triggered, this, &ChatListWidget::renameCurrentItem);
+    m_removeAction = m_contextMenu->addAction(QStringLiteral("删除"));
+    connect(m_removeAction, &QAction::triggered, this, &ChatListWidget::removeCurrentItem);
+}
+
+QModelIndex ChatListWidget::sourceIndexFor(const QModelIndex &index) const
+{
+    if (!index.isValid())
+        return QModelIndex();
+    QModelIndex sourceIndex = index;
+    if (auto *proxy = qobject_cast<QSortFilterProxyModel *>(m_listView->model())) {
+        if (index.model() == proxy) {
+            sourceIndex = proxy->mapToSource(index);
+        }
+    }
+    return sourceIndex;
+}
+
+void ChatListWidget::renameCurrentItem()
+{
+    if (!m_contextIndex.isValid())
+        return;
+    const QModelIndex sourceIndex = sourceIndexFor(m_contextIndex);
+    if (!sourceIndex.isValid())
+        return;
+    const int sourceRow = sourceIndex.row();
+    const QString currentName = sourceIndex.data(ChatListNameRole).toString();
+    bool ok = false;
+    QString name = QInputDialog::getText(this,
+                                         tr("重命名会话"),
+                                         tr("名称"),
+                                         QLineEdit::Normal,
+                                         currentName,
+                                         &ok);
+    if (!ok)
+        return;
+    name = name.trimmed();
+    if (name.isEmpty())
+        return;
+    updateChatItemData(sourceRow, ChatListNameRole, name);
+    emit chatItemRenamed(sourceRow, name);
+}
+
+void ChatListWidget::removeCurrentItem()
+{
+    if (!m_contextIndex.isValid())
+        return;
+    int sourceRow = -1;
+    const QModelIndex sourceIndex = sourceIndexFor(m_contextIndex);
+    if (sourceIndex.isValid())
+        sourceRow = sourceIndex.row();
+    if (removeChatItem(m_contextIndex)) {
+        emit chatItemRemoved(sourceRow);
+    }
 }
 
 bool ChatListWidget::applyStyleSheetFile(const QString &fileNameOrPath)

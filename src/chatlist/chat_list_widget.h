@@ -83,6 +83,7 @@ signals:
                            const QColor &avatarColor,
                            int unreadCount);
     void chatItemRemoved(int row);
+    void chatItemRenamed(int row, const QString &name);
     void headerActionTriggered(QAction *action);
     void clicked(const QModelIndex &index);
     void doubleClicked(const QModelIndex &index);
@@ -97,12 +98,17 @@ private:
     void setupUi();
     void applyFilterText(const QString &text);
     void wireSelectionSignals();
+    void ensureContextMenu();
+    QModelIndex sourceIndexFor(const QModelIndex &index) const;
+    void renameCurrentItem();
+    void removeCurrentItem();
 
     QLineEdit *m_searchBar;
     ChatListView *m_listView;
     QToolButton *m_moreButton;
     QMenu *m_moreMenu;
     QMenu *m_contextMenu = nullptr;
+    QAction *m_renameAction = nullptr;
     QAction *m_removeAction = nullptr;
     QModelIndex m_contextIndex;
     class ChatListFilterModel *m_filterModel;
