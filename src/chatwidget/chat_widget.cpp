@@ -5,6 +5,7 @@
 #include "qss_utils.h"
 #include <QTimer>
 #include <QVBoxLayout>
+#include <algorithm>
 
 ChatWidget::ChatWidget(QWidget* parent) : QWidget(parent)
 {
@@ -127,7 +128,11 @@ void ChatWidget::onInputMessageSent(const QString& content)
 
 void ChatWidget::removeLastMessage() { m_viewWidget->removeLastMessage(); }
 
-void ChatWidget::clearMessages() { m_viewWidget->clearMessages(); }
+void ChatWidget::clearMessages()
+{
+    m_viewWidget->clearMessages();
+    m_messageIds.clear();
+}
 
 int ChatWidget::messageCount() const { return m_viewWidget->messageCount(); }
 
@@ -205,6 +210,30 @@ void ChatWidget::upsertParticipant(const QString& userId, const QString& display
     info.displayName = displayName;
     info.avatarPath = avatarPath;
     m_participants.insert(userId, info);
+    if (m_viewWidget && (!displayName.isEmpty() || !avatarPath.isEmpty())) {
+        const QString finalName = displayName.isEmpty() ? userId : displayName;
+        m_viewWidget->updateParticipantInfo(userId, finalName, avatarPath);
+    }
+}
+
+void ChatWidget::updateParticipant(const QString& userId, const QString& displayName, const QString& avatarPath)
+{
+    if (userId.trimmed().isEmpty()) {
+        return;
+    }
+    ParticipantInfo info = m_participants.value(userId);
+    info.id = userId;
+    if (!displayName.isEmpty()) {
+        info.displayName = displayName;
+    }
+    if (!avatarPath.isEmpty()) {
+        info.avatarPath = avatarPath;
+    }
+    m_participants.insert(userId, info);
+    if (m_viewWidget) {
+        const QString finalName = info.displayName.isEmpty() ? userId : info.displayName;
+        m_viewWidget->updateParticipantInfo(userId, finalName, info.avatarPath);
+    }
 }
 
 bool ChatWidget::removeParticipant(const QString& userId)
@@ -235,12 +264,25 @@ void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool 
         if (hasCurrent) {
             m_participants.insert(m_currentUserId, currentInfo);
         }
+        m_messageIds.clear();
     }
 
+    QList<HistoryMessage> sorted = messages;
+    std::sort(sorted.begin(), sorted.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
+        const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
+        const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
+        return at < bt;
+    });
+
     QList<ChatWidgetMessage> converted;
-    converted.reserve(messages.size());
-    for (const HistoryMessage& history : messages) {
+    converted.reserve(sorted.size());
+    for (const HistoryMessage& history : sorted) {
+        if (!history.messageId.isEmpty() && m_messageIds.contains(history.messageId)) {
+            continue;
+        }
+
         ChatWidgetMessage msg;
+        msg.messageId = history.messageId;
         msg.content = history.content;
         msg.timestamp = history.timestamp;
 
@@ -249,31 +291,179 @@ void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool 
             msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
             msg.avatarPath = history.avatarPath;
             msg.isMine = history.isMine;
-            converted.append(msg);
-            continue;
+        } else {
+            ParticipantInfo info = m_participants.value(history.senderId);
+            info.id = history.senderId;
+            if (!history.displayName.isEmpty()) {
+                info.displayName = history.displayName;
+            }
+            if (!history.avatarPath.isEmpty()) {
+                info.avatarPath = history.avatarPath;
+            }
+            m_participants.insert(history.senderId, info);
+
+            msg.senderId = history.senderId;
+            msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
+            msg.avatarPath = info.avatarPath;
+            msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
+            if (m_currentUserId.isEmpty()) {
+                msg.isMine = history.isMine;
+            }
         }
 
-        ParticipantInfo info = m_participants.value(history.senderId);
-        info.id = history.senderId;
-        if (!history.displayName.isEmpty()) {
-            info.displayName = history.displayName;
-        }
-        if (!history.avatarPath.isEmpty()) {
-            info.avatarPath = history.avatarPath;
-        }
-        m_participants.insert(history.senderId, info);
-
-        msg.senderId = history.senderId;
-        msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
-        msg.avatarPath = info.avatarPath;
-        msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
-        if (m_currentUserId.isEmpty()) {
-            msg.isMine = history.isMine;
+        if (!msg.messageId.isEmpty()) {
+            m_messageIds.insert(msg.messageId);
         }
         converted.append(msg);
     }
 
     m_viewWidget->setMessages(converted);
+}
+
+void ChatWidget::appendHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe)
+{
+    if (messages.isEmpty()) {
+        return;
+    }
+    QList<HistoryMessage> sorted = messages;
+    if (sortAndDedupe) {
+        std::sort(sorted.begin(), sorted.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
+            const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
+            const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
+            return at < bt;
+        });
+    }
+    QList<ChatWidgetMessage> converted;
+    converted.reserve(sorted.size());
+    QHash<QString, ParticipantInfo> updatedParticipants;
+    for (const HistoryMessage& history : sorted) {
+        if (sortAndDedupe && !history.messageId.isEmpty() && m_messageIds.contains(history.messageId)) {
+            continue;
+        }
+
+        ChatWidgetMessage msg;
+        msg.messageId = history.messageId;
+        msg.content = history.content;
+        msg.timestamp = history.timestamp;
+
+        if (history.senderId.trimmed().isEmpty()) {
+            msg.senderId = QString();
+            msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
+            msg.avatarPath = history.avatarPath;
+            msg.isMine = history.isMine;
+        } else {
+            ParticipantInfo info = m_participants.value(history.senderId);
+            const QString oldName = info.displayName;
+            const QString oldAvatar = info.avatarPath;
+            info.id = history.senderId;
+            if (!history.displayName.isEmpty()) {
+                info.displayName = history.displayName;
+            }
+            if (!history.avatarPath.isEmpty()) {
+                info.avatarPath = history.avatarPath;
+            }
+            m_participants.insert(history.senderId, info);
+            if ((!history.displayName.isEmpty() && oldName != info.displayName) ||
+                (!history.avatarPath.isEmpty() && oldAvatar != info.avatarPath)) {
+                updatedParticipants.insert(history.senderId, info);
+            }
+
+            msg.senderId = history.senderId;
+            msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
+            msg.avatarPath = info.avatarPath;
+            msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
+            if (m_currentUserId.isEmpty()) {
+                msg.isMine = history.isMine;
+            }
+        }
+
+        if (!msg.messageId.isEmpty()) {
+            m_messageIds.insert(msg.messageId);
+        }
+        converted.append(msg);
+    }
+
+    m_viewWidget->appendMessages(converted);
+    if (!updatedParticipants.isEmpty()) {
+        for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
+            const ParticipantInfo& info = it.value();
+            const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
+            m_viewWidget->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+        }
+    }
+}
+
+void ChatWidget::prependHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe)
+{
+    if (messages.isEmpty()) {
+        return;
+    }
+    QList<HistoryMessage> sorted = messages;
+    if (sortAndDedupe) {
+        std::sort(sorted.begin(), sorted.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
+            const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
+            const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
+            return at < bt;
+        });
+    }
+    QList<ChatWidgetMessage> converted;
+    converted.reserve(sorted.size());
+    QHash<QString, ParticipantInfo> updatedParticipants;
+    for (const HistoryMessage& history : sorted) {
+        if (sortAndDedupe && !history.messageId.isEmpty() && m_messageIds.contains(history.messageId)) {
+            continue;
+        }
+
+        ChatWidgetMessage msg;
+        msg.messageId = history.messageId;
+        msg.content = history.content;
+        msg.timestamp = history.timestamp;
+
+        if (history.senderId.trimmed().isEmpty()) {
+            msg.senderId = QString();
+            msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
+            msg.avatarPath = history.avatarPath;
+            msg.isMine = history.isMine;
+        } else {
+            ParticipantInfo info = m_participants.value(history.senderId);
+            const QString oldName = info.displayName;
+            const QString oldAvatar = info.avatarPath;
+            info.id = history.senderId;
+            if (!history.displayName.isEmpty()) {
+                info.displayName = history.displayName;
+            }
+            if (!history.avatarPath.isEmpty()) {
+                info.avatarPath = history.avatarPath;
+            }
+            m_participants.insert(history.senderId, info);
+            if ((!history.displayName.isEmpty() && oldName != info.displayName) ||
+                (!history.avatarPath.isEmpty() && oldAvatar != info.avatarPath)) {
+                updatedParticipants.insert(history.senderId, info);
+            }
+
+            msg.senderId = history.senderId;
+            msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
+            msg.avatarPath = info.avatarPath;
+            msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
+            if (m_currentUserId.isEmpty()) {
+                msg.isMine = history.isMine;
+            }
+        }
+
+        if (!msg.messageId.isEmpty()) {
+            m_messageIds.insert(msg.messageId);
+        }
+        converted.append(msg);
+    }
+
+    m_viewWidget->prependMessages(converted);
+    if (!updatedParticipants.isEmpty()) {
+        for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
+            const ParticipantInfo& info = it.value();
+            const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
+            m_viewWidget->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+        }
+    }
 }
 
 void ChatWidget::onStreamingTimeout()

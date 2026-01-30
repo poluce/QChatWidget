@@ -15,6 +15,7 @@ struct ChatWidgetMessage {
     QString avatarPath;  // 头像路径
     QDateTime timestamp; // 时间戳
     bool isMine;         // 是否是我发的消息
+    QString messageId;   // 消息唯一ID
 };
 
 class ChatWidgetModel : public QAbstractListModel {
@@ -26,7 +27,8 @@ public:
         ChatWidgetAvatarRole,
         ChatWidgetTimestampRole,
         ChatWidgetIsMineRole,
-        ChatWidgetSenderIdRole
+        ChatWidgetSenderIdRole,
+        ChatWidgetMessageIdRole
     };
 
     explicit ChatWidgetModel(QObject* parent = nullptr);
@@ -37,7 +39,10 @@ public:
 
     void addMessage(const ChatWidgetMessage& message);
     void setMessages(const QList<ChatWidgetMessage>& messages);
+    void appendMessages(const QList<ChatWidgetMessage>& messages);
+    void prependMessages(const QList<ChatWidgetMessage>& messages);
     void updateIsMine(const QString& currentUserId);
+    void updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath);
     void appendContentToLastMessage(const QString& content);
     void removeLastMessage();
     void clearMessages();

@@ -57,10 +57,28 @@ void ChatWidgetView::setMessages(const QList<ChatWidgetMessage>& messages)
     m_chatView->scrollToBottom();
 }
 
+void ChatWidgetView::appendMessages(const QList<ChatWidgetMessage>& messages)
+{
+    m_model->appendMessages(messages);
+    m_chatView->scrollToBottom();
+}
+
+void ChatWidgetView::prependMessages(const QList<ChatWidgetMessage>& messages)
+{
+    m_model->prependMessages(messages);
+    m_chatView->viewport()->update();
+}
+
 void ChatWidgetView::updateIsMine(const QString& currentUserId)
 {
     m_model->updateIsMine(currentUserId);
     m_chatView->doItemsLayout();
+    m_chatView->viewport()->update();
+}
+
+void ChatWidgetView::updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath)
+{
+    m_model->updateParticipantInfo(senderId, displayName, avatarPath);
     m_chatView->viewport()->update();
 }
 

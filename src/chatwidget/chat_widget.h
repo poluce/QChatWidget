@@ -4,6 +4,7 @@
 #include "chat_widget_delegate.h"
 #include <QHash>
 #include <QList>
+#include <QSet>
 #include <QDateTime>
 #include <QString>
 #include <QWidget>
@@ -28,6 +29,7 @@ public:
         QString content;
         QDateTime timestamp;
         bool isMine = false;
+        QString messageId;
     };
 
     explicit ChatWidget(QWidget* parent = nullptr);
@@ -57,10 +59,13 @@ public:
     QString currentUserId() const;
     void setCurrentUser(const QString& userId, const QString& displayName = QString(), const QString& avatarPath = QString());
     void upsertParticipant(const QString& userId, const QString& displayName, const QString& avatarPath = QString());
+    void updateParticipant(const QString& userId, const QString& displayName, const QString& avatarPath = QString());
     bool removeParticipant(const QString& userId);
     void clearParticipants();
     bool hasParticipant(const QString& userId) const;
     void setHistoryMessages(const QList<HistoryMessage>& messages, bool resetParticipants = true);
+    void appendHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe = true);
+    void prependHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe = true);
 
     // API: 模拟 AI 自动流式回复（组件内部管理定时器）
     void startSimulatedStreaming(const QString& content, int interval = 30);
@@ -86,6 +91,7 @@ private:
     bool m_isSending = false;
     QHash<QString, ParticipantInfo> m_participants;
     QString m_currentUserId;
+    QSet<QString> m_messageIds;
 
     QTimer* m_streamingTimer = nullptr;
     QString m_streamingContent;

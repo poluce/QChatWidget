@@ -32,6 +32,8 @@ QVariant ChatWidgetModel::data(const QModelIndex& index, int role) const
         return msg.isMine;
     case ChatWidgetSenderIdRole:
         return msg.senderId;
+    case ChatWidgetMessageIdRole:
+        return msg.messageId;
     default:
         return QVariant();
     }
@@ -43,8 +45,10 @@ QHash<int, QByteArray> ChatWidgetModel::roleNames() const
     roles[ChatWidgetSenderRole] = "sender";
     roles[ChatWidgetContentRole] = "content";
     roles[ChatWidgetAvatarRole] = "avatar";
+    roles[ChatWidgetTimestampRole] = "timestamp";
     roles[ChatWidgetIsMineRole] = "isMine";
     roles[ChatWidgetSenderIdRole] = "senderId";
+    roles[ChatWidgetMessageIdRole] = "messageId";
     return roles;
 }
 
@@ -60,6 +64,29 @@ void ChatWidgetModel::setMessages(const QList<ChatWidgetMessage>& messages)
     beginResetModel();
     m_messages = messages;
     endResetModel();
+}
+
+void ChatWidgetModel::appendMessages(const QList<ChatWidgetMessage>& messages)
+{
+    if (messages.isEmpty()) {
+        return;
+    }
+    int start = m_messages.count();
+    beginInsertRows(QModelIndex(), start, start + messages.count() - 1);
+    m_messages.append(messages);
+    endInsertRows();
+}
+
+void ChatWidgetModel::prependMessages(const QList<ChatWidgetMessage>& messages)
+{
+    if (messages.isEmpty()) {
+        return;
+    }
+    beginInsertRows(QModelIndex(), 0, messages.count() - 1);
+    QList<ChatWidgetMessage> combined = messages;
+    combined.append(m_messages);
+    m_messages.swap(combined);
+    endInsertRows();
 }
 
 void ChatWidgetModel::updateIsMine(const QString& currentUserId)
@@ -82,6 +109,32 @@ void ChatWidgetModel::updateIsMine(const QString& currentUserId)
         QModelIndex first = index(0, 0);
         QModelIndex last = index(m_messages.size() - 1, 0);
         emit dataChanged(first, last, { ChatWidgetIsMineRole });
+    }
+}
+
+void ChatWidgetModel::updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath)
+{
+    if (senderId.trimmed().isEmpty() || m_messages.isEmpty()) {
+        return;
+    }
+    bool anyChanged = false;
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].senderId != senderId) {
+            continue;
+        }
+        if (!displayName.isEmpty() && m_messages[i].sender != displayName) {
+            m_messages[i].sender = displayName;
+            anyChanged = true;
+        }
+        if (!avatarPath.isEmpty() && m_messages[i].avatarPath != avatarPath) {
+            m_messages[i].avatarPath = avatarPath;
+            anyChanged = true;
+        }
+    }
+    if (anyChanged) {
+        QModelIndex first = index(0, 0);
+        QModelIndex last = index(m_messages.size() - 1, 0);
+        emit dataChanged(first, last, { ChatWidgetSenderRole, ChatWidgetAvatarRole });
     }
 }
 

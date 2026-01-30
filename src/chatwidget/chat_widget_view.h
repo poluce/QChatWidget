@@ -21,7 +21,10 @@ public:
     void addMessage(const QString& content, bool isMine, const QString& sender = "User",
                     const QString& senderId = QString(), const QString& avatarPath = QString());
     void setMessages(const QList<ChatWidgetMessage>& messages);
+    void appendMessages(const QList<ChatWidgetMessage>& messages);
+    void prependMessages(const QList<ChatWidgetMessage>& messages);
     void updateIsMine(const QString& currentUserId);
+    void updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath);
     void streamOutput(const QString& content);
     void removeLastMessage();
     void clearMessages();
