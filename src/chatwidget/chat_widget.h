@@ -19,6 +19,14 @@ class ChatWidget : public QWidget {
     Q_OBJECT
 
 public:
+    struct MessageParams {
+        QString content;
+        QString senderId;
+        QString displayName;
+        QString avatarPath;
+        bool isMine = false;
+    };
+
     struct ParticipantInfo {
         QString id;
         QString displayName;
@@ -54,10 +62,11 @@ public:
     explicit ChatWidget(QWidget* parent = nullptr);
     ~ChatWidget();
 
+    ChatWidgetView* view() const;
+    ChatWidgetModel* model() const;
+
     // API: 添加消息
-    void addMessage(const QString& content, bool isMine, const QString& sender = "User");
-    void addMessage(const QString& content, const QString& senderId);
-    void addMessage(const QString& content, const QString& senderId, const QString& displayName, const QString& avatarPath = QString());
+    void addMessage(const MessageParams& params);
 
     // API: 流式输出（追加内容到最后一条消息）
     void streamOutput(const QString& content);
@@ -74,11 +83,9 @@ public:
     void setSendingState(bool sending);
     void setEmptyStateVisible(bool visible, const QString& message = QString());
     bool isEmptyStateVisible() const;
-    void setCurrentUserId(const QString& userId);
     QString currentUserId() const;
     void setCurrentUser(const QString& userId, const QString& displayName = QString(), const QString& avatarPath = QString());
     void upsertParticipant(const QString& userId, const QString& displayName, const QString& avatarPath = QString());
-    void updateParticipant(const QString& userId, const QString& displayName, const QString& avatarPath = QString());
     bool removeParticipant(const QString& userId);
     void clearParticipants();
     bool hasParticipant(const QString& userId) const;

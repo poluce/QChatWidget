@@ -161,7 +161,13 @@ int main(int argc, char* argv[])
     applyTheme();
     bindDefaultInputSignals();
 
-    chat->addMessage("**Hello!** 欢迎使用 ChatWidget 控制面板演示。", false, "AI");
+    {
+        ChatWidget::MessageParams params;
+        params.content = "**Hello!** 欢迎使用 ChatWidget 控制面板演示。";
+        params.displayName = "AI";
+        params.isMine = false;
+        chat->addMessage(params);
+    }
 
     QObject::connect(chat, &ChatWidget::messageSent, chat, [&](const QString& content) {
         setStatus(QString("messageSent: %1").arg(content));
@@ -325,17 +331,28 @@ int main(int argc, char* argv[])
     auto* msgSection = makeSection("基础消息");
     auto* addMine = addButton(msgSection, "添加我的消息（bool）");
     QObject::connect(addMine, &QPushButton::clicked, chat, [chat, setStatus]() {
-        chat->addMessage("这是一条我的消息（bool 重载）", true, "Me");
+        ChatWidget::MessageParams params;
+        params.content = "这是一条我的消息（bool 重载）";
+        params.displayName = "Me";
+        params.isMine = true;
+        chat->addMessage(params);
         setStatus("添加我的消息（bool 重载）");
     });
     auto* addById = addButton(msgSection, "添加他人消息（senderId）");
     QObject::connect(addById, &QPushButton::clicked, chat, [chat, setStatus]() {
-        chat->addMessage("你好，我是 Bob（senderId 重载）", "u_bob");
+        ChatWidget::MessageParams params;
+        params.content = "你好，我是 Bob（senderId 重载）";
+        params.senderId = "u_bob";
+        chat->addMessage(params);
         setStatus("添加他人消息（senderId 重载）");
     });
     auto* addByFull = addButton(msgSection, "添加他人消息（完整信息）");
     QObject::connect(addByFull, &QPushButton::clicked, chat, [chat, setStatus]() {
-        chat->addMessage("我是 Alice（完整信息）", "u_alice", "Alice", "");
+        ChatWidget::MessageParams params;
+        params.content = "我是 Alice（完整信息）";
+        params.senderId = "u_alice";
+        params.displayName = "Alice";
+        chat->addMessage(params);
         setStatus("添加他人消息（完整信息）");
     });
     auto* removeLast = addButton(msgSection, "移除最后一条");
@@ -361,7 +378,11 @@ int main(int argc, char* argv[])
     });
     auto* appendStream = addButton(streamSection, "追加流式片段");
     QObject::connect(appendStream, &QPushButton::clicked, chat, [chat, setStatus]() {
-        chat->addMessage("", false, "AI");
+        ChatWidget::MessageParams params;
+        params.content = QString();
+        params.displayName = "AI";
+        params.isMine = false;
+        chat->addMessage(params);
         chat->setSendingState(true);
         chat->streamOutput("这是一段手动追加的流式内容。");
         setStatus("手动追加流式片段");
@@ -383,21 +404,20 @@ int main(int argc, char* argv[])
         chat->setCurrentUser("u_me", "Me");
         setStatus("设置当前用户: u_me");
     });
-    auto* setCurrentUserId = addButton(participantSection, "设置当前用户ID");
-    QObject::connect(setCurrentUserId, &QPushButton::clicked, chat, [chat, setStatus]() {
-        chat->setCurrentUserId("u_me");
-        setStatus(QString("setCurrentUserId: %1").arg(chat->currentUserId()));
-    });
     auto* upsertAlice = addButton(participantSection, "Upsert 参与者 Alice");
     QObject::connect(upsertAlice, &QPushButton::clicked, chat, [chat, setStatus]() {
         chat->upsertParticipant("u_alice", "Alice");
-        chat->addMessage("Alice 刚加入", "u_alice", "Alice");
+        ChatWidget::MessageParams params;
+        params.content = "Alice 刚加入";
+        params.senderId = "u_alice";
+        params.displayName = "Alice";
+        chat->addMessage(params);
         setStatus("upsertParticipant: u_alice");
     });
     auto* updateAlice = addButton(participantSection, "更新 Alice 信息");
     QObject::connect(updateAlice, &QPushButton::clicked, chat, [chat, setStatus]() {
-        chat->updateParticipant("u_alice", "Alice ✨");
-        setStatus("updateParticipant: u_alice -> Alice ✨");
+        chat->upsertParticipant("u_alice", "Alice ✨");
+        setStatus("upsertParticipant: u_alice -> Alice ✨");
     });
     auto* removeAlice = addButton(participantSection, "移除 Alice");
     QObject::connect(removeAlice, &QPushButton::clicked, chat, [chat, setStatus]() {

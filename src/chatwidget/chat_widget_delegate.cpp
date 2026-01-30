@@ -144,7 +144,6 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
     doc.setTextWidth(maxWidth);
 
     const int docHeight = qCeil(doc.size().height());
-    const int docWidth = qMin(maxWidth, qCeil(doc.idealWidth()));
 
     const bool isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
     const QString senderName = index.data(ChatWidgetModel::ChatWidgetSenderRole).toString();

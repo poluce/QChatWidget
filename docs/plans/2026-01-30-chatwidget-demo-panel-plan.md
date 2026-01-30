@@ -190,13 +190,21 @@ auto* msgSection = makeSection("基础消息");
 
 auto* addMine = addButton(msgSection, "添加我的消息");
 QObject::connect(addMine, &QPushButton::clicked, [chat, setStatus]() {
-    chat->addMessage("这是一条我的消息", true, "Me");
+    ChatWidget::MessageParams params;
+    params.content = "这是一条我的消息";
+    params.displayName = "Me";
+    params.isMine = true;
+    chat->addMessage(params);
     setStatus("添加我的消息");
 });
 
 auto* addOther = addButton(msgSection, "添加他人消息");
 QObject::connect(addOther, &QPushButton::clicked, [chat, setStatus]() {
-    chat->addMessage("你好，我是 Bob", "u_bob", "Bob");
+    ChatWidget::MessageParams params;
+    params.content = "你好，我是 Bob";
+    params.senderId = "u_bob";
+    params.displayName = "Bob";
+    chat->addMessage(params);
     setStatus("添加他人消息（Bob）");
 });
 

@@ -16,6 +16,16 @@ ChatWidget::ChatWidget(QWidget* parent) : QWidget(parent)
 
 ChatWidget::~ChatWidget() { }
 
+ChatWidgetView* ChatWidget::view() const
+{
+    return m_viewWidget;
+}
+
+ChatWidgetModel* ChatWidget::model() const
+{
+    return m_viewWidget ? m_viewWidget->model() : nullptr;
+}
+
 void ChatWidget::setupUi()
 {
     m_viewWidget = new ChatWidgetView(this);
@@ -38,37 +48,56 @@ void ChatWidget::setupUi()
     emit stopRequested(); });
 }
 
-void ChatWidget::addMessage(const QString& content, bool isMine, const QString& sender)
+void ChatWidget::addMessage(const MessageParams& params)
 {
-    m_viewWidget->addMessage(content, isMine, sender);
-}
+    if (params.senderId.trimmed().isEmpty()) {
+        const QString fallbackName = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
+        ChatWidgetMessage msg;
+        msg.senderId = QString();
+        msg.sender = fallbackName;
+        msg.content = params.content;
+        msg.avatarPath = params.avatarPath;
+        msg.isMine = params.isMine;
+        msg.timestamp = QDateTime::currentDateTime();
 
-void ChatWidget::addMessage(const QString& content, const QString& senderId)
-{
-    addMessage(content, senderId, QString(), QString());
-}
-
-void ChatWidget::addMessage(const QString& content, const QString& senderId, const QString& displayName, const QString& avatarPath)
-{
-    if (senderId.trimmed().isEmpty()) {
-        const QString fallbackName = displayName.isEmpty() ? QStringLiteral("User") : displayName;
-        addMessage(content, false, fallbackName);
+        if (auto* dataModel = model()) {
+            dataModel->addMessage(msg);
+        }
+        if (m_viewWidget) {
+            m_viewWidget->scrollToBottom();
+        }
         return;
     }
 
-    ParticipantInfo info = m_participants.value(senderId);
-    info.id = senderId;
-    if (!displayName.isEmpty()) {
-        info.displayName = displayName;
+    ParticipantInfo info = m_participants.value(params.senderId);
+    info.id = params.senderId;
+    if (!params.displayName.isEmpty()) {
+        info.displayName = params.displayName;
     }
-    if (!avatarPath.isEmpty()) {
-        info.avatarPath = avatarPath;
+    if (!params.avatarPath.isEmpty()) {
+        info.avatarPath = params.avatarPath;
     }
-    m_participants.insert(senderId, info);
+    m_participants.insert(params.senderId, info);
 
-    const QString finalName = info.displayName.isEmpty() ? senderId : info.displayName;
-    const bool isMine = !m_currentUserId.isEmpty() && senderId == m_currentUserId;
-    m_viewWidget->addMessage(content, isMine, finalName, senderId, info.avatarPath);
+    const QString finalName = info.displayName.isEmpty() ? params.senderId : info.displayName;
+    bool isMine = params.isMine;
+    if (!m_currentUserId.isEmpty()) {
+        isMine = params.senderId == m_currentUserId;
+    }
+    ChatWidgetMessage msg;
+    msg.senderId = params.senderId;
+    msg.sender = finalName;
+    msg.content = params.content;
+    msg.avatarPath = info.avatarPath;
+    msg.isMine = isMine;
+    msg.timestamp = QDateTime::currentDateTime();
+
+    if (auto* dataModel = model()) {
+        dataModel->addMessage(msg);
+    }
+    if (m_viewWidget) {
+        m_viewWidget->scrollToBottom();
+    }
 }
 
 void ChatWidget::streamOutput(const QString& content)
@@ -77,7 +106,12 @@ void ChatWidget::streamOutput(const QString& content)
     if (!m_isSending) {
         return;
     }
-    m_viewWidget->streamOutput(content);
+    if (auto* dataModel = model()) {
+        dataModel->appendContentToLastMessage(content);
+    }
+    if (m_viewWidget) {
+        m_viewWidget->scrollToBottom();
+    }
 }
 
 bool ChatWidget::applyStyleSheetFile(const QString& fileNameOrPath)
@@ -121,23 +155,37 @@ ChatWidgetInputBase* ChatWidget::inputWidget() const { return m_inputWidget; }
 void ChatWidget::onInputMessageSent(const QString& content)
 {
     m_isSending = true; // 用户点击发送后，组件自动进入“发送/等待响应”状态
+    MessageParams params;
+    params.content = content;
     if (!m_currentUserId.isEmpty()) {
-        addMessage(content, m_currentUserId);
+        params.senderId = m_currentUserId;
     } else {
-        addMessage(content, true, "Me");
+        params.isMine = true;
+        params.displayName = QStringLiteral("Me");
     }
+    addMessage(params);
     emit messageSent(content);
 }
 
-void ChatWidget::removeLastMessage() { m_viewWidget->removeLastMessage(); }
+void ChatWidget::removeLastMessage()
+{
+    if (auto* dataModel = model()) {
+        dataModel->removeLastMessage();
+    }
+}
 
 void ChatWidget::clearMessages()
 {
-    m_viewWidget->clearMessages();
+    if (auto* dataModel = model()) {
+        dataModel->clearMessages();
+    }
     m_messageIds.clear();
 }
 
-int ChatWidget::messageCount() const { return m_viewWidget->messageCount(); }
+int ChatWidget::messageCount() const
+{
+    return model() ? model()->messageCount() : 0;
+}
 
 void ChatWidget::setSendingState(bool sending)
 {
@@ -177,63 +225,68 @@ void ChatWidget::startSimulatedStreaming(const QString& content, int interval)
     m_streamingContent = content;
     m_streamingIndex = 0;
     // 先添加一个空消息作为容器
-    addMessage("", false, "AI");
+    MessageParams params;
+    params.content = QString();
+    params.displayName = QStringLiteral("AI");
+    params.isMine = false;
+    addMessage(params);
     setSendingState(true);
     m_streamingTimer->start(interval);
 }
 
 void ChatWidget::updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status)
 {
-    if (m_viewWidget) {
-        m_viewWidget->updateMessageStatus(messageId, status);
+    if (auto* dataModel = model()) {
+        dataModel->updateMessageStatus(messageId, status);
     }
 }
 
 void ChatWidget::updateMessageContent(const QString& messageId, const QString& content)
 {
+    if (auto* dataModel = model()) {
+        dataModel->updateMessageContent(messageId, content);
+    }
     if (m_viewWidget) {
-        m_viewWidget->updateMessageContent(messageId, content);
+        m_viewWidget->refreshLayout();
     }
 }
 
 void ChatWidget::updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions)
 {
+    if (auto* dataModel = model()) {
+        dataModel->updateMessageReactions(messageId, reactions);
+    }
     if (m_viewWidget) {
-        m_viewWidget->updateMessageReactions(messageId, reactions);
+        m_viewWidget->refreshLayout();
     }
 }
 
 void ChatWidget::updateMessageAttachments(const QString& messageId, const QString& imagePath, const QString& filePath,
                                           const QString& fileName, qint64 fileSize)
 {
+    if (auto* dataModel = model()) {
+        dataModel->updateMessageAttachments(messageId, imagePath, filePath, fileName, fileSize);
+    }
     if (m_viewWidget) {
-        m_viewWidget->updateMessageAttachments(messageId, imagePath, filePath, fileName, fileSize);
+        m_viewWidget->refreshLayout();
     }
 }
 
 void ChatWidget::updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
                                     const QString& replyPreview, bool isForwarded, const QString& forwardedFrom)
 {
+    if (auto* dataModel = model()) {
+        dataModel->updateMessageReply(messageId, replyToMessageId, replySender, replyPreview, isForwarded, forwardedFrom);
+    }
     if (m_viewWidget) {
-        m_viewWidget->updateMessageReply(messageId, replyToMessageId, replySender, replyPreview, isForwarded, forwardedFrom);
+        m_viewWidget->refreshLayout();
     }
 }
 
 void ChatWidget::setSearchKeyword(const QString& keyword)
 {
-    if (m_viewWidget) {
-        m_viewWidget->setSearchKeyword(keyword);
-    }
-}
-
-void ChatWidget::setCurrentUserId(const QString& userId)
-{
-    if (m_currentUserId == userId) {
-        return;
-    }
-    m_currentUserId = userId;
-    if (m_viewWidget) {
-        m_viewWidget->updateIsMine(m_currentUserId);
+    if (auto* dataModel = model()) {
+        dataModel->setSearchKeyword(keyword);
     }
 }
 
@@ -244,10 +297,19 @@ QString ChatWidget::currentUserId() const
 
 void ChatWidget::setCurrentUser(const QString& userId, const QString& displayName, const QString& avatarPath)
 {
+    if (m_currentUserId == userId && displayName.isEmpty() && avatarPath.isEmpty()) {
+        return;
+    }
     if (!userId.trimmed().isEmpty()) {
         upsertParticipant(userId, displayName, avatarPath);
     }
-    setCurrentUserId(userId);
+    m_currentUserId = userId;
+    if (auto* dataModel = model()) {
+        dataModel->updateIsMine(m_currentUserId);
+    }
+    if (m_viewWidget) {
+        m_viewWidget->refreshLayout();
+    }
 }
 
 void ChatWidget::upsertParticipant(const QString& userId, const QString& displayName, const QString& avatarPath)
@@ -257,29 +319,14 @@ void ChatWidget::upsertParticipant(const QString& userId, const QString& display
     info.displayName = displayName;
     info.avatarPath = avatarPath;
     m_participants.insert(userId, info);
-    if (m_viewWidget && (!displayName.isEmpty() || !avatarPath.isEmpty())) {
+    if ((!displayName.isEmpty() || !avatarPath.isEmpty())) {
         const QString finalName = displayName.isEmpty() ? userId : displayName;
-        m_viewWidget->updateParticipantInfo(userId, finalName, avatarPath);
-    }
-}
-
-void ChatWidget::updateParticipant(const QString& userId, const QString& displayName, const QString& avatarPath)
-{
-    if (userId.trimmed().isEmpty()) {
-        return;
-    }
-    ParticipantInfo info = m_participants.value(userId);
-    info.id = userId;
-    if (!displayName.isEmpty()) {
-        info.displayName = displayName;
-    }
-    if (!avatarPath.isEmpty()) {
-        info.avatarPath = avatarPath;
-    }
-    m_participants.insert(userId, info);
-    if (m_viewWidget) {
-        const QString finalName = info.displayName.isEmpty() ? userId : info.displayName;
-        m_viewWidget->updateParticipantInfo(userId, finalName, info.avatarPath);
+        if (auto* dataModel = model()) {
+            dataModel->updateParticipantInfo(userId, finalName, avatarPath);
+        }
+        if (m_viewWidget) {
+            m_viewWidget->refreshLayout();
+        }
     }
 }
 
@@ -377,7 +424,9 @@ void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool 
         converted.append(msg);
     }
 
-    m_viewWidget->setMessages(converted);
+    if (m_viewWidget) {
+        m_viewWidget->setMessages(converted);
+    }
 }
 
 void ChatWidget::appendHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe)
@@ -456,12 +505,19 @@ void ChatWidget::appendHistoryMessages(const QList<HistoryMessage>& messages, bo
         converted.append(msg);
     }
 
-    m_viewWidget->appendMessages(converted);
+    if (m_viewWidget) {
+        m_viewWidget->appendMessages(converted);
+    }
     if (!updatedParticipants.isEmpty()) {
         for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
             const ParticipantInfo& info = it.value();
             const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
-            m_viewWidget->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+            if (auto* dataModel = model()) {
+                dataModel->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+            }
+        }
+        if (m_viewWidget) {
+            m_viewWidget->refreshLayout();
         }
     }
 }
@@ -542,12 +598,19 @@ void ChatWidget::prependHistoryMessages(const QList<HistoryMessage>& messages, b
         converted.append(msg);
     }
 
-    m_viewWidget->prependMessages(converted);
+    if (m_viewWidget) {
+        m_viewWidget->prependMessages(converted);
+    }
     if (!updatedParticipants.isEmpty()) {
         for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
             const ParticipantInfo& info = it.value();
             const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
-            m_viewWidget->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+            if (auto* dataModel = model()) {
+                dataModel->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+            }
+        }
+        if (m_viewWidget) {
+            m_viewWidget->refreshLayout();
         }
     }
 }

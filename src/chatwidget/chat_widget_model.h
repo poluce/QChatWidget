@@ -9,6 +9,7 @@
 #include <QString>
 #include <QtGlobal>
 #include <QVariant>
+#include <QSet>
 
 struct ChatWidgetReaction {
     QString emoji;
@@ -130,6 +131,7 @@ public:
 private:
     QList<ChatWidgetMessage> m_messages;
     QString m_searchKeyword;
+    QSet<QString> m_messageIds;
 };
 
 #endif // CHAT_WIDGET_MODEL_H

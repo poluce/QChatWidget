@@ -1,7 +1,6 @@
 #include "chat_widget_view.h"
 #include "chat_widget_delegate.h"
 #include "chat_widget_model.h"
-#include <QDateTime>
 #include <QListView>
 #include <QMenu>
 #include <QMouseEvent>
@@ -15,6 +14,28 @@ ChatWidgetView::ChatWidgetView(QWidget* parent) : QWidget(parent)
 }
 
 ChatWidgetView::~ChatWidgetView() { }
+
+ChatWidgetModel* ChatWidgetView::model() const
+{
+    return m_model;
+}
+
+void ChatWidgetView::setModel(ChatWidgetModel* model)
+{
+    if (!model || model == m_model) {
+        return;
+    }
+
+    if (m_model && m_model->parent() == this) {
+        m_model->deleteLater();
+    }
+
+    m_model = model;
+    if (!m_model->parent()) {
+        m_model->setParent(this);
+    }
+    m_chatView->setModel(m_model);
+}
 
 void ChatWidgetView::setupUi()
 {
@@ -38,94 +59,22 @@ void ChatWidgetView::setupUi()
     layout->addWidget(m_chatView);
 }
 
-void ChatWidgetView::addMessage(const QString& content, bool isMine, const QString& sender,
-                                const QString& senderId, const QString& avatarPath)
-{
-    ChatWidgetMessage msg;
-    msg.senderId = senderId;
-    msg.content = content;
-    msg.isMine = isMine;
-    msg.sender = sender;
-    msg.avatarPath = avatarPath;
-    msg.timestamp = QDateTime::currentDateTime();
-
-    m_model->addMessage(msg);
-    m_chatView->scrollToBottom();
-}
-
 void ChatWidgetView::setMessages(const QList<ChatWidgetMessage>& messages)
 {
     m_model->setMessages(messages);
-    m_chatView->scrollToBottom();
+    scrollToBottom();
 }
 
 void ChatWidgetView::appendMessages(const QList<ChatWidgetMessage>& messages)
 {
     m_model->appendMessages(messages);
-    m_chatView->scrollToBottom();
+    scrollToBottom();
 }
 
 void ChatWidgetView::prependMessages(const QList<ChatWidgetMessage>& messages)
 {
     m_model->prependMessages(messages);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::updateIsMine(const QString& currentUserId)
-{
-    m_model->updateIsMine(currentUserId);
-    m_chatView->doItemsLayout();
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath)
-{
-    m_model->updateParticipantInfo(senderId, displayName, avatarPath);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::streamOutput(const QString& content)
-{
-    m_model->appendContentToLastMessage(content);
-    m_chatView->scrollToBottom();
-}
-
-void ChatWidgetView::updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status)
-{
-    m_model->updateMessageStatus(messageId, status);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::updateMessageContent(const QString& messageId, const QString& content)
-{
-    m_model->updateMessageContent(messageId, content);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions)
-{
-    m_model->updateMessageReactions(messageId, reactions);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::updateMessageAttachments(const QString& messageId, const QString& imagePath, const QString& filePath,
-                                              const QString& fileName, qint64 fileSize)
-{
-    m_model->updateMessageAttachments(messageId, imagePath, filePath, fileName, fileSize);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
-                                        const QString& replyPreview, bool isForwarded, const QString& forwardedFrom)
-{
-    m_model->updateMessageReply(messageId, replyToMessageId, replySender, replyPreview, isForwarded, forwardedFrom);
-    m_chatView->viewport()->update();
-}
-
-void ChatWidgetView::setSearchKeyword(const QString& keyword)
-{
-    m_model->setSearchKeyword(keyword);
-    m_chatView->viewport()->update();
+    refreshLayout();
 }
 
 void ChatWidgetView::setDelegateStyle(const ChatWidgetDelegate::Style& style)
@@ -139,19 +88,19 @@ ChatWidgetDelegate::Style ChatWidgetView::delegateStyle() const
     return m_delegate->style();
 }
 
-void ChatWidgetView::removeLastMessage()
+void ChatWidgetView::scrollToBottom()
 {
-    m_model->removeLastMessage();
+    if (m_chatView) {
+        m_chatView->scrollToBottom();
+    }
 }
 
-void ChatWidgetView::clearMessages()
+void ChatWidgetView::refreshLayout()
 {
-    m_model->clearMessages();
-}
-
-int ChatWidgetView::messageCount() const
-{
-    return m_model->messageCount();
+    if (m_chatView) {
+        m_chatView->doItemsLayout();
+        m_chatView->viewport()->update();
+    }
 }
 
 bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
