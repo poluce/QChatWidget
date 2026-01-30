@@ -13,17 +13,20 @@ public:
         int margin = 10;
         int bubblePadding = 10;
         int bubbleRadius = 8;
+        int nameSpacing = 4;
 
         QColor myBubbleColor = QColor(149, 236, 105);
         QColor otherBubbleColor = Qt::white;
         QColor myAvatarColor = QColor(0, 120, 215);
         QColor otherAvatarColor = QColor(200, 200, 200);
+        QColor nameColor = QColor(120, 120, 120);
         QColor myTextColor = QColor(25, 25, 25);
         QColor otherTextColor = QColor(25, 25, 25);
         QColor backgroundColor = QColor(245, 245, 245);
 
         QFont messageFont = QFont("Microsoft YaHei", 11);
         QFont avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
+        QFont nameFont = QFont("Microsoft YaHei", 9);
     };
 
     explicit ChatWidgetDelegate(QObject* parent = nullptr);
@@ -33,6 +36,7 @@ public:
 
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    QRect avatarRect(const QStyleOptionViewItem& option, const QModelIndex& index) const;
 
 private:
     Style m_style;

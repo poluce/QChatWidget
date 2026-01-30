@@ -9,6 +9,7 @@
 #include <QVariant>
 
 struct ChatWidgetMessage {
+    QString senderId;    // 发送者ID（多人聊天用）
     QString sender;      // 发送者姓名
     QString content;     // 消息内容
     QString avatarPath;  // 头像路径
@@ -24,7 +25,8 @@ public:
         ChatWidgetContentRole,
         ChatWidgetAvatarRole,
         ChatWidgetTimestampRole,
-        ChatWidgetIsMineRole
+        ChatWidgetIsMineRole,
+        ChatWidgetSenderIdRole
     };
 
     explicit ChatWidgetModel(QObject* parent = nullptr);
@@ -34,6 +36,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     void addMessage(const ChatWidgetMessage& message);
+    void setMessages(const QList<ChatWidgetMessage>& messages);
+    void updateIsMine(const QString& currentUserId);
     void appendContentToLastMessage(const QString& content);
     void removeLastMessage();
     void clearMessages();

@@ -30,6 +30,8 @@ QVariant ChatWidgetModel::data(const QModelIndex& index, int role) const
         return msg.timestamp;
     case ChatWidgetIsMineRole:
         return msg.isMine;
+    case ChatWidgetSenderIdRole:
+        return msg.senderId;
     default:
         return QVariant();
     }
@@ -42,6 +44,7 @@ QHash<int, QByteArray> ChatWidgetModel::roleNames() const
     roles[ChatWidgetContentRole] = "content";
     roles[ChatWidgetAvatarRole] = "avatar";
     roles[ChatWidgetIsMineRole] = "isMine";
+    roles[ChatWidgetSenderIdRole] = "senderId";
     return roles;
 }
 
@@ -50,6 +53,36 @@ void ChatWidgetModel::addMessage(const ChatWidgetMessage& message)
     beginInsertRows(QModelIndex(), m_messages.count(), m_messages.count());
     m_messages.append(message);
     endInsertRows();
+}
+
+void ChatWidgetModel::setMessages(const QList<ChatWidgetMessage>& messages)
+{
+    beginResetModel();
+    m_messages = messages;
+    endResetModel();
+}
+
+void ChatWidgetModel::updateIsMine(const QString& currentUserId)
+{
+    if (currentUserId.trimmed().isEmpty() || m_messages.isEmpty()) {
+        return;
+    }
+    bool anyChanged = false;
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].senderId.isEmpty()) {
+            continue;
+        }
+        const bool newIsMine = m_messages[i].senderId == currentUserId;
+        if (m_messages[i].isMine != newIsMine) {
+            m_messages[i].isMine = newIsMine;
+            anyChanged = true;
+        }
+    }
+    if (anyChanged) {
+        QModelIndex first = index(0, 0);
+        QModelIndex last = index(m_messages.size() - 1, 0);
+        emit dataChanged(first, last, { ChatWidgetIsMineRole });
+    }
 }
 
 void ChatWidgetModel::appendContentToLastMessage(const QString& content)
