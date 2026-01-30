@@ -29,6 +29,9 @@ void ChatWidget::setupUi()
     connect(m_viewWidget, &ChatWidgetView::avatarClicked, this, &ChatWidget::avatarClicked);
     connect(m_viewWidget, &ChatWidgetView::selfAvatarClicked, this, &ChatWidget::selfAvatarClicked);
     connect(m_viewWidget, &ChatWidgetView::memberAvatarClicked, this, &ChatWidget::memberAvatarClicked);
+    connect(m_viewWidget, &ChatWidgetView::messageSelected, this, &ChatWidget::messageSelected);
+    connect(m_viewWidget, &ChatWidgetView::messageContextMenuRequested, this, &ChatWidget::messageContextMenuRequested);
+    connect(m_viewWidget, &ChatWidgetView::messageActionRequested, this, &ChatWidget::messageActionRequested);
     connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &ChatWidget::onInputMessageSent);
     connect(m_inputWidget, &ChatWidgetInputBase::stopRequested, this, [this]() {
     setSendingState(false);
@@ -179,6 +182,50 @@ void ChatWidget::startSimulatedStreaming(const QString& content, int interval)
     m_streamingTimer->start(interval);
 }
 
+void ChatWidget::updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status)
+{
+    if (m_viewWidget) {
+        m_viewWidget->updateMessageStatus(messageId, status);
+    }
+}
+
+void ChatWidget::updateMessageContent(const QString& messageId, const QString& content)
+{
+    if (m_viewWidget) {
+        m_viewWidget->updateMessageContent(messageId, content);
+    }
+}
+
+void ChatWidget::updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions)
+{
+    if (m_viewWidget) {
+        m_viewWidget->updateMessageReactions(messageId, reactions);
+    }
+}
+
+void ChatWidget::updateMessageAttachments(const QString& messageId, const QString& imagePath, const QString& filePath,
+                                          const QString& fileName, qint64 fileSize)
+{
+    if (m_viewWidget) {
+        m_viewWidget->updateMessageAttachments(messageId, imagePath, filePath, fileName, fileSize);
+    }
+}
+
+void ChatWidget::updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
+                                    const QString& replyPreview, bool isForwarded, const QString& forwardedFrom)
+{
+    if (m_viewWidget) {
+        m_viewWidget->updateMessageReply(messageId, replyToMessageId, replySender, replyPreview, isForwarded, forwardedFrom);
+    }
+}
+
+void ChatWidget::setSearchKeyword(const QString& keyword)
+{
+    if (m_viewWidget) {
+        m_viewWidget->setSearchKeyword(keyword);
+    }
+}
+
 void ChatWidget::setCurrentUserId(const QString& userId)
 {
     if (m_currentUserId == userId) {
@@ -285,6 +332,19 @@ void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool 
         msg.messageId = history.messageId;
         msg.content = history.content;
         msg.timestamp = history.timestamp;
+        msg.messageType = history.messageType;
+        msg.status = history.status;
+        msg.imagePath = history.imagePath;
+        msg.filePath = history.filePath;
+        msg.fileName = history.fileName;
+        msg.fileSize = history.fileSize;
+        msg.replyToMessageId = history.replyToMessageId;
+        msg.replySender = history.replySender;
+        msg.replyPreview = history.replyPreview;
+        msg.isForwarded = history.isForwarded;
+        msg.forwardedFrom = history.forwardedFrom;
+        msg.reactions = history.reactions;
+        msg.mentions = history.mentions;
 
         if (history.senderId.trimmed().isEmpty()) {
             msg.senderId = QString();
@@ -345,6 +405,19 @@ void ChatWidget::appendHistoryMessages(const QList<HistoryMessage>& messages, bo
         msg.messageId = history.messageId;
         msg.content = history.content;
         msg.timestamp = history.timestamp;
+        msg.messageType = history.messageType;
+        msg.status = history.status;
+        msg.imagePath = history.imagePath;
+        msg.filePath = history.filePath;
+        msg.fileName = history.fileName;
+        msg.fileSize = history.fileSize;
+        msg.replyToMessageId = history.replyToMessageId;
+        msg.replySender = history.replySender;
+        msg.replyPreview = history.replyPreview;
+        msg.isForwarded = history.isForwarded;
+        msg.forwardedFrom = history.forwardedFrom;
+        msg.reactions = history.reactions;
+        msg.mentions = history.mentions;
 
         if (history.senderId.trimmed().isEmpty()) {
             msg.senderId = QString();
@@ -418,6 +491,19 @@ void ChatWidget::prependHistoryMessages(const QList<HistoryMessage>& messages, b
         msg.messageId = history.messageId;
         msg.content = history.content;
         msg.timestamp = history.timestamp;
+        msg.messageType = history.messageType;
+        msg.status = history.status;
+        msg.imagePath = history.imagePath;
+        msg.filePath = history.filePath;
+        msg.fileName = history.fileName;
+        msg.fileSize = history.fileSize;
+        msg.replyToMessageId = history.replyToMessageId;
+        msg.replySender = history.replySender;
+        msg.replyPreview = history.replyPreview;
+        msg.isForwarded = history.isForwarded;
+        msg.forwardedFrom = history.forwardedFrom;
+        msg.reactions = history.reactions;
+        msg.mentions = history.mentions;
 
         if (history.senderId.trimmed().isEmpty()) {
             msg.senderId = QString();

@@ -32,6 +32,8 @@
 
 /* ChatWidget Plus 按钮和语音按钮 - 图标按钮样式 */
 #chatWidgetInputPlusButton,
+#chatWidgetInputEmojiButton,
+#chatWidgetInputRichButton,
 #chatWidgetInputVoiceButton {
     background: #f4f6f9;
     border: 1px solid #e1e4ea;
@@ -42,13 +44,23 @@
 }
 
 #chatWidgetInputPlusButton:hover,
+#chatWidgetInputEmojiButton:hover,
+#chatWidgetInputRichButton:hover,
 #chatWidgetInputVoiceButton:hover {
     background: #eef2f7;
 }
 
 #chatWidgetInputPlusButton:pressed,
+#chatWidgetInputEmojiButton:pressed,
+#chatWidgetInputRichButton:pressed,
 #chatWidgetInputVoiceButton:pressed {
     background: #e2e8f0;
+}
+
+#chatWidgetInputRichButton:checked {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
 }
 
 /* ChatWidget 发送按钮 - 主要按钮样式 */
@@ -85,4 +97,11 @@
 /* ChatWidget 命令菜单 - 继承 global.qss 中的 QMenu 样式 */
 #chatWidgetCommandMenu::item {
     padding: 8px 12px;
+}
+
+/* ChatWidget 输入快捷提示 */
+#chatWidgetInputShortcutLabel {
+    color: #6b7280;
+    font-size: 11px;
+    padding: 2px 6px 0 6px;
 }

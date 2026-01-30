@@ -5,17 +5,73 @@
 #include <QDateTime>
 #include <QHash>
 #include <QList>
+#include <QStringList>
 #include <QString>
+#include <QtGlobal>
 #include <QVariant>
 
+struct ChatWidgetReaction {
+    QString emoji;
+    int count = 0;
+
+    ChatWidgetReaction() = default;
+    ChatWidgetReaction(const QString& emojiValue, int countValue)
+        : emoji(emojiValue)
+        , count(countValue)
+    {
+    }
+};
+
+inline bool operator==(const ChatWidgetReaction& lhs, const ChatWidgetReaction& rhs)
+{
+    return lhs.emoji == rhs.emoji && lhs.count == rhs.count;
+}
+
+inline bool operator!=(const ChatWidgetReaction& lhs, const ChatWidgetReaction& rhs)
+{
+    return !(lhs == rhs);
+}
+
 struct ChatWidgetMessage {
+    enum class MessageType {
+        Text,
+        Image,
+        File,
+        System,
+        DateSeparator
+    };
+
+    enum class MessageStatus {
+        Sending,
+        Sent,
+        Failed,
+        Read
+    };
+
     QString senderId;    // 发送者ID（多人聊天用）
     QString sender;      // 发送者姓名
     QString content;     // 消息内容
     QString avatarPath;  // 头像路径
     QDateTime timestamp; // 时间戳
-    bool isMine;         // 是否是我发的消息
+    bool isMine = false; // 是否是我发的消息
     QString messageId;   // 消息唯一ID
+
+    MessageType messageType = MessageType::Text;
+    MessageStatus status = MessageStatus::Sent;
+
+    QString imagePath;
+    QString filePath;
+    QString fileName;
+    qint64 fileSize = 0;
+
+    QString replyToMessageId;
+    QString replySender;
+    QString replyPreview;
+    bool isForwarded = false;
+    QString forwardedFrom;
+
+    QList<ChatWidgetReaction> reactions;
+    QStringList mentions;
 };
 
 class ChatWidgetModel : public QAbstractListModel {
@@ -28,7 +84,22 @@ public:
         ChatWidgetTimestampRole,
         ChatWidgetIsMineRole,
         ChatWidgetSenderIdRole,
-        ChatWidgetMessageIdRole
+        ChatWidgetMessageIdRole,
+        ChatWidgetMessageTypeRole,
+        ChatWidgetMessageStatusRole,
+        ChatWidgetImagePathRole,
+        ChatWidgetFilePathRole,
+        ChatWidgetFileNameRole,
+        ChatWidgetFileSizeRole,
+        ChatWidgetReplyToMessageIdRole,
+        ChatWidgetReplySenderRole,
+        ChatWidgetReplyPreviewRole,
+        ChatWidgetIsForwardedRole,
+        ChatWidgetForwardedFromRole,
+        ChatWidgetReactionsRole,
+        ChatWidgetMentionsRole,
+        ChatWidgetIsSystemRole,
+        ChatWidgetSearchKeywordRole
     };
 
     explicit ChatWidgetModel(QObject* parent = nullptr);
@@ -44,12 +115,21 @@ public:
     void updateIsMine(const QString& currentUserId);
     void updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath);
     void appendContentToLastMessage(const QString& content);
+    void updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status);
+    void updateMessageContent(const QString& messageId, const QString& content);
+    void updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions);
+    void updateMessageAttachments(const QString& messageId, const QString& imagePath, const QString& filePath,
+                                  const QString& fileName, qint64 fileSize);
+    void updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
+                            const QString& replyPreview, bool isForwarded, const QString& forwardedFrom);
+    void setSearchKeyword(const QString& keyword);
     void removeLastMessage();
     void clearMessages();
     int messageCount() const;
 
 private:
     QList<ChatWidgetMessage> m_messages;
+    QString m_searchKeyword;
 };
 
 #endif // CHAT_WIDGET_MODEL_H

@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
@@ -42,12 +43,23 @@ void ChatWidgetInput::setupUi()
     m_plusButton->setProperty("role", "icon");
     m_plusButton->setPopupMode(QToolButton::InstantPopup);
 
+    m_emojiButton = new QToolButton(m_inputBar);
+    m_emojiButton->setObjectName("chatWidgetInputEmojiButton");
+    m_emojiButton->setText("😊");
+    m_emojiButton->setProperty("role", "icon");
+    m_emojiButton->setPopupMode(QToolButton::InstantPopup);
+
     m_voiceButton = new QPushButton("语音", m_inputBar);
     m_voiceButton->setObjectName("chatWidgetInputVoiceButton");
     m_voiceButton->setProperty("role", "icon");
     m_inputEdit = new QLineEdit(m_inputBar);
     m_inputEdit->setObjectName("chatWidgetInputEdit");
     m_inputEdit->setPlaceholderText("输入消息...");
+    m_richTextButton = new QToolButton(m_inputBar);
+    m_richTextButton->setObjectName("chatWidgetInputRichButton");
+    m_richTextButton->setText("A");
+    m_richTextButton->setCheckable(true);
+    m_richTextButton->setProperty("role", "icon");
     m_sendButton = new QPushButton("发送", m_inputBar);
     m_sendButton->setObjectName("chatWidgetInputSendButton");
     m_sendButton->setProperty("role", "primary");
@@ -58,6 +70,15 @@ void ChatWidgetInput::setupUi()
     m_pickFileAction = m_plusMenu->addAction("文件");
     m_plusButton->setMenu(m_plusMenu);
 
+    m_emojiMenu = new QMenu(this);
+    m_emojiMenu->setObjectName("chatWidgetInputEmojiMenu");
+    const QStringList emojis = { "😀", "😂", "😍", "👍", "🎉", "🔥", "🙏", "✅", "✨", "😅" };
+    for (const QString& emoji : emojis) {
+        QAction* action = m_emojiMenu->addAction(emoji);
+        action->setData(emoji);
+    }
+    m_emojiButton->setMenu(m_emojiMenu);
+
     m_commandMenu = new QListWidget(this);
     m_commandMenu->setObjectName("chatWidgetCommandMenu");
     m_commandMenu->setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
@@ -65,6 +86,9 @@ void ChatWidgetInput::setupUi()
     m_commandMenu->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_commandMenu->setSelectionMode(QAbstractItemView::SingleSelection);
     m_commandMenu->setSpacing(2);
+
+    m_shortcutLabel = new QLabel("Enter 发送 · Ctrl+Enter 换行", this);
+    m_shortcutLabel->setObjectName("chatWidgetInputShortcutLabel");
 
     QGraphicsDropShadowEffect* barShadow = new QGraphicsDropShadowEffect(this);
     barShadow->setBlurRadius(18);
@@ -82,13 +106,16 @@ void ChatWidgetInput::setupUi()
     inputLayout->setContentsMargins(10, 6, 10, 6);
     inputLayout->setSpacing(8);
     inputLayout->addWidget(m_plusButton);
+    inputLayout->addWidget(m_emojiButton);
     inputLayout->addWidget(m_inputEdit);
+    inputLayout->addWidget(m_richTextButton);
     inputLayout->addWidget(m_voiceButton);
     inputLayout->addWidget(m_sendButton);
 
     QVBoxLayout* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(10, 8, 10, 12);
     rootLayout->addWidget(m_inputBar);
+    rootLayout->addWidget(m_shortcutLabel, 0, Qt::AlignRight);
 
     connect(m_sendButton, &QPushButton::clicked, this, &ChatWidgetInput::onSendClicked);
     connect(m_inputEdit, &QLineEdit::returnPressed, this, &ChatWidgetInput::onSendClicked);
@@ -97,6 +124,8 @@ void ChatWidgetInput::setupUi()
     connect(m_voiceButton, &QPushButton::clicked, this, &ChatWidgetInput::onVoiceClicked);
     connect(m_pickImageAction, &QAction::triggered, this, &ChatWidgetInput::onPickImage);
     connect(m_pickFileAction, &QAction::triggered, this, &ChatWidgetInput::onPickFile);
+    connect(m_emojiMenu, &QMenu::triggered, this, &ChatWidgetInput::onEmojiPicked);
+    connect(m_richTextButton, &QToolButton::toggled, this, &ChatWidgetInput::onRichTextToggled);
 }
 
 void ChatWidgetInput::onSendClicked()
@@ -122,6 +151,7 @@ void ChatWidgetInput::onSendClicked()
 void ChatWidgetInput::onInputTextChanged(const QString& text)
 {
     updateCommandMenu(text);
+    emit draftChanged(text);
 }
 
 void ChatWidgetInput::onCommandClicked(QListWidgetItem* item)
@@ -228,6 +258,16 @@ void ChatWidgetInput::setSendingState(bool sending)
     setSending(sending);
 }
 
+void ChatWidgetInput::setDraftText(const QString& text)
+{
+    m_inputEdit->setText(text);
+}
+
+QString ChatWidgetInput::draftText() const
+{
+    return m_inputEdit->text();
+}
+
 void ChatWidgetInput::onVoiceClicked()
 {
     m_isRecording = !m_isRecording;
@@ -264,4 +304,23 @@ void ChatWidgetInput::onPickFile()
     }
 
     emit messageSent("【文件】" + path);
+}
+
+void ChatWidgetInput::onEmojiPicked(QAction* action)
+{
+    if (!action) {
+        return;
+    }
+    const QString emoji = action->data().toString();
+    if (emoji.isEmpty()) {
+        return;
+    }
+    m_inputEdit->insert(emoji);
+    emit emojiSelected(emoji);
+}
+
+void ChatWidgetInput::onRichTextToggled(bool checked)
+{
+    m_richTextEnabled = checked;
+    emit richTextToggled(m_richTextEnabled);
 }

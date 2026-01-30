@@ -1,5 +1,13 @@
 #include "chat_widget_model.h"
 
+namespace {
+bool isSystemMessage(ChatWidgetMessage::MessageType type)
+{
+    return type == ChatWidgetMessage::MessageType::System ||
+           type == ChatWidgetMessage::MessageType::DateSeparator;
+}
+} // namespace
+
 ChatWidgetModel::ChatWidgetModel(QObject* parent)
     : QAbstractListModel(parent)
 {
@@ -34,6 +42,45 @@ QVariant ChatWidgetModel::data(const QModelIndex& index, int role) const
         return msg.senderId;
     case ChatWidgetMessageIdRole:
         return msg.messageId;
+    case ChatWidgetMessageTypeRole:
+        return static_cast<int>(msg.messageType);
+    case ChatWidgetMessageStatusRole:
+        return static_cast<int>(msg.status);
+    case ChatWidgetImagePathRole:
+        return msg.imagePath;
+    case ChatWidgetFilePathRole:
+        return msg.filePath;
+    case ChatWidgetFileNameRole:
+        return msg.fileName;
+    case ChatWidgetFileSizeRole:
+        return msg.fileSize;
+    case ChatWidgetReplyToMessageIdRole:
+        return msg.replyToMessageId;
+    case ChatWidgetReplySenderRole:
+        return msg.replySender;
+    case ChatWidgetReplyPreviewRole:
+        return msg.replyPreview;
+    case ChatWidgetIsForwardedRole:
+        return msg.isForwarded;
+    case ChatWidgetForwardedFromRole:
+        return msg.forwardedFrom;
+    case ChatWidgetReactionsRole: {
+        QVariantList reactionList;
+        reactionList.reserve(msg.reactions.size());
+        for (const ChatWidgetReaction& reaction : msg.reactions) {
+            QVariantMap map;
+            map.insert("emoji", reaction.emoji);
+            map.insert("count", reaction.count);
+            reactionList.append(map);
+        }
+        return reactionList;
+    }
+    case ChatWidgetMentionsRole:
+        return msg.mentions;
+    case ChatWidgetIsSystemRole:
+        return isSystemMessage(msg.messageType);
+    case ChatWidgetSearchKeywordRole:
+        return m_searchKeyword;
     default:
         return QVariant();
     }
@@ -49,6 +96,21 @@ QHash<int, QByteArray> ChatWidgetModel::roleNames() const
     roles[ChatWidgetIsMineRole] = "isMine";
     roles[ChatWidgetSenderIdRole] = "senderId";
     roles[ChatWidgetMessageIdRole] = "messageId";
+    roles[ChatWidgetMessageTypeRole] = "messageType";
+    roles[ChatWidgetMessageStatusRole] = "messageStatus";
+    roles[ChatWidgetImagePathRole] = "imagePath";
+    roles[ChatWidgetFilePathRole] = "filePath";
+    roles[ChatWidgetFileNameRole] = "fileName";
+    roles[ChatWidgetFileSizeRole] = "fileSize";
+    roles[ChatWidgetReplyToMessageIdRole] = "replyToMessageId";
+    roles[ChatWidgetReplySenderRole] = "replySender";
+    roles[ChatWidgetReplyPreviewRole] = "replyPreview";
+    roles[ChatWidgetIsForwardedRole] = "isForwarded";
+    roles[ChatWidgetForwardedFromRole] = "forwardedFrom";
+    roles[ChatWidgetReactionsRole] = "reactions";
+    roles[ChatWidgetMentionsRole] = "mentions";
+    roles[ChatWidgetIsSystemRole] = "isSystem";
+    roles[ChatWidgetSearchKeywordRole] = "searchKeyword";
     return roles;
 }
 
@@ -146,6 +208,154 @@ void ChatWidgetModel::appendContentToLastMessage(const QString& content)
     m_messages.last().content.append(content);
     QModelIndex idx = index(m_messages.count() - 1, 0);
     emit dataChanged(idx, idx, { ChatWidgetContentRole });
+}
+
+void ChatWidgetModel::updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status)
+{
+    if (messageId.trimmed().isEmpty()) {
+        return;
+    }
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId) {
+            continue;
+        }
+        if (m_messages[i].status == status) {
+            return;
+        }
+        m_messages[i].status = status;
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetMessageStatusRole });
+        return;
+    }
+}
+
+void ChatWidgetModel::updateMessageContent(const QString& messageId, const QString& content)
+{
+    if (messageId.trimmed().isEmpty()) {
+        return;
+    }
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId) {
+            continue;
+        }
+        if (m_messages[i].content == content) {
+            return;
+        }
+        m_messages[i].content = content;
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetContentRole });
+        return;
+    }
+}
+
+void ChatWidgetModel::updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions)
+{
+    if (messageId.trimmed().isEmpty()) {
+        return;
+    }
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId) {
+            continue;
+        }
+        if (m_messages[i].reactions == reactions) {
+            return;
+        }
+        m_messages[i].reactions = reactions;
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetReactionsRole });
+        return;
+    }
+}
+
+void ChatWidgetModel::updateMessageAttachments(const QString& messageId, const QString& imagePath, const QString& filePath,
+                                               const QString& fileName, qint64 fileSize)
+{
+    if (messageId.trimmed().isEmpty()) {
+        return;
+    }
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId) {
+            continue;
+        }
+        bool changed = false;
+        if (m_messages[i].imagePath != imagePath) {
+            m_messages[i].imagePath = imagePath;
+            changed = true;
+        }
+        if (m_messages[i].filePath != filePath) {
+            m_messages[i].filePath = filePath;
+            changed = true;
+        }
+        if (m_messages[i].fileName != fileName) {
+            m_messages[i].fileName = fileName;
+            changed = true;
+        }
+        if (m_messages[i].fileSize != fileSize) {
+            m_messages[i].fileSize = fileSize;
+            changed = true;
+        }
+        if (!changed) {
+            return;
+        }
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetImagePathRole, ChatWidgetFilePathRole, ChatWidgetFileNameRole, ChatWidgetFileSizeRole });
+        return;
+    }
+}
+
+void ChatWidgetModel::updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
+                                         const QString& replyPreview, bool isForwarded, const QString& forwardedFrom)
+{
+    if (messageId.trimmed().isEmpty()) {
+        return;
+    }
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId) {
+            continue;
+        }
+        bool changed = false;
+        if (m_messages[i].replyToMessageId != replyToMessageId) {
+            m_messages[i].replyToMessageId = replyToMessageId;
+            changed = true;
+        }
+        if (m_messages[i].replySender != replySender) {
+            m_messages[i].replySender = replySender;
+            changed = true;
+        }
+        if (m_messages[i].replyPreview != replyPreview) {
+            m_messages[i].replyPreview = replyPreview;
+            changed = true;
+        }
+        if (m_messages[i].isForwarded != isForwarded) {
+            m_messages[i].isForwarded = isForwarded;
+            changed = true;
+        }
+        if (m_messages[i].forwardedFrom != forwardedFrom) {
+            m_messages[i].forwardedFrom = forwardedFrom;
+            changed = true;
+        }
+        if (!changed) {
+            return;
+        }
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetReplyToMessageIdRole, ChatWidgetReplySenderRole, ChatWidgetReplyPreviewRole,
+                                     ChatWidgetIsForwardedRole, ChatWidgetForwardedFromRole });
+        return;
+    }
+}
+
+void ChatWidgetModel::setSearchKeyword(const QString& keyword)
+{
+    if (m_searchKeyword == keyword) {
+        return;
+    }
+    m_searchKeyword = keyword;
+    if (m_messages.isEmpty()) {
+        return;
+    }
+    QModelIndex first = index(0, 0);
+    QModelIndex last = index(m_messages.size() - 1, 0);
+    emit dataChanged(first, last, { ChatWidgetSearchKeywordRole });
 }
 
 void ChatWidgetModel::removeLastMessage()

@@ -2,10 +2,12 @@
 #define CHAT_WIDGET_H
 
 #include "chat_widget_delegate.h"
+#include "chat_widget_model.h"
+#include <QDateTime>
 #include <QHash>
 #include <QList>
+#include <QPoint>
 #include <QSet>
-#include <QDateTime>
 #include <QString>
 #include <QWidget>
 
@@ -30,6 +32,23 @@ public:
         QDateTime timestamp;
         bool isMine = false;
         QString messageId;
+
+        ChatWidgetMessage::MessageType messageType = ChatWidgetMessage::MessageType::Text;
+        ChatWidgetMessage::MessageStatus status = ChatWidgetMessage::MessageStatus::Sent;
+
+        QString imagePath;
+        QString filePath;
+        QString fileName;
+        qint64 fileSize = 0;
+
+        QString replyToMessageId;
+        QString replySender;
+        QString replyPreview;
+        bool isForwarded = false;
+        QString forwardedFrom;
+
+        QList<ChatWidgetReaction> reactions;
+        QStringList mentions;
     };
 
     explicit ChatWidget(QWidget* parent = nullptr);
@@ -67,6 +86,15 @@ public:
     void appendHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe = true);
     void prependHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe = true);
 
+    void updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status);
+    void updateMessageContent(const QString& messageId, const QString& content);
+    void updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions);
+    void updateMessageAttachments(const QString& messageId, const QString& imagePath, const QString& filePath,
+                                  const QString& fileName, qint64 fileSize);
+    void updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
+                            const QString& replyPreview, bool isForwarded, const QString& forwardedFrom);
+    void setSearchKeyword(const QString& keyword);
+
     // API: 模拟 AI 自动流式回复（组件内部管理定时器）
     void startSimulatedStreaming(const QString& content, int interval = 30);
 
@@ -77,6 +105,9 @@ signals:
     void selfAvatarClicked(const QString& senderId, int row);
     void memberAvatarClicked(const QString& senderId, const QString& displayName, int row);
     void stopRequested();
+    void messageSelected(const QString& messageId);
+    void messageContextMenuRequested(const QString& messageId, const QPoint& globalPos);
+    void messageActionRequested(const QString& action, const QString& messageId);
 
 private slots:
     void onInputMessageSent(const QString& content);

@@ -13,6 +13,7 @@ class QResizeEvent;
 class QFrame;
 class QMenu;
 class QAction;
+class QLabel;
 
 class ChatWidgetInputBase : public QWidget {
     Q_OBJECT
@@ -35,9 +36,14 @@ public:
 signals:
     void voiceStartRequested();
     void voiceStopRequested();
+    void emojiSelected(const QString& emoji);
+    void richTextToggled(bool enabled);
+    void draftChanged(const QString& text);
 
 public slots:
     void setSendingState(bool sending);
+    void setDraftText(const QString& text);
+    QString draftText() const;
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -49,6 +55,8 @@ private slots:
     void onVoiceClicked();
     void onPickImage();
     void onPickFile();
+    void onEmojiPicked(QAction* action);
+    void onRichTextToggled(bool checked);
 
 private:
     enum InputMode { NormalMode,
@@ -65,13 +73,18 @@ private:
     QPushButton* m_sendButton;
     QPushButton* m_voiceButton;
     QToolButton* m_plusButton;
+    QToolButton* m_emojiButton;
+    QToolButton* m_richTextButton;
+    QLabel* m_shortcutLabel;
     QMenu* m_plusMenu;
+    QMenu* m_emojiMenu;
     QAction* m_pickImageAction;
     QAction* m_pickFileAction;
     QListWidget* m_commandMenu;
     InputMode m_inputMode = NormalMode;
     bool m_isRecording = false;
     bool m_isSending = false;
+    bool m_richTextEnabled = false;
 };
 
 #endif // CHAT_WIDGET_INPUT_H
