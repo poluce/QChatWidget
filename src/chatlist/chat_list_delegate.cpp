@@ -3,6 +3,7 @@
 #include <QPainterPath>
 #include <QPen>
 #include <QFontMetrics>
+#include <QPixmap>
 
 ChatListDelegate::ChatListDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
@@ -37,6 +38,7 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     QString message = index.data(ChatListMessageRole).toString();
     QString time = index.data(ChatListTimeRole).toString();
     QColor avatarColor = index.data(ChatListAvatarColorRole).value<QColor>();
+    QString avatarPath = index.data(ChatListAvatarPathRole).toString().trimmed();
     int unreadCount = index.data(ChatListUnreadCountRole).toInt();
 
     // 2. 绘制卡片背景（圆角 + 边框）
@@ -74,21 +76,37 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
                      rect.top() + (rect.height() - avatarSize) / 2,
                      avatarSize,
                      avatarSize);
+    QPainterPath avatarClipPath;
     if (m_style.avatarShape == AvatarSquare) {
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(avatarColor);
-        painter->drawRoundedRect(avatarRect, 6, 6);
+        avatarClipPath.addRoundedRect(avatarRect, 6, 6);
+    } else if (m_style.avatarShape == AvatarRoundedRect) {
+        const int radius = qMax(0, m_style.avatarCornerRadius);
+        avatarClipPath.addRoundedRect(avatarRect, radius, radius);
     } else {
-        QPainterPath path;
-        if (m_style.avatarShape == AvatarRoundedRect) {
-            const int radius = qMax(0, m_style.avatarCornerRadius);
-            path.addRoundedRect(avatarRect, radius, radius);
-        } else {
-            path.addEllipse(avatarRect);
+        avatarClipPath.addEllipse(avatarRect);
+    }
+
+    bool drewAvatarImage = false;
+    if (!avatarPath.isEmpty()) {
+        QPixmap avatarPixmap(avatarPath);
+        if (!avatarPixmap.isNull()) {
+            painter->save();
+            painter->setClipPath(avatarClipPath);
+            painter->drawPixmap(
+                avatarRect,
+                avatarPixmap.scaled(avatarRect.size(),
+                                    Qt::KeepAspectRatioByExpanding,
+                                    Qt::SmoothTransformation));
+            painter->restore();
+            drewAvatarImage = true;
         }
-        painter->setClipPath(path);
+    }
+
+    if (!drewAvatarImage) {
+        painter->save();
+        painter->setClipPath(avatarClipPath);
         painter->fillRect(avatarRect, avatarColor);
-        painter->setClipping(false);
+        painter->restore();
     }
 
     // 5. 绘制未读红点

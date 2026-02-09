@@ -15,8 +15,8 @@ public:
         int bubbleRadius = 14;
         int nameSpacing = 4;
 
-        QColor myBubbleColor = Qt::white;
-        QColor otherBubbleColor = Qt::white;
+        QColor myBubbleColor = QColor(242, 244, 247);
+        QColor otherBubbleColor = QColor(242, 244, 247);
         QColor myAvatarColor = QColor(0, 120, 215);
         QColor otherAvatarColor = QColor(200, 200, 200);
         QColor nameColor = QColor(120, 120, 120);

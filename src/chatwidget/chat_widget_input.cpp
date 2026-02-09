@@ -438,6 +438,16 @@ void ChatWidgetInput::updateInputEditHeight()
     const int targetHeight = qBound(minHeight, docHeight, maxHeight);
     m_inputEdit->setFixedHeight(targetHeight);
     m_inputEdit->setVerticalScrollBarPolicy(docHeight > maxHeight ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff);
+
+    // 输入区高度始终由内容驱动，避免在父布局空态时被拉伸占满。
+    if (m_inputBar) {
+        const int barHeight = m_inputBar->sizeHint().height();
+        if (barHeight > 0) {
+            setMinimumHeight(barHeight);
+            setMaximumHeight(barHeight);
+            updateGeometry();
+        }
+    }
 }
 
 void ChatWidgetInput::updateVoiceButtonState()

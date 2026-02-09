@@ -9,6 +9,7 @@ enum ChatListRoles {
     ChatListMessageRole,                 // 最后一条消息
     ChatListTimeRole,                    // 时间
     ChatListAvatarColorRole,             // 头像颜色
+    ChatListAvatarPathRole,              // 头像图片路径（可选）
     ChatListUnreadCountRole              // 未读消息数
 };
 

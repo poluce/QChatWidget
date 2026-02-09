@@ -20,6 +20,9 @@ const int kAttachmentHeight = 120;
 const int kFileCardHeight = 56;
 const int kSystemPaddingH = 16;
 const int kSystemPaddingV = 6;
+const int kFooterTextHPadding = 4;
+const int kFooterTextVPadding = 2;
+const int kFooterBottomSafety = 3;
 
 QString formatStatus(ChatWidgetMessage::MessageStatus status)
 {
@@ -93,6 +96,11 @@ bool isSystemType(ChatWidgetMessage::MessageType type)
 {
     return type == ChatWidgetMessage::MessageType::System ||
            type == ChatWidgetMessage::MessageType::DateSeparator;
+}
+
+int textPixelWidth(const QFontMetrics& metrics, const QString& text)
+{
+    return qMax(metrics.horizontalAdvance(text), metrics.boundingRect(text).width());
 }
 } // namespace
 
@@ -210,7 +218,9 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
     if (!timestampText.isEmpty() || isMine) {
         QFontMetrics timestampMetrics(m_style.timestampFont);
         QFontMetrics statusMetrics(m_style.statusFont);
-        totalHeight += qMax(timestampMetrics.height(), statusMetrics.height()) + kLineSpacing;
+        const int footerTextHeight =
+            qMax(timestampMetrics.height(), statusMetrics.height()) + kFooterTextVPadding;
+        totalHeight += footerTextHeight + kLineSpacing + kFooterBottomSafety;
     }
 
     return QSize(option.rect.width(), qMax(totalHeight, m_style.avatarSize + m_style.margin * 2));
@@ -509,32 +519,37 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
                                     index.data(ChatWidgetModel::ChatWidgetMessageStatusRole).toInt()))
                                       : QString();
     if (!timestampText.isEmpty() || !statusText.isEmpty()) {
-        const int footerY = bubbleRect.bottom() + kLineSpacing;
+        const int footerY = bubbleRect.bottom() + kLineSpacing + 1;
         if (isMine) {
             painter->setFont(m_style.statusFont);
             QFontMetrics statusMetrics(m_style.statusFont);
-            int textX = bubbleRect.right();
+            int textX = bubbleRect.right() + 1;
             if (!timestampText.isEmpty()) {
                 painter->setFont(m_style.timestampFont);
                 painter->setPen(m_style.timestampColor);
                 QFontMetrics tsMetrics(m_style.timestampFont);
-                const int tsWidth = tsMetrics.horizontalAdvance(timestampText);
-                QRect tsRect(bubbleRect.right() - tsWidth, footerY, tsWidth, tsMetrics.height());
+                const int tsWidth = textPixelWidth(tsMetrics, timestampText) + kFooterTextHPadding;
+                const int tsHeight = tsMetrics.height() + kFooterTextVPadding;
+                QRect tsRect(textX - tsWidth, footerY, tsWidth, tsHeight);
                 painter->drawText(tsRect, Qt::AlignRight | Qt::AlignVCenter, timestampText);
                 textX = tsRect.left() - 6;
             }
             if (!statusText.isEmpty()) {
                 painter->setFont(m_style.statusFont);
                 painter->setPen(m_style.statusColor);
-                const int statusWidth = statusMetrics.horizontalAdvance(statusText);
-                QRect statusRect(textX - statusWidth, footerY, statusWidth, statusMetrics.height());
+                const int statusWidth =
+                    textPixelWidth(statusMetrics, statusText) + kFooterTextHPadding;
+                const int statusHeight = statusMetrics.height() + kFooterTextVPadding;
+                QRect statusRect(textX - statusWidth, footerY, statusWidth, statusHeight);
                 painter->drawText(statusRect, Qt::AlignRight | Qt::AlignVCenter, statusText);
             }
         } else if (!timestampText.isEmpty()) {
             painter->setFont(m_style.timestampFont);
             painter->setPen(m_style.timestampColor);
             QFontMetrics tsMetrics(m_style.timestampFont);
-            QRect tsRect(bubbleRect.left(), footerY, tsMetrics.horizontalAdvance(timestampText), tsMetrics.height());
+            const int tsWidth = textPixelWidth(tsMetrics, timestampText) + kFooterTextHPadding;
+            const int tsHeight = tsMetrics.height() + kFooterTextVPadding;
+            QRect tsRect(bubbleRect.left(), footerY, tsWidth, tsHeight);
             painter->drawText(tsRect, Qt::AlignLeft | Qt::AlignVCenter, timestampText);
         }
     }

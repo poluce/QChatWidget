@@ -28,6 +28,8 @@ ChatListWidget::~ChatListWidget()
 
 void ChatListWidget::setupUi()
 {
+    const int kOuterVerticalMargin = 2;
+
     setObjectName("chatListWidget");
     m_searchBar = new QLineEdit(this);
     m_searchBar->setObjectName("chatListSearchBar");
@@ -51,7 +53,7 @@ void ChatListWidget::setupUi()
 
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(0, 0, 0, 0);
-    m_layout->setSpacing(0);
+    m_layout->setSpacing(kOuterVerticalMargin);
 
     QWidget* headerBar = new QWidget(this);
     headerBar->setObjectName("chatListHeaderBar");
@@ -63,7 +65,7 @@ void ChatListWidget::setupUi()
     headerBarLayout->addWidget(m_moreButton);
 
     QHBoxLayout* headerLayout = new QHBoxLayout();
-    headerLayout->setContentsMargins(0, 2, 0, 2);
+    headerLayout->setContentsMargins(0, kOuterVerticalMargin, 0, 0);
     headerLayout->setSpacing(0);
     headerLayout->addWidget(headerBar);
 

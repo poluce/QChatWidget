@@ -4,6 +4,7 @@
 #include "chat_widget_view.h"
 #include "qss_utils.h"
 #include <QTimer>
+#include <QSizePolicy>
 #include <QVBoxLayout>
 #include <algorithm>
 
@@ -30,11 +31,13 @@ void ChatWidget::setupUi()
 {
     m_viewWidget = new ChatWidgetView(this);
     m_inputWidget = new ChatWidgetInput(this);
+    m_viewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_inputWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
-    m_mainLayout->addWidget(m_viewWidget);
-    m_mainLayout->addWidget(m_inputWidget);
+    m_mainLayout->addWidget(m_viewWidget, 1);
+    m_mainLayout->addWidget(m_inputWidget, 0);
 
     connect(m_viewWidget, &ChatWidgetView::avatarClicked, this, &ChatWidget::avatarClicked);
     connect(m_viewWidget, &ChatWidgetView::selfAvatarClicked, this, &ChatWidget::selfAvatarClicked);
@@ -183,7 +186,8 @@ void ChatWidget::setInputWidget(ChatWidgetInputBase* widget)
 
     widget->setParent(this);
     m_inputWidget = widget;
-    m_mainLayout->addWidget(m_inputWidget);
+    m_inputWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_mainLayout->addWidget(m_inputWidget, 0);
     connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &ChatWidget::onInputMessageSent);
     connect(m_inputWidget, &ChatWidgetInputBase::stopRequested, this, &ChatWidget::stopRequested);
 }

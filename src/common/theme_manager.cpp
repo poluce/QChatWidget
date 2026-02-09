@@ -55,8 +55,8 @@ void ThemeManager::initLightTheme()
 
     // ChatWidget Light 主题
     m_lightChatWidgetStyle.backgroundColor = QColor(245, 245, 245);
-    m_lightChatWidgetStyle.myBubbleColor = Qt::white;
-    m_lightChatWidgetStyle.otherBubbleColor = Qt::white;
+    m_lightChatWidgetStyle.myBubbleColor = QColor(242, 244, 247);
+    m_lightChatWidgetStyle.otherBubbleColor = QColor(242, 244, 247);
     m_lightChatWidgetStyle.bubbleRadius = 14;
     m_lightChatWidgetStyle.myAvatarColor = QColor(0, 120, 215);
     m_lightChatWidgetStyle.otherAvatarColor = QColor(200, 200, 200);

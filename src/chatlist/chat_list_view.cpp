@@ -8,6 +8,7 @@ ChatListView::ChatListView(QWidget* parent) : QListView(parent)
 {
     this->setFrameShape(QFrame::NoFrame);
     this->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setUniformItemSizes(true);
     this->setEditTriggers(QAbstractItemView::NoEditTriggers);
     this->setSelectionMode(QAbstractItemView::SingleSelection);
