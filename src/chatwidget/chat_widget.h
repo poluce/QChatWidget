@@ -70,6 +70,10 @@ public:
 
     // API: 流式输出（追加内容到最后一条消息）
     void streamOutput(const QString& content);
+    void setStreamTargetRow(int row);
+    void clearStreamTargetRow();
+    void updateMessageContentAtRow(int row, const QString& content);
+    void removeMessageAt(int row);
 
     // API: 移除最后一条消息
     void removeLastMessage();
@@ -134,6 +138,7 @@ private:
     QTimer* m_streamingTimer = nullptr;
     QString m_streamingContent;
     int m_streamingIndex = 0;
+    int m_streamTargetRow = -1;
 };
 
 #endif // CHAT_WIDGET_H

@@ -107,10 +107,48 @@ void ChatWidget::streamOutput(const QString& content)
         return;
     }
     if (auto* dataModel = model()) {
-        dataModel->appendContentToLastMessage(content);
+        int targetRow = m_streamTargetRow;
+        if (targetRow < 0 || targetRow >= dataModel->messageCount()) {
+            targetRow = dataModel->messageCount() - 1;
+        }
+        dataModel->appendContentToMessageAt(targetRow, content);
     }
     if (m_viewWidget) {
         m_viewWidget->scrollToBottom();
+    }
+}
+
+void ChatWidget::setStreamTargetRow(int row)
+{
+    m_streamTargetRow = row;
+}
+
+void ChatWidget::clearStreamTargetRow()
+{
+    m_streamTargetRow = -1;
+}
+
+void ChatWidget::updateMessageContentAtRow(int row, const QString& content)
+{
+    if (auto* dataModel = model()) {
+        dataModel->updateMessageContentAt(row, content);
+    }
+    if (m_viewWidget) {
+        m_viewWidget->refreshLayout();
+    }
+}
+
+void ChatWidget::removeMessageAt(int row)
+{
+    if (row < 0)
+        return;
+    if (auto* dataModel = model()) {
+        dataModel->removeMessageAt(row);
+        if (m_streamTargetRow == row) {
+            m_streamTargetRow = -1;
+        } else if (m_streamTargetRow > row) {
+            --m_streamTargetRow;
+        }
     }
 }
 
@@ -170,6 +208,9 @@ void ChatWidget::onInputMessageSent(const QString& content)
 void ChatWidget::removeLastMessage()
 {
     if (auto* dataModel = model()) {
+        if (m_streamTargetRow == dataModel->messageCount() - 1) {
+            m_streamTargetRow = -1;
+        }
         dataModel->removeLastMessage();
     }
 }
@@ -180,6 +221,7 @@ void ChatWidget::clearMessages()
         dataModel->clearMessages();
     }
     m_messageIds.clear();
+    m_streamTargetRow = -1;
 }
 
 int ChatWidget::messageCount() const

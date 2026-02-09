@@ -276,6 +276,28 @@ void ChatWidgetModel::appendContentToLastMessage(const QString& content)
     emit dataChanged(idx, idx, { ChatWidgetContentRole });
 }
 
+void ChatWidgetModel::appendContentToMessageAt(int row, const QString& content)
+{
+    if (row < 0 || row >= m_messages.size())
+        return;
+
+    m_messages[row].content.append(content);
+    QModelIndex idx = index(row, 0);
+    emit dataChanged(idx, idx, { ChatWidgetContentRole });
+}
+
+void ChatWidgetModel::updateMessageContentAt(int row, const QString& content)
+{
+    if (row < 0 || row >= m_messages.size())
+        return;
+    if (m_messages[row].content == content)
+        return;
+
+    m_messages[row].content = content;
+    QModelIndex idx = index(row, 0);
+    emit dataChanged(idx, idx, { ChatWidgetContentRole });
+}
+
 void ChatWidgetModel::updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status)
 {
     if (messageId.trimmed().isEmpty()) {
@@ -422,6 +444,20 @@ void ChatWidgetModel::setSearchKeyword(const QString& keyword)
     QModelIndex first = index(0, 0);
     QModelIndex last = index(m_messages.size() - 1, 0);
     emit dataChanged(first, last, { ChatWidgetSearchKeywordRole });
+}
+
+void ChatWidgetModel::removeMessageAt(int row)
+{
+    if (row < 0 || row >= m_messages.size()) {
+        return;
+    }
+    beginRemoveRows(QModelIndex(), row, row);
+    const QString messageId = m_messages.at(row).messageId;
+    m_messages.removeAt(row);
+    if (!messageId.isEmpty()) {
+        m_messageIds.remove(messageId);
+    }
+    endRemoveRows();
 }
 
 void ChatWidgetModel::removeLastMessage()

@@ -116,6 +116,8 @@ public:
     void updateIsMine(const QString& currentUserId);
     void updateParticipantInfo(const QString& senderId, const QString& displayName, const QString& avatarPath);
     void appendContentToLastMessage(const QString& content);
+    void appendContentToMessageAt(int row, const QString& content);
+    void updateMessageContentAt(int row, const QString& content);
     void updateMessageStatus(const QString& messageId, ChatWidgetMessage::MessageStatus status);
     void updateMessageContent(const QString& messageId, const QString& content);
     void updateMessageReactions(const QString& messageId, const QList<ChatWidgetReaction>& reactions);
@@ -124,6 +126,7 @@ public:
     void updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
                             const QString& replyPreview, bool isForwarded, const QString& forwardedFrom);
     void setSearchKeyword(const QString& keyword);
+    void removeMessageAt(int row);
     void removeLastMessage();
     void clearMessages();
     int messageCount() const;
