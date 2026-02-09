@@ -70,7 +70,7 @@ QPushButton.icon:pressed {
 /* 小按钮 (Small Button) - 用于紧凑布局 */
 QPushButton.small {
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 4px 12px;
     background: #f5f5f5;
     color: #333;
@@ -97,7 +97,7 @@ QPushButton::menu-indicator {
 /* 标准输入框 */
 QLineEdit {
     border: 1px solid #d1d5db;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 8px;
     background: #ffffff;
     color: #111827;
@@ -105,12 +105,13 @@ QLineEdit {
 
 QLineEdit:focus {
     border: 2px solid #4b7bec;
+    border-radius: 10px;
 }
 
 /* 搜索框样式 */
 QLineEdit.search {
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 6px 10px;
     background: #f5f5f5;
     color: #333;
@@ -138,7 +139,7 @@ QMenu {
 
 QMenu::item {
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 QMenu::item:selected {
@@ -163,7 +164,7 @@ QListWidget {
 QListWidget::item {
     height: 40px;
     padding-left: 15px;
-    border-radius: 6px;
+    border-radius: 10px;
     margin: 2px 5px;
     color: #4b5563;
 }
@@ -185,7 +186,7 @@ QListWidget::item:hover:!selected {
 /* 白色卡片容器 */
 QWidget.card {
     background: #ffffff;
-    border-radius: 8px;
+    border-radius: 14px;
 }
 
 /* 浅灰背景容器 */

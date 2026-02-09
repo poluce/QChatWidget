@@ -12,10 +12,10 @@ public:
         int avatarSize = 40;
         int margin = 10;
         int bubblePadding = 10;
-        int bubbleRadius = 8;
+        int bubbleRadius = 14;
         int nameSpacing = 4;
 
-        QColor myBubbleColor = QColor(149, 236, 105);
+        QColor myBubbleColor = Qt::white;
         QColor otherBubbleColor = Qt::white;
         QColor myAvatarColor = QColor(0, 120, 215);
         QColor otherAvatarColor = QColor(200, 200, 200);

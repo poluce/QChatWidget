@@ -9,17 +9,20 @@
 /* ChatWidget 输入区域根容器 - 渐变背景 */
 #chatWidgetInputRoot {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f7f7f8, stop:1 #eceff3);
+    border-radius: 14px;
 }
 
 /* ChatWidget 聊天视图容器 */
 #chatWidgetView {
-    background: #f5f5f5;
+    background: #ffffff;
+    border-radius: 14px;
 }
 
 /* ChatWidget 聊天列表 */
 #chatWidgetViewList {
-    background: #f5f5f5;
-    border: none;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
     outline: none;
 }
 
@@ -30,55 +33,59 @@
     border-radius: 14px;
 }
 
-/* ChatWidget Plus 按钮和语音按钮 - 图标按钮样式 */
+/* ChatWidget 输入工具栏按钮 - 贴近背景的工具按钮风格 */
 #chatWidgetInputPlusButton,
 #chatWidgetInputEmojiButton,
 #chatWidgetInputRichButton,
-#chatWidgetInputVoiceButton {
-    background: #f4f6f9;
-    border: 1px solid #e1e4ea;
+#chatWidgetInputVoiceButton,
+#chatWidgetInputSendButton {
+    background: transparent;
+    border: none;
     border-radius: 10px;
-    padding: 6px 10px;
-    color: #374151;
-    min-width: 36px;
+    padding: 2px;
+    color: #4b5563;
+    min-width: 30px;
+    min-height: 30px;
+    icon-size: 20px;
 }
 
 #chatWidgetInputPlusButton:hover,
 #chatWidgetInputEmojiButton:hover,
 #chatWidgetInputRichButton:hover,
-#chatWidgetInputVoiceButton:hover {
-    background: #eef2f7;
+#chatWidgetInputVoiceButton:hover,
+#chatWidgetInputSendButton:hover {
+    background: rgba(148, 163, 184, 0.18);
 }
 
 #chatWidgetInputPlusButton:pressed,
 #chatWidgetInputEmojiButton:pressed,
 #chatWidgetInputRichButton:pressed,
-#chatWidgetInputVoiceButton:pressed {
-    background: #e2e8f0;
+#chatWidgetInputVoiceButton:pressed,
+#chatWidgetInputSendButton:pressed {
+    background: rgba(148, 163, 184, 0.28);
 }
 
 #chatWidgetInputRichButton:checked {
-    background: #dbeafe;
-    border-color: #93c5fd;
+    background: rgba(59, 130, 246, 0.16);
     color: #1d4ed8;
 }
 
-/* ChatWidget 发送按钮 - 主要按钮样式 */
 #chatWidgetInputSendButton {
-    background: #4b7bec;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 6px 14px;
-    min-width: 64px;
+    color: #2563eb;
 }
 
-#chatWidgetInputSendButton:hover {
-    background: #3b6fe0;
+#chatWidgetInputSendButton[sending="true"] {
+    color: #dc2626;
 }
 
-#chatWidgetInputSendButton:pressed {
-    background: #2f62d6;
+#chatWidgetInputVoiceButton[recording="true"] {
+    color: #dc2626;
+}
+
+#chatWidgetInputPlusButton::menu-indicator,
+#chatWidgetInputEmojiButton::menu-indicator {
+    image: none;
+    width: 0px;
 }
 
 /* ChatWidget 输入框 - 透明样式 */
@@ -99,9 +106,3 @@
     padding: 8px 12px;
 }
 
-/* ChatWidget 输入快捷提示 */
-#chatWidgetInputShortcutLabel {
-    color: #6b7280;
-    font-size: 11px;
-    padding: 2px 6px 0 6px;
-}

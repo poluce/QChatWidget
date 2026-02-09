@@ -51,7 +51,7 @@ public:
         int avatarSize = 40;
         int margin = 10;
         int bubblePadding = 10;
-        int bubbleRadius = 8;
+        int bubbleRadius = 14;
 
         QColor myBubbleColor;
         QColor otherBubbleColor;

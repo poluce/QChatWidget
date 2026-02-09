@@ -4,16 +4,16 @@
 #include <QString>
 #include <QWidget>
 
-class QLineEdit;
-class QPushButton;
+class QTextEdit;
 class QToolButton;
 class QListWidget;
 class QListWidgetItem;
 class QResizeEvent;
+class QObject;
+class QEvent;
 class QFrame;
 class QMenu;
 class QAction;
-class QLabel;
 
 class ChatWidgetInputBase : public QWidget {
     Q_OBJECT
@@ -47,6 +47,7 @@ public slots:
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private slots:
     void onSendClicked();
@@ -67,15 +68,16 @@ private:
     bool tryApplyCommand(const QString& text);
     void applyMode(InputMode mode);
     void positionCommandMenu();
+    void updateInputEditHeight();
+    void updateVoiceButtonState();
     void setSending(bool sending);
     QFrame* m_inputBar;
-    QLineEdit* m_inputEdit;
-    QPushButton* m_sendButton;
-    QPushButton* m_voiceButton;
+    QTextEdit* m_inputEdit;
+    QToolButton* m_sendButton;
+    QToolButton* m_voiceButton;
     QToolButton* m_plusButton;
     QToolButton* m_emojiButton;
     QToolButton* m_richTextButton;
-    QLabel* m_shortcutLabel;
     QMenu* m_plusMenu;
     QMenu* m_emojiMenu;
     QAction* m_pickImageAction;

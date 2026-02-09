@@ -16,27 +16,34 @@ public:
     };
 
     struct Style {
-        int itemHeight = 72;
-        int avatarSize = 50;
-        int margin = 12;
+        int itemHeight = 84;
+        int avatarSize = 54;
+        int margin = 10;
         int badgeSize = 18;
-        int avatarCornerRadius = 8;
-        AvatarShape avatarShape = AvatarCircle;
+        int itemCornerRadius = 14;
+        int itemInsetX = 12;
+        int itemInsetY = 4;
+        int itemBorderWidth = 1;
+        int avatarCornerRadius = 12;
+        AvatarShape avatarShape = AvatarRoundedRect;
 
         QColor backgroundColor = Qt::white;
-        QColor hoverColor = QColor(220, 220, 220);
-        QColor selectedColor = QColor(195, 195, 195);
+        QColor hoverColor = Qt::white;
+        QColor selectedColor = Qt::white;
+        QColor borderColor = QColor(229, 231, 235);
+        QColor hoverBorderColor = QColor(214, 220, 228);
+        QColor selectedBorderColor = QColor(185, 201, 229);
         QColor nameColor = QColor(25, 25, 25);
-        QColor messageColor = QColor(150, 150, 150);
-        QColor timeColor = QColor(180, 180, 180);
+        QColor messageColor = QColor(168, 174, 183);
+        QColor timeColor = QColor(176, 182, 190);
         QColor separatorColor = QColor(230, 230, 230);
         QColor badgeColor = Qt::red;
         QColor badgeTextColor = Qt::white;
 
-        QFont nameFont = QFont("Arial", 16);
-        QFont messageFont = QFont("Arial", 14);
-        QFont timeFont = QFont("Arial", 12);
-        QFont badgeFont = QFont("Arial", 10);
+        QFont nameFont = QFont("Microsoft YaHei UI", 14, QFont::Normal);
+        QFont messageFont = QFont("Microsoft YaHei UI", 11);
+        QFont timeFont = QFont("Microsoft YaHei UI", 11);
+        QFont badgeFont = QFont("Microsoft YaHei UI", 10);
 
         bool showSeparator = true;
         bool showUnreadBadge = true;

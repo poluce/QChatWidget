@@ -4,6 +4,7 @@ ProfileWidget, #ContentWidget {
 
 #HeaderWidget {
     background-color: #FFFFFF;
+    border-radius: 14px;
 }
 
 #AvatarLabel {
@@ -34,7 +35,7 @@ ProfileWidget, #ContentWidget {
 
 #MoreButton:hover {
     background-color: #F0F0F0;
-    border-radius: 4px;
+    border-radius: 8px;
 }
 
 #GapFrame {
@@ -53,7 +54,7 @@ ProfileWidget, #ContentWidget {
 #DetailGroup {
     background-color: #FFFFFF;
     border: 1px solid #ECECEC;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-left: 20px;
     margin-right: 20px;
 }
@@ -76,12 +77,14 @@ ProfileWidget, #ContentWidget {
 #BottomBar {
     background-color: #FFFFFF;
     border-top: 1px solid #E5E5E5;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
 }
 
 #MsgButton {
     background-color: #FFFFFF;
     border: 1px solid #E5E5E5;
-    border-radius: 5px;
+    border-radius: 10px;
     color: #576B95;
     font-size: 16px;
     font-weight: bold;

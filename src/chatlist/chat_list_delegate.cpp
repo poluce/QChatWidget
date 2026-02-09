@@ -1,6 +1,7 @@
 #include "chat_list_delegate.h"
 #include <QPainter>
 #include <QPainterPath>
+#include <QPen>
 #include <QFontMetrics>
 
 ChatListDelegate::ChatListDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
@@ -38,15 +39,24 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     QColor avatarColor = index.data(ChatListAvatarColorRole).value<QColor>();
     int unreadCount = index.data(ChatListUnreadCountRole).toInt();
 
-    // 2. 绘制背景
-    QRect rect = option.rect;
+    // 2. 绘制卡片背景（圆角 + 边框）
+    QRect rect = option.rect.adjusted(m_style.itemInsetX,
+                                      m_style.itemInsetY,
+                                      -m_style.itemInsetX,
+                                      -m_style.itemInsetY);
+    QColor fillColor = m_style.backgroundColor;
+    QColor borderColor = m_style.borderColor;
     if (option.state & QStyle::State_Selected) {
-        painter->fillRect(rect, m_style.selectedColor);
+        fillColor = m_style.selectedColor;
+        borderColor = m_style.selectedBorderColor;
     } else if (option.state & QStyle::State_MouseOver) {
-        painter->fillRect(rect, m_style.hoverColor);
-    } else {
-        painter->fillRect(rect, m_style.backgroundColor);
+        fillColor = m_style.hoverColor;
+        borderColor = m_style.hoverBorderColor;
     }
+    painter->setPen(QPen(borderColor, m_style.itemBorderWidth));
+    painter->setBrush(fillColor);
+    const QRectF cardRect = rect.adjusted(0.5, 0.5, -0.5, -0.5);
+    painter->drawRoundedRect(cardRect, m_style.itemCornerRadius, m_style.itemCornerRadius);
 
     // 3. 布局参数
     int avatarSize = m_style.avatarSize;
@@ -56,17 +66,18 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     const QFontMetrics fmMsg(m_style.messageFont);
     const QFontMetrics fmTime(m_style.timeFont);
     const int textSpacing = qMax(4, fmMsg.leading());
-    const int textBlockHeight = fmName.height() + fmMsg.height() + textSpacing;
-    const int contentHeight = qMax(avatarSize, textBlockHeight);
-    const int contentTop = rect.top() + (rect.height() - contentHeight) / 2;
+    const int contentTop = rect.top() + margin;
+    const int contentBottom = rect.bottom() - margin;
 
     // 4. 绘制头像
     QRect avatarRect(rect.left() + margin,
-                     contentTop + (contentHeight - avatarSize) / 2,
+                     rect.top() + (rect.height() - avatarSize) / 2,
                      avatarSize,
                      avatarSize);
     if (m_style.avatarShape == AvatarSquare) {
-        painter->fillRect(avatarRect, avatarColor);
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(avatarColor);
+        painter->drawRoundedRect(avatarRect, 6, 6);
     } else {
         QPainterPath path;
         if (m_style.avatarShape == AvatarRoundedRect) {
@@ -101,10 +112,16 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     
     QFont timeFont = m_style.timeFont;
     int timeWidth = fmTime.horizontalAdvance(time) + margin;
+    const int nameTop = contentTop;
+    int msgTop = contentBottom - fmMsg.height();
+    const int minMsgTop = nameTop + fmName.height() + textSpacing;
+    if (msgTop < minMsgTop) {
+        msgTop = minMsgTop;
+    }
 
     const int nameWidth = qMax(0, rect.width() - textLeftMargin - timeWidth - margin);
     QRect nameRect(rect.left() + textLeftMargin,
-                   contentTop,
+                   nameTop,
                    nameWidth,
                    fmName.height());
     QString elidedName = painter->fontMetrics().elidedText(name, Qt::ElideRight, nameRect.width());
@@ -114,7 +131,7 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->setPen(m_style.timeColor);
     painter->setFont(timeFont);
     QRect timeRect(rect.right() - timeWidth,
-                   contentTop,
+                   nameTop,
                    timeWidth - margin,
                    fmTime.height());
     painter->drawText(timeRect, Qt::AlignRight | Qt::AlignVCenter, time);
@@ -126,13 +143,13 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     const int msgWidth = qMax(0, rect.width() - textLeftMargin - margin);
     QRect msgRect(rect.left() + textLeftMargin,
-                  contentTop + fmName.height() + textSpacing,
+                  msgTop,
                   msgWidth,
                   fmMsg.height());
     QString elidedMsg = painter->fontMetrics().elidedText(message, Qt::ElideRight, msgRect.width());
     painter->drawText(msgRect, Qt::AlignLeft | Qt::AlignVCenter, elidedMsg);
 
-    // 9. 分隔线
+    // 9. 分隔线（卡片样式下默认建议关闭）
     if (m_style.showSeparator) {
         painter->setPen(m_style.separatorColor);
         painter->drawLine(textLeftMargin, rect.bottom(), rect.right(), rect.bottom());

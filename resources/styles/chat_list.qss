@@ -9,18 +9,27 @@
 /* ChatList 根容器 */
 #chatListWidget {
     background: #ffffff;
+    border-radius: 14px;
 }
 
 /* ChatList 视图 */
 #chatListView {
-    background-color: property(chatListBg);
+    background-color: #ffffff;
     outline: none;
+    border-radius: 14px;
+}
+
+/* ChatList 头部容器（包裹搜索框与更多按钮） */
+#chatListHeaderBar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
 }
 
 /* ChatList 搜索框 - 使用统一的搜索框样式 */
 #chatListSearchBar {
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 6px 10px;
     background: #f5f5f5;
     color: #333;
@@ -30,7 +39,7 @@
 /* ChatList 更多按钮 - 小按钮样式 */
 #chatListMoreButton {
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 4px 12px;
     background: #f5f5f5;
     color: #333;

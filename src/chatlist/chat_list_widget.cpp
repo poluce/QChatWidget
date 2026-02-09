@@ -9,6 +9,7 @@
 #include <QItemSelectionModel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QFont>
 #include <QRegularExpression>
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
@@ -42,6 +43,7 @@ void ChatListWidget::setupUi()
     m_moreButton->setText("+");
     m_moreButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
     m_moreButton->setPopupMode(QToolButton::InstantPopup);
+    m_moreButton->setFixedWidth(44);
 
     m_moreMenu = new QMenu(this);
     m_moreMenu->setObjectName("chatListHeaderMenu");
@@ -51,11 +53,19 @@ void ChatListWidget::setupUi()
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(0);
 
+    QWidget* headerBar = new QWidget(this);
+    headerBar->setObjectName("chatListHeaderBar");
+
+    QHBoxLayout* headerBarLayout = new QHBoxLayout(headerBar);
+    headerBarLayout->setContentsMargins(10, 10, 10, 10);
+    headerBarLayout->setSpacing(6);
+    headerBarLayout->addWidget(m_searchBar);
+    headerBarLayout->addWidget(m_moreButton);
+
     QHBoxLayout* headerLayout = new QHBoxLayout();
-    headerLayout->setContentsMargins(10, 10, 10, 10);
-    headerLayout->setSpacing(8);
-    headerLayout->addWidget(m_searchBar);
-    headerLayout->addWidget(m_moreButton);
+    headerLayout->setContentsMargins(0, 2, 0, 2);
+    headerLayout->setSpacing(0);
+    headerLayout->addWidget(headerBar);
 
     m_layout->addLayout(headerLayout);
     m_layout->addWidget(m_listView);
@@ -98,11 +108,20 @@ QLineEdit* ChatListWidget::searchBar() const
 
 void ChatListWidget::applyDefaultStyle()
 {
-    m_listView->setItemHeight(76);
-    m_listView->setAvatarSize(52);
-    m_listView->setShowSeparator(true);
-    m_listView->setHoverColor(QColor(236, 238, 242));
-    m_listView->setSelectedColor(QColor(220, 224, 230));
+    m_listView->setItemHeight(84);
+    m_listView->setAvatarSize(54);
+    m_listView->setAvatarShape(ChatListDelegate::AvatarRoundedRect);
+    m_listView->setAvatarCornerRadius(12);
+    m_listView->setMargins(10);
+    m_listView->setShowSeparator(false);
+    m_listView->setBackgroundColor(QColor(255, 255, 255));
+    m_listView->setHoverColor(QColor(255, 255, 255));
+    m_listView->setSelectedColor(QColor(255, 255, 255));
+    m_listView->setNameFont(QFont(QStringLiteral("Microsoft YaHei UI"), 14, QFont::Normal));
+    m_listView->setMessageFont(QFont(QStringLiteral("Microsoft YaHei UI"), 11));
+    m_listView->setTimeFont(QFont(QStringLiteral("Microsoft YaHei UI"), 11));
+    m_listView->setMessageColor(QColor(168, 174, 183));
+    m_listView->setTimeColor(QColor(176, 182, 190));
 }
 
 void ChatListWidget::ensureContextMenu()
