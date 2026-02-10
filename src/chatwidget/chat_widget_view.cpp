@@ -1,6 +1,8 @@
 #include "chat_widget_view.h"
 #include "chat_widget_delegate.h"
 #include "chat_widget_model.h"
+#include <QClipboard>
+#include <QGuiApplication>
 #include <QListView>
 #include <QMenu>
 #include <QMouseEvent>
@@ -138,19 +140,11 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
             }
         } else if (mouseEvent->button() == Qt::RightButton) {
             const QString messageId = index.data(ChatWidgetModel::ChatWidgetMessageIdRole).toString();
-            if (messageId.isEmpty()) {
-                return QWidget::eventFilter(watched, event);
-            }
-
             m_chatView->setCurrentIndex(index);
             emit messageContextMenuRequested(messageId, mouseEvent->globalPos());
 
             QMenu menu(this);
-            QAction* copyAction = menu.addAction(tr("Copy"));
-            QAction* replyAction = menu.addAction(tr("Reply"));
-            QAction* forwardAction = menu.addAction(tr("Forward"));
-            QAction* retryAction = menu.addAction(tr("Retry"));
-            QAction* reactAction = menu.addAction(tr("React"));
+            QAction* copyAction = menu.addAction(tr("复制"));
 
             QAction* picked = menu.exec(mouseEvent->globalPos());
             if (picked == nullptr) {
@@ -158,15 +152,15 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
             }
 
             if (picked == copyAction) {
+                const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
+                if (!content.isEmpty()) {
+                    if (QClipboard* clipboard = QGuiApplication::clipboard()) {
+                        clipboard->setText(content, QClipboard::Clipboard);
+                        if (clipboard->supportsSelection())
+                            clipboard->setText(content, QClipboard::Selection);
+                    }
+                }
                 emit messageActionRequested(QStringLiteral("copy"), messageId);
-            } else if (picked == replyAction) {
-                emit messageActionRequested(QStringLiteral("reply"), messageId);
-            } else if (picked == forwardAction) {
-                emit messageActionRequested(QStringLiteral("forward"), messageId);
-            } else if (picked == retryAction) {
-                emit messageActionRequested(QStringLiteral("retry"), messageId);
-            } else if (picked == reactAction) {
-                emit messageActionRequested(QStringLiteral("react"), messageId);
             }
         }
     }

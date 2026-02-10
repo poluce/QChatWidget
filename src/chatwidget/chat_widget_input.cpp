@@ -233,7 +233,8 @@ void ChatWidgetInput::onSendClicked()
 
     emit messageSent(text);
     m_inputEdit->clear();
-    setSending(true);
+    // 发送态由上层（ChatService/UI）统一驱动，避免本地乐观自锁导致短暂无法连续发送。
+    // 这里不再立即切换为 sending=true。
 }
 
 void ChatWidgetInput::onInputTextChanged(const QString& text)
