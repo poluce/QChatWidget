@@ -10,6 +10,7 @@
 
 class QListView;
 class QEvent;
+class QResizeEvent;
 
 class ChatWidgetView : public QWidget {
     Q_OBJECT
@@ -40,6 +41,7 @@ signals:
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void setupUi();

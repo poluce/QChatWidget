@@ -62,7 +62,7 @@ void ThemeManager::initLightTheme()
     m_lightChatWidgetStyle.otherAvatarColor = QColor(200, 200, 200);
     m_lightChatWidgetStyle.myTextColor = QColor(25, 25, 25);
     m_lightChatWidgetStyle.otherTextColor = QColor(25, 25, 25);
-    m_lightChatWidgetStyle.messageFont = QFont("Microsoft YaHei", 11);
+    m_lightChatWidgetStyle.messageFont = QFont("Microsoft YaHei", 9);
     m_lightChatWidgetStyle.avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
 }
 
@@ -92,6 +92,6 @@ void ThemeManager::initDarkTheme()
     m_darkChatWidgetStyle.otherAvatarColor = QColor(100, 100, 100);
     m_darkChatWidgetStyle.myTextColor = QColor(230, 230, 230);
     m_darkChatWidgetStyle.otherTextColor = QColor(230, 230, 230);
-    m_darkChatWidgetStyle.messageFont = QFont("Microsoft YaHei", 11);
+    m_darkChatWidgetStyle.messageFont = QFont("Microsoft YaHei", 9);
     m_darkChatWidgetStyle.avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
 }

@@ -6,7 +6,9 @@
 #include <QListView>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QResizeEvent>
 #include <QStyleOptionViewItem>
+#include <QTimer>
 #include <QVBoxLayout>
 
 ChatWidgetView::ChatWidgetView(QWidget* parent) : QWidget(parent)
@@ -53,6 +55,7 @@ void ChatWidgetView::setupUi()
     m_chatView->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_chatView->setFocusPolicy(Qt::NoFocus);
     m_chatView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_chatView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_chatView->setResizeMode(QListView::Adjust);
     m_chatView->viewport()->installEventFilter(this);
 
@@ -166,4 +169,22 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
     }
 
     return QWidget::eventFilter(watched, event);
+}
+
+void ChatWidgetView::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    if (!m_chatView)
+        return;
+    if (event && event->oldSize().width() == event->size().width())
+        return;
+
+    // 宽度变化后，强制触发 delegate 重新计算 sizeHint，避免气泡间距残留旧布局。
+    refreshLayout();
+    QTimer::singleShot(0, this, [this]() {
+        if (!m_chatView)
+            return;
+        m_chatView->doItemsLayout();
+        m_chatView->viewport()->update();
+    });
 }

@@ -102,6 +102,19 @@ int textPixelWidth(const QFontMetrics& metrics, const QString& text)
 {
     return qMax(metrics.horizontalAdvance(text), metrics.boundingRect(text).width());
 }
+
+int effectiveItemWidth(const QStyleOptionViewItem& option)
+{
+    int width = 0;
+    if (option.widget) {
+        width = option.widget->width();
+        if (width <= 0 && option.widget->parentWidget())
+            width = option.widget->parentWidget()->width();
+    }
+    if (width <= 0)
+        width = option.rect.width();
+    return qMax(120, width);
+}
 } // namespace
 
 ChatWidgetDelegate::ChatWidgetDelegate(QObject* parent)
@@ -131,10 +144,12 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
             : content;
         QFontMetrics sysMetrics(m_style.systemFont);
         const int textWidth = sysMetrics.horizontalAdvance(text);
-        const int maxWidth = option.rect.width() > 0 ? option.rect.width() * 0.8 : 400;
+        const int maxWidth = effectiveItemWidth(option) * 0.8;
         const int finalWidth = qMin(maxWidth, textWidth + kSystemPaddingH * 2);
+        Q_UNUSED(finalWidth);
         const int height = sysMetrics.height() + kSystemPaddingV * 2 + m_style.margin * 2;
-        return QSize(finalWidth, height);
+        // QListView 行模式下仅需要高度，返回横向提示会触发不必要的水平滚动条。
+        return QSize(0, height);
     }
 
     QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
@@ -142,7 +157,7 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
     const QString searchKeyword = index.data(ChatWidgetModel::ChatWidgetSearchKeywordRole).toString();
     html = applyHighlights(html, mentions, searchKeyword, m_style);
 
-    int maxWidth = option.rect.width() * 0.6;
+    int maxWidth = effectiveItemWidth(option) * 0.6;
     if (maxWidth <= 0)
         maxWidth = 400;
 
@@ -223,7 +238,8 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
         totalHeight += footerTextHeight + kLineSpacing + kFooterBottomSafety;
     }
 
-    return QSize(option.rect.width(), qMax(totalHeight, m_style.avatarSize + m_style.margin * 2));
+    // 行宽由视图 viewport 决定；这里只返回高度，避免 width hint 导致横向滚动条。
+    return QSize(0, qMax(totalHeight, m_style.avatarSize + m_style.margin * 2));
 }
 
 void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -243,7 +259,7 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
             : content;
         QFontMetrics sysMetrics(m_style.systemFont);
         const int textWidth = sysMetrics.horizontalAdvance(text);
-        const int maxWidth = option.rect.width() > 0 ? option.rect.width() * 0.8 : 400;
+        const int maxWidth = effectiveItemWidth(option) * 0.8;
         const int bubbleWidth = qMin(maxWidth, textWidth + kSystemPaddingH * 2);
         const int bubbleHeight = sysMetrics.height() + kSystemPaddingV * 2;
         const int centerX = option.rect.center().x() - bubbleWidth / 2;
@@ -265,7 +281,7 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     html = applyHighlights(html, mentions, searchKeyword, m_style);
 
     QRect rect = option.rect;
-    int maxWidth = rect.width() * 0.6;
+    int maxWidth = effectiveItemWidth(option) * 0.6;
     if (maxWidth <= 0)
         maxWidth = 400;
 

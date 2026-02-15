@@ -37,7 +37,7 @@ public:
         QColor fileCardColor = QColor(250, 250, 252);
         QColor fileBorderColor = QColor(220, 220, 220);
 
-        QFont messageFont = QFont("Microsoft YaHei", 11);
+        QFont messageFont = QFont("Microsoft YaHei", 9);
         QFont avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
         QFont nameFont = QFont("Microsoft YaHei", 9);
         QFont timestampFont = QFont("Microsoft YaHei", 8);
