@@ -56,6 +56,7 @@ void ChatWidget::addMessage(const MessageParams& params)
     if (params.senderId.trimmed().isEmpty()) {
         const QString fallbackName = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
         ChatWidgetMessage msg;
+        msg.messageId = params.messageId;
         msg.senderId = QString();
         msg.sender = fallbackName;
         msg.content = params.content;
@@ -88,6 +89,7 @@ void ChatWidget::addMessage(const MessageParams& params)
         isMine = params.senderId == m_currentUserId;
     }
     ChatWidgetMessage msg;
+    msg.messageId = params.messageId;
     msg.senderId = params.senderId;
     msg.sender = finalName;
     msg.content = params.content;

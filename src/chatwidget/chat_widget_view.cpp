@@ -143,11 +143,14 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
             }
         } else if (mouseEvent->button() == Qt::RightButton) {
             const QString messageId = index.data(ChatWidgetModel::ChatWidgetMessageIdRole).toString();
+            const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
             m_chatView->setCurrentIndex(index);
             emit messageContextMenuRequested(messageId, mouseEvent->globalPos());
 
             QMenu menu(this);
             QAction* copyAction = menu.addAction(tr("复制"));
+            QAction* rememberAction = menu.addAction(tr("记住这条"));
+            rememberAction->setEnabled(!content.trimmed().isEmpty());
 
             QAction* picked = menu.exec(mouseEvent->globalPos());
             if (picked == nullptr) {
@@ -163,7 +166,9 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
                             clipboard->setText(content, QClipboard::Selection);
                     }
                 }
-                emit messageActionRequested(QStringLiteral("copy"), messageId);
+                emit messageActionRequested(QStringLiteral("copy"), messageId, content);
+            } else if (picked == rememberAction) {
+                emit messageActionRequested(QStringLiteral("remember"), messageId, content);
             }
         }
     }

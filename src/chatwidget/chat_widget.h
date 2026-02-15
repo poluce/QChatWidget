@@ -20,6 +20,7 @@ class ChatWidget : public QWidget {
 
 public:
     struct MessageParams {
+        QString messageId;
         QString content;
         QString senderId;
         QString displayName;
@@ -118,7 +119,7 @@ signals:
     void stopRequested();
     void messageSelected(const QString& messageId);
     void messageContextMenuRequested(const QString& messageId, const QPoint& globalPos);
-    void messageActionRequested(const QString& action, const QString& messageId);
+    void messageActionRequested(const QString& action, const QString& messageId, const QString& content);
 
 private slots:
     void onInputMessageSent(const QString& content);

@@ -37,7 +37,7 @@ signals:
     void memberAvatarClicked(const QString& senderId, const QString& displayName, int row);
     void messageSelected(const QString& messageId);
     void messageContextMenuRequested(const QString& messageId, const QPoint& globalPos);
-    void messageActionRequested(const QString& action, const QString& messageId);
+    void messageActionRequested(const QString& action, const QString& messageId, const QString& content);
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
