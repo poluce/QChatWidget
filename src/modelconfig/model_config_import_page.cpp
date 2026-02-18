@@ -1,5 +1,6 @@
 #include "model_config_import_page.h"
 #include "qss_utils.h"
+#include <QComboBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -7,6 +8,7 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -65,17 +67,31 @@ void ModelConfigImportPage::setProviders(const QList<ModelConfigProvider>& provi
 void ModelConfigImportPage::setConfigData(const QVariantMap& data)
 {
     QString providerId = data.value("providerId").toString();
+    const QString providerAlias = providerId.trimmed().toLower();
+    if (providerAlias == QStringLiteral("claude")
+        || providerAlias == QStringLiteral("claudeai")) {
+        providerId = QStringLiteral("anthropic");
+    } else if (providerAlias == QStringLiteral("google")) {
+        providerId = QStringLiteral("gemini");
+    }
     if (providerId.isEmpty())
         return;
 
     for (int i = 0; i < m_providers.size(); ++i) {
         if (m_providers[i].id == providerId) {
             m_providerList->setCurrentRow(i);
-            const auto& widgets = m_fieldWidgetsMap[i].inputs;
-            for (auto it = widgets.begin(); it != widgets.end(); ++it) {
-                if (data.contains(it.key())) {
-                    it.value()->setText(data[it.key()].toString());
-                }
+            const auto& fieldWidgets = m_fieldWidgetsMap[i];
+            for (auto it = fieldWidgets.inputs.begin(); it != fieldWidgets.inputs.end(); ++it) {
+                if (data.contains(it.key()))
+                    it.value()->setText(data.value(it.key()).toString());
+            }
+            for (auto it = fieldWidgets.combos.begin(); it != fieldWidgets.combos.end(); ++it) {
+                if (!data.contains(it.key()))
+                    continue;
+                const QString value = data.value(it.key()).toString();
+                if (it.value()->findText(value) < 0)
+                    it.value()->addItem(value);
+                it.value()->setCurrentText(value);
             }
             break;
         }
@@ -182,14 +198,39 @@ QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider& prov
     fieldWidgets.providerId = provider.id;
 
     for (const auto& f : provider.fields) {
-        QLineEdit* edit = new QLineEdit();
-        if (f.isPassword)
-            edit->setEchoMode(QLineEdit::Password);
-        edit->setPlaceholderText(f.placeholder);
-        edit->setText(f.defaultValue);
+        if (f.key == QStringLiteral("modelId")) {
+            QComboBox* combo = new QComboBox();
+            combo->setEditable(true);
+            combo->setInsertPolicy(QComboBox::NoInsert);
+            if (!f.defaultValue.trimmed().isEmpty())
+                combo->addItem(f.defaultValue.trimmed());
+            combo->setCurrentText(f.defaultValue);
+            if (combo->lineEdit())
+                combo->lineEdit()->setPlaceholderText(f.placeholder);
+            layout->addRow(f.label + ":", combo);
+            fieldWidgets.combos.insert(f.key, combo);
 
-        layout->addRow(f.label + ":", edit);
-        fieldWidgets.inputs.insert(f.key, edit);
+            const QString fieldKey = f.key;
+            connect(combo, &QComboBox::currentTextChanged, this, [this, fieldKey]() {
+                setDirty(true);
+                setFieldError(fieldKey, QString());
+            });
+        } else {
+            QLineEdit* edit = new QLineEdit();
+            if (f.isPassword)
+                edit->setEchoMode(QLineEdit::Password);
+            edit->setPlaceholderText(f.placeholder);
+            edit->setText(f.defaultValue);
+
+            layout->addRow(f.label + ":", edit);
+            fieldWidgets.inputs.insert(f.key, edit);
+
+            const QString fieldKey = f.key;
+            connect(edit, &QLineEdit::textChanged, this, [this, fieldKey]() {
+                setDirty(true);
+                setFieldError(fieldKey, QString());
+            });
+        }
 
         QLabel* errorLabel = new QLabel();
         errorLabel->setObjectName("fieldError");
@@ -197,12 +238,6 @@ QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider& prov
         errorLabel->setWordWrap(true);
         layout->addRow(QString(), errorLabel);
         fieldWidgets.errors.insert(f.key, errorLabel);
-
-        const QString fieldKey = f.key;
-        connect(edit, &QLineEdit::textChanged, this, [this, fieldKey]() {
-            setDirty(true);
-            setFieldError(fieldKey, QString());
-        });
     }
 
     int index = m_detailStack->count();
@@ -260,8 +295,13 @@ void ModelConfigImportPage::onResetClicked()
     const auto& provider = m_providers[index];
     const auto& widgets = m_fieldWidgetsMap[index];
     for (const auto& f : provider.fields) {
-        if (widgets.inputs.contains(f.key)) {
+        if (widgets.inputs.contains(f.key))
             widgets.inputs[f.key]->setText(f.defaultValue);
+        if (widgets.combos.contains(f.key)) {
+            QComboBox* combo = widgets.combos[f.key];
+            if (combo->findText(f.defaultValue) < 0 && !f.defaultValue.trimmed().isEmpty())
+                combo->addItem(f.defaultValue.trimmed());
+            combo->setCurrentText(f.defaultValue);
         }
     }
     clearFieldErrors();
@@ -283,8 +323,16 @@ QVariantMap ModelConfigImportPage::collectCurrentConfig() const
     config["providerName"] = provider.name; // 额外补充名称，方便显示
 
     // 遍历当前厂商定义的所有字段并从 UI 提取值
-    for (auto it = widgets.inputs.begin(); it != widgets.inputs.end(); ++it) {
-        config[it.key()] = it.value()->text();
+    for (const auto& field : provider.fields) {
+        if (widgets.inputs.contains(field.key)) {
+            config[field.key] = widgets.inputs.value(field.key)->text();
+            continue;
+        }
+        if (widgets.combos.contains(field.key)) {
+            config[field.key] = widgets.combos.value(field.key)->currentText();
+            continue;
+        }
+        config[field.key] = QString();
     }
 
     return config;
@@ -372,6 +420,47 @@ void ModelConfigImportPage::setFieldError(const QString& providerId, const QStri
         return;
     label->setText(message);
     label->setVisible(!message.trimmed().isEmpty());
+}
+
+void ModelConfigImportPage::setFieldOptions(const QString& providerId, const QString& fieldKey, const QStringList& options, bool editable)
+{
+    const int index = providerId.isEmpty() ? m_providerList->currentRow() : providerIndexForId(providerId);
+    if (index < 0 || index >= m_providers.size())
+        return;
+
+    auto& widgets = m_fieldWidgetsMap[index];
+    QComboBox* combo = widgets.combos.value(fieldKey, nullptr);
+    if (!combo)
+        return;
+
+    QStringList normalized;
+    normalized.reserve(options.size());
+    for (const QString& item : options) {
+        const QString trimmed = item.trimmed();
+        if (trimmed.isEmpty())
+            continue;
+        if (!normalized.contains(trimmed))
+            normalized.append(trimmed);
+    }
+
+    const QString current = combo->currentText().trimmed();
+    const QSignalBlocker blocker(combo);
+    combo->setEditable(editable);
+    combo->clear();
+    for (const QString& item : normalized)
+        combo->addItem(item);
+
+    if (!current.isEmpty()) {
+        int currentIndex = combo->findText(current);
+        if (currentIndex < 0) {
+            combo->addItem(current);
+            currentIndex = combo->findText(current);
+        }
+        combo->setCurrentIndex(currentIndex);
+        combo->setCurrentText(current);
+    } else if (combo->count() > 0) {
+        combo->setCurrentIndex(0);
+    }
 }
 
 void ModelConfigImportPage::setDirty(bool dirty)

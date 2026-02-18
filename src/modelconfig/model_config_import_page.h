@@ -3,10 +3,12 @@
 
 #include <QVariantMap>
 #include <QWidget>
+#include <QStringList>
 
 class QListWidget;
 class QStackedWidget;
 class QLineEdit;
+class QComboBox;
 class QPushButton;
 class QFormLayout;
 class QLabel;
@@ -85,6 +87,7 @@ public:
     void clearFieldErrors();
     void setFieldError(const QString& fieldKey, const QString& message);
     void setFieldError(const QString& providerId, const QString& fieldKey, const QString& message);
+    void setFieldOptions(const QString& providerId, const QString& fieldKey, const QStringList& options, bool editable = true);
     bool isDirty() const { return m_dirty; }
 
 signals:
@@ -118,6 +121,7 @@ private:
     struct FieldWidgets {
         QString providerId;
         QHash<QString, QLineEdit*> inputs; // Key 是字段的 key
+        QHash<QString, QComboBox*> combos; // Key 是字段的 key
         QHash<QString, QLabel*> errors;    // Key 是字段的 key
     };
     QHash<int, FieldWidgets> m_fieldWidgetsMap;
