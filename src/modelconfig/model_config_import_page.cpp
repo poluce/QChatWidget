@@ -1,5 +1,6 @@
 #include "model_config_import_page.h"
 #include "qss_utils.h"
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -77,6 +78,12 @@ void ModelConfigImportPage::setConfigData(const QVariantMap& data)
     if (providerId.isEmpty())
         return;
 
+    // 回显 configId / enabled
+    if (data.contains("configId") && m_configIdEdit)
+        m_configIdEdit->setText(data.value("configId").toString());
+    if (data.contains("enabled") && m_enabledCheck)
+        m_enabledCheck->setChecked(data.value("enabled").toBool());
+
     for (int i = 0; i < m_providers.size(); ++i) {
         if (m_providers[i].id == providerId) {
             m_providerList->setCurrentRow(i);
@@ -133,6 +140,18 @@ void ModelConfigImportPage::setupUi()
     QVBoxLayout* rightLayout = new QVBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0, 10, 10, 10); // 上、右、下边缘留白
 
+    // configId / enabled 控件（将嵌入每个厂商表单，此处仅创建）
+    m_configIdEdit = new QLineEdit();
+    m_configIdEdit->setObjectName("configIdEdit");
+    m_configIdEdit->setPlaceholderText(tr("自动生成，也可手动指定"));
+    m_configIdEdit->setToolTip(tr("配置条目的唯一标识，用于区分同一模型的不同配置"));
+    m_configIdEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    m_enabledCheck = new QCheckBox(tr("启用"));
+    m_enabledCheck->setObjectName("enabledCheck");
+    m_enabledCheck->setChecked(true);
+    m_enabledCheck->setToolTip(tr("取消勾选可暂时禁用此配置，不会删除"));
+
     m_detailStack = new QStackedWidget(rightContainer);
     m_detailStack->setObjectName("detailStack");
 
@@ -175,13 +194,28 @@ void ModelConfigImportPage::setupUi()
 
     mainLayout->addWidget(splitter);
 
-    connect(m_providerList, &QListWidget::currentRowChanged, m_detailStack, &QStackedWidget::setCurrentIndex);
+    connect(m_providerList, &QListWidget::currentRowChanged, this, [this](int row) {
+        m_detailStack->setCurrentIndex(row);
+        // 将 configId / enabled 控件移入当前厂商表单的占位行
+        QWidget* page = m_detailStack->widget(row);
+        if (page) {
+            QWidget* ph = page->findChild<QWidget*>("configIdPlaceholder");
+            if (ph && ph->layout()) {
+                ph->layout()->addWidget(m_configIdEdit);
+                ph->layout()->addWidget(m_enabledCheck);
+            }
+        }
+        autoGenerateConfigId(); // 切换厂商时自动更新 configId
+    });
     connect(m_importBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onImportClicked);
     connect(m_cancelBtn, &QPushButton::clicked, this, &ModelConfigImportPage::cancelled);
     connect(m_testBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onTestConnectionClicked);
     connect(m_importFileBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onImportFromFileClicked);
     connect(m_exportBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onExportClicked);
     connect(m_resetBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onResetClicked);
+
+    connect(m_configIdEdit, &QLineEdit::textChanged, this, [this]() { setDirty(true); });
+    connect(m_enabledCheck, &QCheckBox::toggled, this, [this]() { setDirty(true); });
 }
 
 QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider& provider)
@@ -193,6 +227,14 @@ QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider& prov
 
     QLabel* header = new QLabel(QString("<h2>%1 %2</h2>").arg(provider.name).arg(tr("配置")));
     layout->addRow(header);
+
+    // 占位行：切换厂商时 configId + enabled 控件会被移入此处
+    QWidget* configIdPlaceholder = new QWidget();
+    configIdPlaceholder->setObjectName("configIdPlaceholder");
+    QHBoxLayout* phLayout = new QHBoxLayout(configIdPlaceholder);
+    phLayout->setContentsMargins(0, 0, 0, 0);
+    phLayout->setSpacing(8);
+    layout->addRow(tr("配置 ID:"), configIdPlaceholder);
 
     FieldWidgets fieldWidgets;
     fieldWidgets.providerId = provider.id;
@@ -214,6 +256,7 @@ QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider& prov
             connect(combo, &QComboBox::currentTextChanged, this, [this, fieldKey]() {
                 setDirty(true);
                 setFieldError(fieldKey, QString());
+                autoGenerateConfigId(); // modelId 变化时自动更新 configId
             });
         } else {
             QLineEdit* edit = new QLineEdit();
@@ -262,6 +305,12 @@ void ModelConfigImportPage::onImportClicked()
         }
     }
 
+    // configId 不能为空
+    if (config.value("configId").toString().trimmed().isEmpty()) {
+        QMessageBox::warning(this, tr("验证失败"), tr("配置 ID 不能为空"));
+        return;
+    }
+
     emit importRequested(config);
 }
 
@@ -304,6 +353,13 @@ void ModelConfigImportPage::onResetClicked()
             combo->setCurrentText(f.defaultValue);
         }
     }
+    // 重置通用字段
+    if (m_configIdEdit)
+        m_configIdEdit->clear();
+    if (m_enabledCheck)
+        m_enabledCheck->setChecked(true);
+    autoGenerateConfigId();
+
     clearFieldErrors();
     setDirty(true);
     emit resetRequested(provider.id);
@@ -321,6 +377,10 @@ QVariantMap ModelConfigImportPage::collectCurrentConfig() const
     QVariantMap config;
     config["providerId"] = provider.id;
     config["providerName"] = provider.name; // 额外补充名称，方便显示
+
+    // configId / enabled
+    config["configId"] = m_configIdEdit ? m_configIdEdit->text().trimmed() : QString();
+    config["enabled"] = m_enabledCheck ? m_enabledCheck->isChecked() : true;
 
     // 遍历当前厂商定义的所有字段并从 UI 提取值
     for (const auto& field : provider.fields) {
@@ -481,4 +541,40 @@ int ModelConfigImportPage::providerIndexForId(const QString& providerId) const
         }
     }
     return -1;
+}
+
+void ModelConfigImportPage::autoGenerateConfigId()
+{
+    if (!m_configIdEdit)
+        return;
+
+    // 只在 configId 为空或看起来像自动生成的值时才覆盖
+    const QString current = m_configIdEdit->text().trimmed();
+    const bool looksAutoGenerated = current.isEmpty()
+        || current.contains('@');
+
+    if (!looksAutoGenerated)
+        return;
+
+    int index = m_providerList->currentRow();
+    if (index < 0 || index >= m_providers.size())
+        return;
+
+    const auto& provider = m_providers[index];
+    const auto& widgets = m_fieldWidgetsMap[index];
+
+    // 从 modelId combo 或 input 获取当前模型名
+    QString modelId;
+    if (widgets.combos.contains(QStringLiteral("modelId")))
+        modelId = widgets.combos.value(QStringLiteral("modelId"))->currentText().trimmed();
+    else if (widgets.inputs.contains(QStringLiteral("modelId")))
+        modelId = widgets.inputs.value(QStringLiteral("modelId"))->text().trimmed();
+
+    if (modelId.isEmpty()) {
+        m_configIdEdit->setText(QString());
+        return;
+    }
+
+    // 格式: provider@modelId  例如 deepseek@deepseek-chat
+    m_configIdEdit->setText(QStringLiteral("%1@%2").arg(provider.id, modelId));
 }

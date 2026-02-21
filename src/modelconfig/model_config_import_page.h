@@ -9,6 +9,7 @@ class QListWidget;
 class QStackedWidget;
 class QLineEdit;
 class QComboBox;
+class QCheckBox;
 class QPushButton;
 class QFormLayout;
 class QLabel;
@@ -67,6 +68,8 @@ public:
 
     /**
      * @brief 设置保存的配置数据（用于回显）
+     *
+     * 支持 configId / enabled 字段回显。
      */
     void setConfigData(const QVariantMap& data);
 
@@ -113,6 +116,7 @@ private:
     void updateListWidgetWidth(); // 动态计算并更新列表宽度
     void setDirty(bool dirty);
     int providerIndexForId(const QString& providerId) const;
+    void autoGenerateConfigId();
 
     QListWidget* m_providerList = nullptr;
     QStackedWidget* m_detailStack = nullptr;
@@ -126,6 +130,10 @@ private:
     };
     QHash<int, FieldWidgets> m_fieldWidgetsMap;
     QList<ModelConfigProvider> m_providers;
+
+    // 通用字段（所有厂商共享，位于表单顶部）
+    QLineEdit* m_configIdEdit = nullptr;
+    QCheckBox* m_enabledCheck = nullptr;
 
     QPushButton* m_importBtn = nullptr;
     QPushButton* m_testBtn = nullptr;
