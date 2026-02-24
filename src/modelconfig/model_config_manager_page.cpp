@@ -17,7 +17,7 @@
 #include <QVBoxLayout>
 
 #include "core/utils/ModelConfigLoader.h"
-#include "newCore/LLMTypes.h"
+#include "llm/LLMTypes.h"
 
 // ---------------------------------------------------------------------------
 // 官方域名表，用于判断"官方"/"中转"标签
