@@ -3,7 +3,6 @@
 #include <QColor>
 #include <QDateTime>
 #include <QDebug>
-#include <QLineEdit>
 #include <QTimer>
 #include <QVBoxLayout>
 #include "chat_list_widget.h"
@@ -30,34 +29,26 @@ int main(int argc, char *argv[]) {
     chatWidget->setSearchRoles(QList<int>() << ChatListNameRole << ChatListMessageRole);
     chatWidget->setSearchPlaceholder("搜索联系人/消息");
 
-    auto addChat = [&](const QString &name, const QString &msg, const QString &time, QColor color, int unread) {
-        chatWidget->addChatItem(name, msg, time, color, unread);
-    };
+    chatWidget->addChatItem("文件传输助手", "[图片] IMG_2026.jpg", "17:52", QColor(255, 170, 0), 0);
+    chatWidget->addChatItem("腾讯新闻", "Qt 6.8 发布了！", "14:30", QColor(0, 120, 215), 1);
+    chatWidget->addChatItem("产品经理", "今晚加班吗？", "12:05", QColor(100, 100, 100), 5);
 
-    addChat("文件传输助手", "[图片] IMG_2026.jpg", "17:52", QColor(255, 170, 0), 0);
-    addChat("腾讯新闻", "Qt 6.8 发布了！", "14:30", QColor(0, 120, 215), 1);
-    addChat("产品经理", "今晚加班吗？", "12:05", QColor(100, 100, 100), 5);
-    
-    for(int i = 0; i < 15; ++i) {
-         addChat(QString("群聊 %1").arg(i), "收到请回复", "10:00", QColor(Qt::lightGray), 0);
+    for (int i = 0; i < 15; ++i) {
+        chatWidget->addChatItem(QString("群聊 %1").arg(i), "收到请回复", "10:00", QColor(Qt::lightGray), 0);
     }
 
     // Header actions 演示
-    QAction *actionAdd = chatWidget->addHeaderAction("新建会话", "add");
-    QAction *actionRemove = chatWidget->addHeaderAction("删除当前会话", "remove");
-    QAction *actionClear = chatWidget->addHeaderAction("清空列表", "clear");
-    QAction *actionToggleSearch = chatWidget->addHeaderAction("显示/隐藏搜索", "toggle_search");
-    Q_UNUSED(actionAdd);
-    Q_UNUSED(actionRemove);
-    Q_UNUSED(actionClear);
-    Q_UNUSED(actionToggleSearch);
+    chatWidget->addHeaderAction("新建会话", "add");
+    chatWidget->addHeaderAction("删除当前会话", "remove");
+    chatWidget->addHeaderAction("清空列表", "clear");
+    chatWidget->addHeaderAction("显示/隐藏搜索", "toggle_search");
 
     QObject::connect(chatWidget, &ChatListWidget::headerActionTriggered,
                      [&](QAction *action) {
         qDebug() << "Header action triggered:" << action->text() << action->data();
         const QString key = action->data().toString();
         if (key == "add") {
-            addChat(QString("新会话 %1").arg(QDateTime::currentDateTime().toString("hh:mm:ss")),
+            chatWidget->addChatItem(QString("新会话 %1").arg(QDateTime::currentDateTime().toString("hh:mm:ss")),
                     "Hello", "刚刚", QColor(0, 153, 255), 0);
         } else if (key == "remove") {
             if (!chatWidget->removeCurrentChat()) {

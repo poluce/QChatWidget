@@ -51,7 +51,7 @@ void ModelConfigManagerPage::applyStyleSheet(const QString& styleSheet)
 {
     const QString combined = QssUtils::buildCombinedStyleSheet(
         "model_config_manager_page.qss", styleSheet);
-    this->setStyleSheet(combined);
+    setStyleSheet(combined);
 }
 
 // ===========================================================================
@@ -609,16 +609,13 @@ void ModelConfigManagerPage::switchToCreateMode()
 
     // 清空当前表单，恢复默认值
     int index = m_formStack->currentIndex();
-    if (index >= 0 && m_fieldWidgetsMap.contains(index)) {
+    if (index >= 0 && index < m_providers.size() && m_fieldWidgetsMap.contains(index)) {
         const auto& widgets = m_fieldWidgetsMap[index];
-        int pi = providerIndexForId(widgets.providerId);
-        if (pi >= 0 && pi < m_providers.size()) {
-            for (const auto& f : m_providers[pi].fields) {
-                if (widgets.inputs.contains(f.key))
-                    widgets.inputs[f.key]->setText(f.defaultValue);
-                if (widgets.combos.contains(f.key))
-                    widgets.combos[f.key]->setCurrentText(f.defaultValue);
-            }
+        for (const auto& f : m_providers[index].fields) {
+            if (widgets.inputs.contains(f.key))
+                widgets.inputs[f.key]->setText(f.defaultValue);
+            if (widgets.combos.contains(f.key))
+                widgets.combos[f.key]->setCurrentText(f.defaultValue);
         }
     }
 }

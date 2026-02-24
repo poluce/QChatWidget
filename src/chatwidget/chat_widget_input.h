@@ -31,7 +31,7 @@ class ChatWidgetInput : public ChatWidgetInputBase {
 
 public:
     explicit ChatWidgetInput(QWidget* parent = nullptr);
-    ~ChatWidgetInput();
+    ~ChatWidgetInput() override = default;
 
 signals:
     void voiceStartRequested();
@@ -64,6 +64,10 @@ private:
                      TranslateMode };
 
     void setupUi();
+    QToolButton* createToolButton(const QString& objectName, const QString& tooltip,
+                                  const QIcon& icon, const QString& fallbackText,
+                                  QWidget* parent);
+    QString placeholderForMode() const;
     void updateCommandMenu(const QString& text);
     bool tryApplyCommand(const QString& text);
     void applyMode(InputMode mode);
@@ -71,6 +75,7 @@ private:
     void updateInputEditHeight();
     void updateVoiceButtonState();
     void setSending(bool sending);
+
     QFrame* m_inputBar;
     QTextEdit* m_inputEdit;
     QToolButton* m_sendButton;

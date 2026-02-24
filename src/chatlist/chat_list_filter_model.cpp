@@ -1,5 +1,4 @@
 #include "chat_list_filter_model.h"
-#include <QAbstractItemModel>
 #include <QRegularExpression>
 
 ChatListFilterModel::ChatListFilterModel(QObject* parent)
@@ -25,16 +24,13 @@ bool ChatListFilterModel::filterAcceptsRow(int source_row, const QModelIndex& so
         return true;
     }
 
-    const QModelIndex index = sourceModel()->index(source_row, 0, source_parent);
-    const QList<int> roles = m_roles.isEmpty() ? QList<int>() : m_roles;
-
-    if (roles.isEmpty()) {
+    if (m_roles.isEmpty()) {
         return QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent);
     }
 
-    for (int role : roles) {
-        const QString text = index.data(role).toString();
-        if (re.match(text).hasMatch()) {
+    const QModelIndex index = sourceModel()->index(source_row, 0, source_parent);
+    for (int role : m_roles) {
+        if (re.match(index.data(role).toString()).hasMatch()) {
             return true;
         }
     }

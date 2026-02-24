@@ -127,6 +127,13 @@ private slots:
 
 private:
     void setupUi();
+    void addMessageToModel(const ChatWidgetMessage& msg);
+    static void sortHistoryByTimestamp(QList<HistoryMessage>& messages);
+    QList<ChatWidgetMessage> convertHistoryBatch(const QList<HistoryMessage>& sorted, bool dedupe,
+                                                  QHash<QString, ParticipantInfo>* updatedParticipants = nullptr);
+    void applyUpdatedParticipants(const QHash<QString, ParticipantInfo>& updatedParticipants);
+    ChatWidgetMessage convertHistoryMessage(const HistoryMessage& history);
+    void updateParticipantFromHistory(const HistoryMessage& history, QHash<QString, ParticipantInfo>* updatedParticipants = nullptr);
 
     class QVBoxLayout* m_mainLayout;
     class ChatWidgetView* m_viewWidget;

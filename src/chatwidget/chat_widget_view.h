@@ -9,8 +9,6 @@
 #include <QWidget>
 
 class QListView;
-class QEvent;
-class QResizeEvent;
 
 class ChatWidgetView : public QWidget {
     Q_OBJECT

@@ -9,17 +9,14 @@
 namespace QssUtils {
 QString resolveStyleSheetPath(const QString& fileNameOrPath)
 {
-    if (fileNameOrPath.startsWith(":/")) {
+    if (fileNameOrPath.startsWith(":/"))
         return fileNameOrPath;
-    }
-    if (QFile::exists(fileNameOrPath)) {
+    if (QFile::exists(fileNameOrPath))
         return QFileInfo(fileNameOrPath).absoluteFilePath();
-    }
 
     const QString fileName = QFileInfo(fileNameOrPath).fileName();
-    if (fileName.isEmpty()) {
+    if (fileName.isEmpty())
         return QString();
-    }
 
     const QString appDir = QCoreApplication::applicationDirPath();
     const QStringList candidates = {
@@ -30,70 +27,56 @@ QString resolveStyleSheetPath(const QString& fileNameOrPath)
     };
 
     for (const QString& path : candidates) {
-        if (QFile::exists(path)) {
+        if (QFile::exists(path))
             return path;
-        }
     }
     return QString();
 }
 
 QString loadStyleSheetFile(const QString& fileNameOrPath)
 {
-    if (fileNameOrPath.trimmed().isEmpty()) {
+    if (fileNameOrPath.trimmed().isEmpty())
         return QString();
-    }
 
-    const QString resolved = resolveStyleSheetPath(fileNameOrPath);
-    const QString fileName = QFileInfo(fileNameOrPath).fileName();
-    QString targetPath;
+    QString targetPath = resolveStyleSheetPath(fileNameOrPath);
 
-    if (!resolved.isEmpty()) {
-        targetPath = resolved;
-    } else if (!fileName.isEmpty()) {
-        targetPath = QString(":/styles/%1").arg(fileName);
-    } else {
-        return QString();
+    // 文件系统找不到时，尝试 qrc 资源
+    if (targetPath.isEmpty()) {
+        const QString fileName = QFileInfo(fileNameOrPath).fileName();
+        if (fileName.isEmpty())
+            return QString();
+        targetPath = QStringLiteral(":/styles/%1").arg(fileName);
     }
 
     QFile file(targetPath);
-    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+    if (!file.open(QFile::ReadOnly | QFile::Text))
         return QString();
-    }
-    const QString content = QString::fromUtf8(file.readAll());
-    file.close();
-    return content;
+    return QString::fromUtf8(file.readAll());
 }
 
 QString buildCombinedStyleSheet(const QString& specificFileNameOrPath, const QString& inlineStyle, const QString& globalFileName)
 {
     QString combined = loadStyleSheetFile(globalFileName);
 
-    if (!inlineStyle.trimmed().isEmpty()) {
-        if (!combined.isEmpty()) {
-            combined += "\n";
-        }
-        combined += inlineStyle;
-        return combined;
-    }
+    // inlineStyle 优先于文件样式
+    const QString extra = inlineStyle.trimmed().isEmpty()
+        ? loadStyleSheetFile(specificFileNameOrPath)
+        : inlineStyle;
 
-    const QString specific = loadStyleSheetFile(specificFileNameOrPath);
-    if (!specific.isEmpty()) {
-        if (!combined.isEmpty()) {
-            combined += "\n";
-        }
-        combined += specific;
+    if (!extra.isEmpty()) {
+        if (!combined.isEmpty())
+            combined += '\n';
+        combined += extra;
     }
     return combined;
 }
 
 bool applyStyleSheetFromFile(QWidget* target, const QString& fileNameOrPath, const QString& globalFileName)
 {
-    if (!target) {
+    if (!target)
         return false;
-    }
 
-    const QString combined = buildCombinedStyleSheet(fileNameOrPath, QString(), globalFileName);
-    target->setStyleSheet(combined);
+    target->setStyleSheet(buildCombinedStyleSheet(fileNameOrPath, QString(), globalFileName));
     return true;
 }
 } // namespace QssUtils

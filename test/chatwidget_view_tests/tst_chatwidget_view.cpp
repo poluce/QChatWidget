@@ -33,27 +33,26 @@ void ChatWidgetViewTest::setModel_usesProvidedModel()
     QCOMPARE(listView->model(), static_cast<QAbstractItemModel*>(external));
 }
 
-void ChatWidgetViewTest::scrollToBottom_noCrash()
+static ChatWidgetView* createViewWithMessage()
 {
-    ChatWidgetView view;
+    auto* view = new ChatWidgetView;
     ChatWidgetMessage message;
     message.content = "hello";
-    view.model()->addMessage(message);
+    view->model()->addMessage(message);
+    return view;
+}
 
-    view.scrollToBottom();
-
+void ChatWidgetViewTest::scrollToBottom_noCrash()
+{
+    QScopedPointer<ChatWidgetView> view(createViewWithMessage());
+    view->scrollToBottom();
     QVERIFY(true);
 }
 
 void ChatWidgetViewTest::refreshLayout_noCrash()
 {
-    ChatWidgetView view;
-    ChatWidgetMessage message;
-    message.content = "hello";
-    view.model()->addMessage(message);
-
-    view.refreshLayout();
-
+    QScopedPointer<ChatWidgetView> view(createViewWithMessage());
+    view->refreshLayout();
     QVERIFY(true);
 }
 

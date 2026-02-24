@@ -9,9 +9,7 @@
 #include <QItemSelectionModel>
 #include <QLineEdit>
 #include <QMenu>
-#include <QFont>
 #include <QRegularExpression>
-#include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -22,9 +20,7 @@ ChatListWidget::ChatListWidget(QWidget* parent)
     setupUi();
 }
 
-ChatListWidget::~ChatListWidget()
-{
-}
+ChatListWidget::~ChatListWidget() = default;
 
 void ChatListWidget::setupUi()
 {
@@ -110,20 +106,9 @@ QLineEdit* ChatListWidget::searchBar() const
 
 void ChatListWidget::applyDefaultStyle()
 {
-    m_listView->setItemHeight(84);
-    m_listView->setAvatarSize(54);
-    m_listView->setAvatarShape(ChatListDelegate::AvatarRoundedRect);
-    m_listView->setAvatarCornerRadius(12);
-    m_listView->setMargins(10);
-    m_listView->setShowSeparator(false);
-    m_listView->setBackgroundColor(QColor(255, 255, 255));
-    m_listView->setHoverColor(QColor(255, 255, 255));
-    m_listView->setSelectedColor(QColor(255, 255, 255));
-    m_listView->setNameFont(QFont(QStringLiteral("Microsoft YaHei UI"), 14, QFont::Normal));
-    m_listView->setMessageFont(QFont(QStringLiteral("Microsoft YaHei UI"), 11));
-    m_listView->setTimeFont(QFont(QStringLiteral("Microsoft YaHei UI"), 11));
-    m_listView->setMessageColor(QColor(168, 174, 183));
-    m_listView->setTimeColor(QColor(176, 182, 190));
+    ChatListDelegate::Style style;
+    style.showSeparator = false;
+    m_listView->setStyle(style);
 }
 
 void ChatListWidget::ensureContextMenu()
@@ -386,11 +371,11 @@ void ChatListWidget::applyFilterText(const QString& text)
     if (!m_filterEnabled) {
         return;
     }
-    QRegularExpression re(QRegularExpression::escape(text), QRegularExpression::CaseInsensitiveOption);
-    if (m_filterModel->filterCaseSensitivity() == Qt::CaseSensitive) {
-        re = QRegularExpression(QRegularExpression::escape(text));
-    }
-    m_filterModel->setFilterRegularExpression(re);
+    const auto options = (m_filterModel->filterCaseSensitivity() == Qt::CaseInsensitive)
+                             ? QRegularExpression::CaseInsensitiveOption
+                             : QRegularExpression::NoPatternOption;
+    m_filterModel->setFilterRegularExpression(
+        QRegularExpression(QRegularExpression::escape(text), options));
 }
 
 void ChatListWidget::wireSelectionSignals()

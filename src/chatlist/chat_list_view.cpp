@@ -1,21 +1,19 @@
 #include "chat_list_view.h"
 #include <QSortFilterProxyModel>
-#include <QStandardItem>
 #include <QStandardItemModel>
 #include <algorithm>
 
 ChatListView::ChatListView(QWidget* parent) : QListView(parent)
 {
-    this->setFrameShape(QFrame::NoFrame);
-    this->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    this->setUniformItemSizes(true);
-    this->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    this->setSelectionMode(QAbstractItemView::SingleSelection);
+    setFrameShape(QFrame::NoFrame);
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setUniformItemSizes(true);
+    setEditTriggers(QAbstractItemView::NoEditTriggers);
+    setSelectionMode(QAbstractItemView::SingleSelection);
 
-    // 设置自定义委托
     m_delegate = new ChatListDelegate(this);
-    this->setItemDelegate(m_delegate);
+    setItemDelegate(m_delegate);
     setObjectName("chatListView");
     updateViewStyleSheet();
 
@@ -46,151 +44,117 @@ void ChatListView::setChatDelegate(ChatListDelegate* delegate)
     viewport()->update();
 }
 
+template<typename T>
+void ChatListView::updateStyleField(T ChatListDelegate::Style::*field, const T& value)
+{
+    auto s = currentStyle();
+    s.*field = value;
+    setStyle(s);
+}
+
 void ChatListView::setItemHeight(int height)
 {
-    auto style = currentStyle();
-    style.itemHeight = height;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::itemHeight, height);
 }
 
 void ChatListView::setAvatarSize(int size)
 {
-    auto style = currentStyle();
-    style.avatarSize = size;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::avatarSize, size);
 }
 
 void ChatListView::setAvatarShape(ChatListDelegate::AvatarShape shape)
 {
-    auto style = currentStyle();
-    style.avatarShape = shape;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::avatarShape, shape);
 }
 
 void ChatListView::setAvatarCornerRadius(int radius)
 {
-    auto style = currentStyle();
-    style.avatarCornerRadius = radius;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::avatarCornerRadius, radius);
 }
 
 void ChatListView::setMargins(int margin)
 {
-    auto style = currentStyle();
-    style.margin = margin;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::margin, margin);
 }
 
 void ChatListView::setBadgeSize(int size)
 {
-    auto style = currentStyle();
-    style.badgeSize = size;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::badgeSize, size);
 }
 
 void ChatListView::setShowSeparator(bool show)
 {
-    auto style = currentStyle();
-    style.showSeparator = show;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::showSeparator, show);
 }
 
 void ChatListView::setShowUnreadBadge(bool show)
 {
-    auto style = currentStyle();
-    style.showUnreadBadge = show;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::showUnreadBadge, show);
 }
 
 void ChatListView::setBackgroundColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.backgroundColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::backgroundColor, color);
 }
 
 void ChatListView::setHoverColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.hoverColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::hoverColor, color);
 }
 
 void ChatListView::setSelectedColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.selectedColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::selectedColor, color);
 }
 
 void ChatListView::setNameColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.nameColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::nameColor, color);
 }
 
 void ChatListView::setMessageColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.messageColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::messageColor, color);
 }
 
 void ChatListView::setTimeColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.timeColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::timeColor, color);
 }
 
 void ChatListView::setSeparatorColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.separatorColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::separatorColor, color);
 }
 
 void ChatListView::setBadgeColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.badgeColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::badgeColor, color);
 }
 
 void ChatListView::setBadgeTextColor(const QColor& color)
 {
-    auto style = currentStyle();
-    style.badgeTextColor = color;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::badgeTextColor, color);
 }
 
 void ChatListView::setNameFont(const QFont& font)
 {
-    auto style = currentStyle();
-    style.nameFont = font;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::nameFont, font);
 }
 
 void ChatListView::setMessageFont(const QFont& font)
 {
-    auto style = currentStyle();
-    style.messageFont = font;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::messageFont, font);
 }
 
 void ChatListView::setTimeFont(const QFont& font)
 {
-    auto style = currentStyle();
-    style.timeFont = font;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::timeFont, font);
 }
 
 void ChatListView::setBadgeFont(const QFont& font)
 {
-    auto style = currentStyle();
-    style.badgeFont = font;
-    setStyle(style);
+    updateStyleField(&ChatListDelegate::Style::badgeFont, font);
 }
 
 int ChatListView::addChatItem(const QString& name, const QString& message, const QString& time, const QColor& avatarColor, int unreadCount)
@@ -253,20 +217,23 @@ bool ChatListView::updateChatItemData(int row, const QHash<int, QVariant>& value
     return true;
 }
 
-int ChatListView::findRowByName(const QString& name) const
+const QStandardItemModel* ChatListView::resolveSourceModel() const
 {
     const QAbstractItemModel* current = model();
-    const QAbstractItemModel* source = current;
     if (auto* proxy = qobject_cast<const QSortFilterProxyModel*>(current)) {
-        source = proxy->sourceModel();
+        current = proxy->sourceModel();
     }
-    auto* standard = qobject_cast<const QStandardItemModel*>(source);
+    return qobject_cast<const QStandardItemModel*>(current);
+}
+
+int ChatListView::findRowByName(const QString& name) const
+{
+    const QStandardItemModel* standard = resolveSourceModel();
     if (!standard) {
         return -1;
     }
     for (int row = 0; row < standard->rowCount(); ++row) {
-        const QModelIndex index = standard->index(row, 0);
-        if (index.data(ChatListNameRole).toString() == name) {
+        if (standard->index(row, 0).data(ChatListNameRole).toString() == name) {
             return row;
         }
     }
@@ -276,18 +243,12 @@ int ChatListView::findRowByName(const QString& name) const
 QList<int> ChatListView::findRowsByName(const QString& name) const
 {
     QList<int> rows;
-    const QAbstractItemModel* current = model();
-    const QAbstractItemModel* source = current;
-    if (auto* proxy = qobject_cast<const QSortFilterProxyModel*>(current)) {
-        source = proxy->sourceModel();
-    }
-    auto* standard = qobject_cast<const QStandardItemModel*>(source);
+    const QStandardItemModel* standard = resolveSourceModel();
     if (!standard) {
         return rows;
     }
     for (int row = 0; row < standard->rowCount(); ++row) {
-        const QModelIndex index = standard->index(row, 0);
-        if (index.data(ChatListNameRole).toString() == name) {
+        if (standard->index(row, 0).data(ChatListNameRole).toString() == name) {
             rows.append(row);
         }
     }

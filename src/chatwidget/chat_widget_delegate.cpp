@@ -1,13 +1,11 @@
 #include "chat_widget_delegate.h"
 #include "chat_widget_markdown_utils.h"
 #include "chat_widget_model.h"
-#include <QAbstractTextDocumentLayout>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
 #include <QTextDocument>
-#include <QVariant>
 #include <QtMath>
 
 namespace {
@@ -115,6 +113,94 @@ int effectiveItemWidth(const QStyleOptionViewItem& option)
         width = option.rect.width();
     return qMax(120, width);
 }
+
+int calcReplyHeight(const QFont& replyFont, bool hasReply, bool hasForward)
+{
+    if (!hasReply && !hasForward)
+        return 0;
+    QFontMetrics metrics(replyFont);
+    const int lines = (hasForward ? 1 : 0) + (hasReply ? 1 : 0);
+    return lines * metrics.height() + kReplyPadding * 2;
+}
+
+int calcReactionHeight(const QFont& reactionFont, const QList<ChatWidgetReaction>& reactions)
+{
+    if (reactions.isEmpty())
+        return 0;
+    QFontMetrics metrics(reactionFont);
+    return metrics.height() + kReactionPaddingV * 2;
+}
+
+int calcAttachmentHeight(bool hasImage, bool hasFile)
+{
+    if (hasImage)
+        return kAttachmentHeight;
+    if (hasFile)
+        return kFileCardHeight;
+    return 0;
+}
+
+int calcMaxBubbleWidth(const QStyleOptionViewItem& option)
+{
+    const int w = effectiveItemWidth(option) * 0.6;
+    return w > 0 ? w : 400;
+}
+
+struct IndexData {
+    ChatWidgetMessage::MessageType type;
+    bool isMine;
+    QString content;
+    QDateTime timestamp;
+    QString senderName;
+    QString senderId;
+    QString avatarPath;
+    QString imagePath;
+    QString fileName;
+    qint64 fileSize;
+    QString replySender;
+    QString replyPreview;
+    QString replyId;
+    bool isForwarded;
+    QString forwardedFrom;
+    QStringList mentions;
+    QString searchKeyword;
+    QList<ChatWidgetReaction> reactions;
+
+    bool hasImage;
+    bool hasFile;
+    bool hasReply;
+    bool hasForward;
+
+    static IndexData fromIndex(const QModelIndex& index)
+    {
+        IndexData d;
+        d.type = static_cast<ChatWidgetMessage::MessageType>(
+            index.data(ChatWidgetModel::ChatWidgetMessageTypeRole).toInt());
+        d.isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
+        d.content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
+        d.timestamp = index.data(ChatWidgetModel::ChatWidgetTimestampRole).toDateTime();
+        d.senderName = index.data(ChatWidgetModel::ChatWidgetSenderRole).toString();
+        d.senderId = index.data(ChatWidgetModel::ChatWidgetSenderIdRole).toString();
+        d.avatarPath = index.data(ChatWidgetModel::ChatWidgetAvatarRole).toString();
+        d.imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
+        d.fileName = index.data(ChatWidgetModel::ChatWidgetFileNameRole).toString();
+        d.fileSize = index.data(ChatWidgetModel::ChatWidgetFileSizeRole).toLongLong();
+        d.replySender = index.data(ChatWidgetModel::ChatWidgetReplySenderRole).toString();
+        d.replyPreview = index.data(ChatWidgetModel::ChatWidgetReplyPreviewRole).toString();
+        d.replyId = index.data(ChatWidgetModel::ChatWidgetReplyToMessageIdRole).toString();
+        d.isForwarded = index.data(ChatWidgetModel::ChatWidgetIsForwardedRole).toBool();
+        d.forwardedFrom = index.data(ChatWidgetModel::ChatWidgetForwardedFromRole).toString();
+        d.mentions = index.data(ChatWidgetModel::ChatWidgetMentionsRole).toStringList();
+        d.searchKeyword = index.data(ChatWidgetModel::ChatWidgetSearchKeywordRole).toString();
+        d.reactions = reactionsFromVariant(index.data(ChatWidgetModel::ChatWidgetReactionsRole));
+
+        d.hasImage = !d.imagePath.isEmpty() || d.type == ChatWidgetMessage::MessageType::Image;
+        d.hasFile = !d.fileName.isEmpty() || d.type == ChatWidgetMessage::MessageType::File;
+        d.hasReply = !d.replySender.isEmpty() || !d.replyPreview.isEmpty() || !d.replyId.isEmpty();
+        d.hasForward = d.isForwarded || !d.forwardedFrom.isEmpty();
+        return d;
+    }
+};
 } // namespace
 
 ChatWidgetDelegate::ChatWidgetDelegate(QObject* parent)
@@ -134,103 +220,47 @@ ChatWidgetDelegate::Style ChatWidgetDelegate::style() const
 
 QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    const auto type = static_cast<ChatWidgetMessage::MessageType>(
-        index.data(ChatWidgetModel::ChatWidgetMessageTypeRole).toInt());
-    const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
-    const QDateTime timestamp = index.data(ChatWidgetModel::ChatWidgetTimestampRole).toDateTime();
-    if (isSystemType(type)) {
-        const QString text = content.isEmpty() && timestamp.isValid()
-            ? timestamp.toString("yyyy-MM-dd")
-            : content;
+    const IndexData d = IndexData::fromIndex(index);
+
+    if (isSystemType(d.type)) {
+        const QString text = d.content.isEmpty() && d.timestamp.isValid()
+            ? d.timestamp.toString("yyyy-MM-dd")
+            : d.content;
         QFontMetrics sysMetrics(m_style.systemFont);
-        const int textWidth = sysMetrics.horizontalAdvance(text);
-        const int maxWidth = effectiveItemWidth(option) * 0.8;
-        const int finalWidth = qMin(maxWidth, textWidth + kSystemPaddingH * 2);
-        Q_UNUSED(finalWidth);
         const int height = sysMetrics.height() + kSystemPaddingV * 2 + m_style.margin * 2;
-        // QListView 行模式下仅需要高度，返回横向提示会触发不必要的水平滚动条。
         return QSize(0, height);
     }
 
-    QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
-    const QStringList mentions = index.data(ChatWidgetModel::ChatWidgetMentionsRole).toStringList();
-    const QString searchKeyword = index.data(ChatWidgetModel::ChatWidgetSearchKeywordRole).toString();
-    html = applyHighlights(html, mentions, searchKeyword, m_style);
+    QString html = ChatWidgetMarkdownUtils::renderMarkdown(d.content);
+    html = applyHighlights(html, d.mentions, d.searchKeyword, m_style);
 
-    int maxWidth = effectiveItemWidth(option) * 0.6;
-    if (maxWidth <= 0)
-        maxWidth = 400;
-
+    const int maxWidth = calcMaxBubbleWidth(option);
     QTextDocument doc;
     doc.setDefaultFont(m_style.messageFont);
     doc.setHtml(html);
     doc.setTextWidth(maxWidth);
 
     const int docHeight = qCeil(doc.size().height());
-
-    const bool isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
-    const QString senderName = index.data(ChatWidgetModel::ChatWidgetSenderRole).toString();
-    const QString senderId = index.data(ChatWidgetModel::ChatWidgetSenderIdRole).toString();
-    const QString imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
-    const QString fileName = index.data(ChatWidgetModel::ChatWidgetFileNameRole).toString();
-    const bool hasImage = !imagePath.isEmpty() || type == ChatWidgetMessage::MessageType::Image;
-    const bool hasFile = !fileName.isEmpty() || type == ChatWidgetMessage::MessageType::File;
-
-    const QString replySender = index.data(ChatWidgetModel::ChatWidgetReplySenderRole).toString();
-    const QString replyPreview = index.data(ChatWidgetModel::ChatWidgetReplyPreviewRole).toString();
-    const QString replyId = index.data(ChatWidgetModel::ChatWidgetReplyToMessageIdRole).toString();
-    const bool isForwarded = index.data(ChatWidgetModel::ChatWidgetIsForwardedRole).toBool();
-    const QString forwardedFrom = index.data(ChatWidgetModel::ChatWidgetForwardedFromRole).toString();
-    const bool hasReply = !replySender.isEmpty() || !replyPreview.isEmpty() || !replyId.isEmpty();
-    const bool hasForward = isForwarded || !forwardedFrom.isEmpty();
-
-    int attachmentHeight = 0;
-    if (hasImage) {
-        attachmentHeight = kAttachmentHeight;
-    } else if (hasFile) {
-        attachmentHeight = kFileCardHeight;
-    }
-
-    int replyHeight = 0;
-    if (hasReply || hasForward) {
-        QFontMetrics replyMetrics(m_style.replyFont);
-        int lines = 0;
-        if (hasForward) {
-            lines += 1;
-        }
-        if (hasReply) {
-            lines += 1;
-        }
-        replyHeight = lines * replyMetrics.height() + kReplyPadding * 2;
-    }
-
-    const QList<ChatWidgetReaction> reactions =
-        reactionsFromVariant(index.data(ChatWidgetModel::ChatWidgetReactionsRole));
-    int reactionHeight = 0;
-    if (!reactions.isEmpty()) {
-        QFontMetrics reactionMetrics(m_style.reactionFont);
-        reactionHeight = reactionMetrics.height() + kReactionPaddingV * 2;
-    }
+    const int replyHeight = calcReplyHeight(m_style.replyFont, d.hasReply, d.hasForward);
+    const int attachmentHeight = calcAttachmentHeight(d.hasImage, d.hasFile);
+    const int reactionHeight = calcReactionHeight(m_style.reactionFont, d.reactions);
 
     int contentHeight = docHeight;
-    if (replyHeight > 0) {
+    if (replyHeight > 0)
         contentHeight += replyHeight + kLineSpacing;
-    }
-    if (attachmentHeight > 0) {
+    if (attachmentHeight > 0)
         contentHeight += attachmentHeight + kLineSpacing;
-    }
-    if (reactionHeight > 0) {
+    if (reactionHeight > 0)
         contentHeight += reactionHeight + kLineSpacing;
-    }
 
     int totalHeight = contentHeight + (m_style.bubblePadding * 2) + (m_style.margin * 2);
-    if (!isMine && !senderId.isEmpty() && !senderName.isEmpty()) {
+    if (!d.isMine && !d.senderId.isEmpty() && !d.senderName.isEmpty()) {
         QFontMetrics nameMetrics(m_style.nameFont);
         totalHeight += nameMetrics.height() + m_style.nameSpacing;
     }
 
-    const QString timestampText = formatTimestamp(timestamp);
-    if (!timestampText.isEmpty() || isMine) {
+    const QString timestampText = formatTimestamp(d.timestamp);
+    if (!timestampText.isEmpty() || d.isMine) {
         QFontMetrics timestampMetrics(m_style.timestampFont);
         QFontMetrics statusMetrics(m_style.statusFont);
         const int footerTextHeight =
@@ -238,7 +268,6 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
         totalHeight += footerTextHeight + kLineSpacing + kFooterBottomSafety;
     }
 
-    // 行宽由视图 viewport 决定；这里只返回高度，避免 width hint 导致横向滚动条。
     return QSize(0, qMax(totalHeight, m_style.avatarSize + m_style.margin * 2));
 }
 
@@ -247,16 +276,12 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
 
-    const auto type = static_cast<ChatWidgetMessage::MessageType>(
-        index.data(ChatWidgetModel::ChatWidgetMessageTypeRole).toInt());
-    const bool isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
-    const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
-    const QDateTime timestamp = index.data(ChatWidgetModel::ChatWidgetTimestampRole).toDateTime();
+    const IndexData d = IndexData::fromIndex(index);
 
-    if (isSystemType(type)) {
-        const QString text = content.isEmpty() && timestamp.isValid()
-            ? timestamp.toString("yyyy-MM-dd")
-            : content;
+    if (isSystemType(d.type)) {
+        const QString text = d.content.isEmpty() && d.timestamp.isValid()
+            ? d.timestamp.toString("yyyy-MM-dd")
+            : d.content;
         QFontMetrics sysMetrics(m_style.systemFont);
         const int textWidth = sysMetrics.horizontalAdvance(text);
         const int maxWidth = effectiveItemWidth(option) * 0.8;
@@ -275,15 +300,11 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         return;
     }
 
-    QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
-    const QStringList mentions = index.data(ChatWidgetModel::ChatWidgetMentionsRole).toStringList();
-    const QString searchKeyword = index.data(ChatWidgetModel::ChatWidgetSearchKeywordRole).toString();
-    html = applyHighlights(html, mentions, searchKeyword, m_style);
+    QString html = ChatWidgetMarkdownUtils::renderMarkdown(d.content);
+    html = applyHighlights(html, d.mentions, d.searchKeyword, m_style);
 
-    QRect rect = option.rect;
-    int maxWidth = effectiveItemWidth(option) * 0.6;
-    if (maxWidth <= 0)
-        maxWidth = 400;
+    const QRect rect = option.rect;
+    const int maxWidth = calcMaxBubbleWidth(option);
 
     QTextDocument doc;
     doc.setDefaultFont(m_style.messageFont);
@@ -294,61 +315,25 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     const int docHeight = qCeil(doc.size().height());
     const QSize docSize(docWidth, docHeight);
 
-    const QString imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
-    const QString fileName = index.data(ChatWidgetModel::ChatWidgetFileNameRole).toString();
-    const qint64 fileSize = index.data(ChatWidgetModel::ChatWidgetFileSizeRole).toLongLong();
-    const bool hasImage = !imagePath.isEmpty() || type == ChatWidgetMessage::MessageType::Image;
-    const bool hasFile = !fileName.isEmpty() || type == ChatWidgetMessage::MessageType::File;
-
-    const QString replySender = index.data(ChatWidgetModel::ChatWidgetReplySenderRole).toString();
-    const QString replyPreview = index.data(ChatWidgetModel::ChatWidgetReplyPreviewRole).toString();
-    const QString replyId = index.data(ChatWidgetModel::ChatWidgetReplyToMessageIdRole).toString();
-    const bool isForwarded = index.data(ChatWidgetModel::ChatWidgetIsForwardedRole).toBool();
-    const QString forwardedFrom = index.data(ChatWidgetModel::ChatWidgetForwardedFromRole).toString();
-    const bool hasReply = !replySender.isEmpty() || !replyPreview.isEmpty() || !replyId.isEmpty();
-    const bool hasForward = isForwarded || !forwardedFrom.isEmpty();
-
     int attachmentWidth = 0;
     int attachmentHeight = 0;
-    if (hasImage) {
+    if (d.hasImage) {
         attachmentWidth = kAttachmentWidth;
         attachmentHeight = kAttachmentHeight;
-    } else if (hasFile) {
+    } else if (d.hasFile) {
         attachmentWidth = qMax(160, docWidth);
         attachmentHeight = kFileCardHeight;
     }
 
-    int replyHeight = 0;
-    if (hasReply || hasForward) {
-        QFontMetrics replyMetrics(m_style.replyFont);
-        int lines = 0;
-        if (hasForward) {
-            lines += 1;
-        }
-        if (hasReply) {
-            lines += 1;
-        }
-        replyHeight = lines * replyMetrics.height() + kReplyPadding * 2;
-    }
+    const int replyHeight = calcReplyHeight(m_style.replyFont, d.hasReply, d.hasForward);
+    const int reactionHeight = calcReactionHeight(m_style.reactionFont, d.reactions);
 
-    const QList<ChatWidgetReaction> reactions =
-        reactionsFromVariant(index.data(ChatWidgetModel::ChatWidgetReactionsRole));
-    int reactionHeight = 0;
-    if (!reactions.isEmpty()) {
-        QFontMetrics reactionMetrics(m_style.reactionFont);
-        reactionHeight = reactionMetrics.height() + kReactionPaddingV * 2;
-    }
-
-    // 绘制头像
     QRect avatarRect = this->avatarRect(option, index);
-    const QString avatarPath = index.data(ChatWidgetModel::ChatWidgetAvatarRole).toString();
-    const QString senderName = index.data(ChatWidgetModel::ChatWidgetSenderRole).toString();
-    const QString senderId = index.data(ChatWidgetModel::ChatWidgetSenderIdRole).toString();
 
     painter->setPen(Qt::NoPen);
     bool drawAvatarText = true;
-    if (!avatarPath.isEmpty()) {
-        QPixmap avatarPixmap(avatarPath);
+    if (!d.avatarPath.isEmpty()) {
+        QPixmap avatarPixmap(d.avatarPath);
         if (!avatarPixmap.isNull()) {
             QPainterPath clipPath;
             clipPath.addEllipse(avatarRect);
@@ -356,19 +341,14 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
             painter->drawPixmap(avatarRect, avatarPixmap);
             painter->setClipping(false);
             drawAvatarText = false;
-        } else {
-            painter->setBrush(isMine ? m_style.myAvatarColor : m_style.otherAvatarColor);
-            painter->drawEllipse(avatarRect);
         }
-    } else {
-        painter->setBrush(isMine ? m_style.myAvatarColor : m_style.otherAvatarColor);
-        painter->drawEllipse(avatarRect);
     }
-
     if (drawAvatarText) {
+        painter->setBrush(d.isMine ? m_style.myAvatarColor : m_style.otherAvatarColor);
+        painter->drawEllipse(avatarRect);
         painter->setPen(Qt::white);
         painter->setFont(m_style.avatarFont);
-        const QString avatarText = senderName.isEmpty() ? (isMine ? "Me" : "U") : senderName.left(1);
+        const QString avatarText = d.senderName.isEmpty() ? (d.isMine ? "Me" : "U") : d.senderName.left(1);
         painter->drawText(avatarRect, Qt::AlignCenter, avatarText);
     }
 
@@ -376,32 +356,29 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     QRect bubbleRect;
     const int contentWidth = qMax(docSize.width(), attachmentWidth);
     int contentHeight = docSize.height();
-    if (replyHeight > 0) {
+    if (replyHeight > 0)
         contentHeight += replyHeight + kLineSpacing;
-    }
-    if (attachmentHeight > 0) {
+    if (attachmentHeight > 0)
         contentHeight += attachmentHeight + kLineSpacing;
-    }
-    if (reactionHeight > 0) {
+    if (reactionHeight > 0)
         contentHeight += reactionHeight + kLineSpacing;
-    }
 
-    int bubbleWidth = contentWidth + m_style.bubblePadding * 2;
-    int bubbleHeight = contentHeight + m_style.bubblePadding * 2;
+    const int bubbleWidth = contentWidth + m_style.bubblePadding * 2;
+    const int bubbleHeight = contentHeight + m_style.bubblePadding * 2;
 
     int contentTop = rect.top() + m_style.margin;
-    if (!isMine && !senderId.isEmpty() && !senderName.isEmpty()) {
+    if (!d.isMine && !d.senderId.isEmpty() && !d.senderName.isEmpty()) {
         painter->setPen(m_style.nameColor);
         painter->setFont(m_style.nameFont);
         QFontMetrics nameMetrics(m_style.nameFont);
         const int nameHeight = nameMetrics.height();
         QRect nameRect(avatarRect.right() + m_style.margin, contentTop,
                        rect.right() - avatarRect.right() - m_style.margin * 2, nameHeight);
-        painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, senderName);
+        painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter, d.senderName);
         contentTop += nameHeight + m_style.nameSpacing;
     }
 
-    if (isMine) {
+    if (d.isMine) {
         bubbleRect = QRect(avatarRect.left() - m_style.margin - bubbleWidth, contentTop, bubbleWidth, bubbleHeight);
         painter->setBrush(m_style.myBubbleColor);
     } else {
@@ -434,22 +411,19 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         int textY = replyRect.top() + kReplyPadding;
         QFontMetrics replyMetrics(m_style.replyFont);
         const int textWidth = replyRect.width() - kReplyPadding * 2;
-        if (hasForward) {
-            const QString forwardLabel = forwardedFrom.isEmpty()
+        if (d.hasForward) {
+            const QString forwardLabel = d.forwardedFrom.isEmpty()
                 ? QStringLiteral("转发")
-                : QStringLiteral("转发自 %1").arg(forwardedFrom);
+                : QStringLiteral("转发自 %1").arg(d.forwardedFrom);
             painter->drawText(QRect(replyRect.left() + kReplyPadding, textY, textWidth, replyMetrics.height()),
                               Qt::AlignLeft | Qt::AlignVCenter,
                               replyMetrics.elidedText(forwardLabel, Qt::ElideRight, textWidth));
             textY += replyMetrics.height();
         }
-        if (hasReply) {
-            QString replyText;
-            if (!replySender.isEmpty()) {
-                replyText = QStringLiteral("回复 %1: %2").arg(replySender, replyPreview);
-            } else {
-                replyText = QStringLiteral("回复: %1").arg(replyPreview);
-            }
+        if (d.hasReply) {
+            const QString replyText = d.replySender.isEmpty()
+                ? QStringLiteral("回复: %1").arg(d.replyPreview)
+                : QStringLiteral("回复 %1: %2").arg(d.replySender, d.replyPreview);
             painter->drawText(QRect(replyRect.left() + kReplyPadding, textY, textWidth, replyMetrics.height()),
                               Qt::AlignLeft | Qt::AlignVCenter,
                               replyMetrics.elidedText(replyText, Qt::ElideRight, textWidth));
@@ -463,8 +437,8 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         painter->setBrush(m_style.fileCardColor);
         painter->drawRoundedRect(attachRect, 6, 6);
 
-        if (hasImage) {
-            QPixmap image(imagePath);
+        if (d.hasImage) {
+            QPixmap image(d.imagePath);
             if (!image.isNull()) {
                 QPainterPath clipPath;
                 clipPath.addRoundedRect(attachRect, 6, 6);
@@ -477,14 +451,14 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
                 painter->setFont(m_style.replyFont);
                 painter->drawText(attachRect, Qt::AlignCenter, "Image");
             }
-        } else if (hasFile) {
+        } else if (d.hasFile) {
             painter->setPen(m_style.replyTextColor);
             painter->setFont(m_style.replyFont);
             QFontMetrics fileMetrics(m_style.replyFont);
             const int textWidth = attachRect.width() - kReplyPadding * 2;
-            const QString nameText = fileMetrics.elidedText(fileName, Qt::ElideRight, textWidth);
-            const QString sizeText = fileSize > 0
-                ? QStringLiteral("%1 KB").arg(fileSize / 1024)
+            const QString nameText = fileMetrics.elidedText(d.fileName, Qt::ElideRight, textWidth);
+            const QString sizeText = d.fileSize > 0
+                ? QStringLiteral("%1 KB").arg(d.fileSize / 1024)
                 : QStringLiteral("文件");
             painter->drawText(QRect(attachRect.left() + kReplyPadding, attachRect.top() + kReplyPadding,
                                     textWidth, fileMetrics.height()),
@@ -506,13 +480,13 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         cursorY += docSize.height();
     }
 
-    if (!reactions.isEmpty()) {
+    if (!d.reactions.isEmpty()) {
         cursorY += kLineSpacing;
         painter->setFont(m_style.reactionFont);
         QFontMetrics reactionMetrics(m_style.reactionFont);
         int x = innerRect.left();
         const int chipHeight = reactionMetrics.height() + kReactionPaddingV * 2;
-        for (const ChatWidgetReaction& reaction : reactions) {
+        for (const ChatWidgetReaction& reaction : d.reactions) {
             const QString label = reaction.count > 0
                 ? QString("%1 %2").arg(reaction.emoji).arg(reaction.count)
                 : reaction.emoji;
@@ -530,13 +504,13 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         }
     }
 
-    const QString timestampText = formatTimestamp(timestamp);
-    const QString statusText = isMine ? formatStatus(static_cast<ChatWidgetMessage::MessageStatus>(
+    const QString timestampText = formatTimestamp(d.timestamp);
+    const QString statusText = d.isMine ? formatStatus(static_cast<ChatWidgetMessage::MessageStatus>(
                                     index.data(ChatWidgetModel::ChatWidgetMessageStatusRole).toInt()))
                                       : QString();
     if (!timestampText.isEmpty() || !statusText.isEmpty()) {
         const int footerY = bubbleRect.bottom() + kLineSpacing + 1;
-        if (isMine) {
+        if (d.isMine) {
             painter->setFont(m_style.statusFont);
             QFontMetrics statusMetrics(m_style.statusFont);
             int textX = bubbleRect.right() + 1;
@@ -585,27 +559,14 @@ QRect ChatWidgetDelegate::avatarRect(const QStyleOptionViewItem& option, const Q
 
 QRect ChatWidgetDelegate::fileCardRect(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    const auto type = static_cast<ChatWidgetMessage::MessageType>(
-        index.data(ChatWidgetModel::ChatWidgetMessageTypeRole).toInt());
-    if (isSystemType(type))
+    const IndexData d = IndexData::fromIndex(index);
+    if (isSystemType(d.type))
+        return QRect();
+    if (!d.hasImage && !d.hasFile)
         return QRect();
 
-    const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
-    const QString imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
-    const QString fileName = index.data(ChatWidgetModel::ChatWidgetFileNameRole).toString();
-    const bool hasImage = !imagePath.isEmpty() || type == ChatWidgetMessage::MessageType::Image;
-    const bool hasFile = !fileName.isEmpty() || type == ChatWidgetMessage::MessageType::File;
-    if (!hasImage && !hasFile)
-        return QRect();
-
-    const bool isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
-    const QString senderName = index.data(ChatWidgetModel::ChatWidgetSenderRole).toString();
-    const QString senderId = index.data(ChatWidgetModel::ChatWidgetSenderIdRole).toString();
-
-    // 计算 bubble 位置（与 paint 逻辑一致）
-    QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
-    int maxWidth = effectiveItemWidth(option) * 0.6;
-    if (maxWidth <= 0) maxWidth = 400;
+    QString html = ChatWidgetMarkdownUtils::renderMarkdown(d.content);
+    const int maxWidth = calcMaxBubbleWidth(option);
 
     QTextDocument doc;
     doc.setDefaultFont(m_style.messageFont);
@@ -613,41 +574,30 @@ QRect ChatWidgetDelegate::fileCardRect(const QStyleOptionViewItem& option, const
     doc.setTextWidth(maxWidth);
     const int docWidth = qMin(maxWidth, qCeil(doc.idealWidth()));
 
-    int attachmentWidth = hasImage ? kAttachmentWidth : qMax(160, docWidth);
-    int attachmentHeight = hasImage ? kAttachmentHeight : kFileCardHeight;
+    const int attachmentWidth = d.hasImage ? kAttachmentWidth : qMax(160, docWidth);
+    const int attachmentHeight = d.hasImage ? kAttachmentHeight : kFileCardHeight;
 
     const int contentWidth = qMax(docWidth, attachmentWidth);
-    int bubbleWidth = contentWidth + m_style.bubblePadding * 2;
+    const int bubbleWidth = contentWidth + m_style.bubblePadding * 2;
 
-    QRect rect = option.rect;
-    QRect avRect = avatarRect(option, index);
+    const QRect rect = option.rect;
+    const QRect avRect = avatarRect(option, index);
     int contentTop = rect.top() + m_style.margin;
-    if (!isMine && !senderId.isEmpty() && !senderName.isEmpty()) {
+    if (!d.isMine && !d.senderId.isEmpty() && !d.senderName.isEmpty()) {
         QFontMetrics nameMetrics(m_style.nameFont);
         contentTop += nameMetrics.height() + m_style.nameSpacing;
     }
 
-    int bubbleLeft = isMine
+    const int bubbleLeft = d.isMine
         ? (avRect.left() - m_style.margin - bubbleWidth)
         : (avRect.right() + m_style.margin);
 
-    int innerLeft = bubbleLeft + m_style.bubblePadding;
+    const int innerLeft = bubbleLeft + m_style.bubblePadding;
     int cursorY = contentTop + m_style.bubblePadding;
 
-    // 跳过 reply 区域
-    const QString replySender = index.data(ChatWidgetModel::ChatWidgetReplySenderRole).toString();
-    const QString replyPreview = index.data(ChatWidgetModel::ChatWidgetReplyPreviewRole).toString();
-    const QString replyId = index.data(ChatWidgetModel::ChatWidgetReplyToMessageIdRole).toString();
-    const bool isForwarded = index.data(ChatWidgetModel::ChatWidgetIsForwardedRole).toBool();
-    const QString forwardedFrom = index.data(ChatWidgetModel::ChatWidgetForwardedFromRole).toString();
-    const bool hasReply = !replySender.isEmpty() || !replyPreview.isEmpty() || !replyId.isEmpty();
-    const bool hasForward = isForwarded || !forwardedFrom.isEmpty();
-    if (hasReply || hasForward) {
-        QFontMetrics replyMetrics(m_style.replyFont);
-        int lines = (hasForward ? 1 : 0) + (hasReply ? 1 : 0);
-        cursorY += lines * replyMetrics.height() + kReplyPadding * 2 + kLineSpacing;
-    }
+    const int replyHeight = calcReplyHeight(m_style.replyFont, d.hasReply, d.hasForward);
+    if (replyHeight > 0)
+        cursorY += replyHeight + kLineSpacing;
 
-    int innerWidth = contentWidth;
-    return QRect(innerLeft, cursorY, qMin(innerWidth, attachmentWidth), attachmentHeight);
+    return QRect(innerLeft, cursorY, qMin(contentWidth, attachmentWidth), attachmentHeight);
 }

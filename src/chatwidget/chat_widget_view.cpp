@@ -1,6 +1,4 @@
 #include "chat_widget_view.h"
-#include "chat_widget_delegate.h"
-#include "chat_widget_model.h"
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QGuiApplication>
@@ -52,7 +50,6 @@ void ChatWidgetView::setupUi()
     m_chatView->setObjectName("chatWidgetViewList");
     m_chatView->setModel(m_model);
     m_chatView->setItemDelegate(m_delegate);
-    m_chatView->setObjectName("chatWidgetViewList");
     m_chatView->setSelectionMode(QAbstractItemView::SingleSelection);
     m_chatView->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_chatView->setFocusPolicy(Qt::NoFocus);
@@ -97,17 +94,13 @@ ChatWidgetDelegate::Style ChatWidgetView::delegateStyle() const
 
 void ChatWidgetView::scrollToBottom()
 {
-    if (m_chatView) {
-        m_chatView->scrollToBottom();
-    }
+    m_chatView->scrollToBottom();
 }
 
 void ChatWidgetView::refreshLayout()
 {
-    if (m_chatView) {
-        m_chatView->doItemsLayout();
-        m_chatView->viewport()->update();
-    }
+    m_chatView->doItemsLayout();
+    m_chatView->viewport()->update();
 }
 
 bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
@@ -164,12 +157,11 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
             rememberAction->setEnabled(!content.trimmed().isEmpty());
 
             QAction* picked = menu.exec(mouseEvent->globalPos());
-            if (picked == nullptr) {
+            if (!picked) {
                 return QWidget::eventFilter(watched, event);
             }
 
             if (picked == copyAction) {
-                const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
                 if (!content.isEmpty()) {
                     if (QClipboard* clipboard = QGuiApplication::clipboard()) {
                         clipboard->setText(content, QClipboard::Clipboard);
@@ -190,17 +182,12 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
 void ChatWidgetView::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-    if (!m_chatView)
-        return;
-    if (event && event->oldSize().width() == event->size().width())
+    if (event->oldSize().width() == event->size().width())
         return;
 
     // 宽度变化后，强制触发 delegate 重新计算 sizeHint，避免气泡间距残留旧布局。
     refreshLayout();
     QTimer::singleShot(0, this, [this]() {
-        if (!m_chatView)
-            return;
-        m_chatView->doItemsLayout();
-        m_chatView->viewport()->update();
+        refreshLayout();
     });
 }

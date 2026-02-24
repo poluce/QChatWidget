@@ -1,8 +1,7 @@
 #include "chat_list_delegate.h"
+#include <QFontMetrics>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPen>
-#include <QFontMetrics>
 #include <QPixmap>
 
 ChatListDelegate::ChatListDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
@@ -34,12 +33,12 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->setRenderHint(QPainter::Antialiasing);
 
     // 1. 获取数据
-    QString name = index.data(ChatListNameRole).toString();
-    QString message = index.data(ChatListMessageRole).toString();
-    QString time = index.data(ChatListTimeRole).toString();
-    QColor avatarColor = index.data(ChatListAvatarColorRole).value<QColor>();
-    QString avatarPath = index.data(ChatListAvatarPathRole).toString().trimmed();
-    int unreadCount = index.data(ChatListUnreadCountRole).toInt();
+    const QString name = index.data(ChatListNameRole).toString();
+    const QString message = index.data(ChatListMessageRole).toString();
+    const QString time = index.data(ChatListTimeRole).toString();
+    const QColor avatarColor = index.data(ChatListAvatarColorRole).value<QColor>();
+    const QString avatarPath = index.data(ChatListAvatarPathRole).toString().trimmed();
+    const int unreadCount = index.data(ChatListUnreadCountRole).toInt();
 
     // 2. 绘制卡片背景（圆角 + 边框）
     QRect rect = option.rect.adjusted(m_style.itemInsetX,
@@ -61,9 +60,9 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->drawRoundedRect(cardRect, m_style.itemCornerRadius, m_style.itemCornerRadius);
 
     // 3. 布局参数
-    int avatarSize = m_style.avatarSize;
-    int margin = m_style.margin;
-    int textLeftMargin = margin + avatarSize + margin;
+    const int avatarSize = m_style.avatarSize;
+    const int margin = m_style.margin;
+    const int textLeftMargin = margin + avatarSize + margin;
     const QFontMetrics fmName(m_style.nameFont);
     const QFontMetrics fmMsg(m_style.messageFont);
     const QFontMetrics fmTime(m_style.timeFont);
@@ -111,31 +110,25 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     // 5. 绘制未读红点
     if (m_style.showUnreadBadge && unreadCount > 0) {
-        int badgeSize = m_style.badgeSize;
+        const int badgeSize = m_style.badgeSize;
         QRect badgeRect(avatarRect.right() - 6, avatarRect.top() - 6, badgeSize, badgeSize);
         painter->setBrush(m_style.badgeColor);
         painter->setPen(Qt::NoPen);
         painter->drawEllipse(badgeRect);
-        
+
         painter->setPen(m_style.badgeTextColor);
-        QFont badgeFont = m_style.badgeFont;
-        painter->setFont(badgeFont);
+        painter->setFont(m_style.badgeFont);
         painter->drawText(badgeRect, Qt::AlignCenter, QString::number(unreadCount));
     }
 
     // 6. 绘制昵称
     painter->setPen(m_style.nameColor);
-    QFont nameFont = m_style.nameFont;
-    painter->setFont(nameFont);
-    
-    QFont timeFont = m_style.timeFont;
-    int timeWidth = fmTime.horizontalAdvance(time) + margin;
+    painter->setFont(m_style.nameFont);
+
+    const int timeWidth = fmTime.horizontalAdvance(time) + margin;
     const int nameTop = contentTop;
-    int msgTop = contentBottom - fmMsg.height();
     const int minMsgTop = nameTop + fmName.height() + textSpacing;
-    if (msgTop < minMsgTop) {
-        msgTop = minMsgTop;
-    }
+    const int msgTop = qMax(contentBottom - fmMsg.height(), minMsgTop);
 
     const int nameWidth = qMax(0, rect.width() - textLeftMargin - timeWidth - margin);
     QRect nameRect(rect.left() + textLeftMargin,
@@ -147,7 +140,7 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     // 7. 绘制时间
     painter->setPen(m_style.timeColor);
-    painter->setFont(timeFont);
+    painter->setFont(m_style.timeFont);
     QRect timeRect(rect.right() - timeWidth,
                    nameTop,
                    timeWidth - margin,
@@ -156,8 +149,7 @@ void ChatListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     // 8. 绘制消息内容
     painter->setPen(m_style.messageColor);
-    QFont msgFont = m_style.messageFont;
-    painter->setFont(msgFont);
+    painter->setFont(m_style.messageFont);
 
     const int msgWidth = qMax(0, rect.width() - textLeftMargin - margin);
     QRect msgRect(rect.left() + textLeftMargin,

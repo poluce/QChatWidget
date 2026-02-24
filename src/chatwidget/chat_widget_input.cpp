@@ -44,10 +44,6 @@ ChatWidgetInput::ChatWidgetInput(QWidget* parent)
     setupUi();
 }
 
-ChatWidgetInput::~ChatWidgetInput()
-{
-}
-
 void ChatWidgetInput::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
@@ -57,6 +53,25 @@ void ChatWidgetInput::resizeEvent(QResizeEvent* event)
     }
 }
 
+QToolButton* ChatWidgetInput::createToolButton(const QString& objectName, const QString& tooltip,
+                                                const QIcon& icon, const QString& fallbackText,
+                                                QWidget* parent)
+{
+    auto* btn = new QToolButton(parent);
+    btn->setObjectName(objectName);
+    btn->setProperty("role", "icon");
+    btn->setAutoRaise(true);
+    btn->setToolTip(tooltip);
+    btn->setIcon(icon);
+    btn->setText(icon.isNull() ? fallbackText : QString());
+    return btn;
+}
+
+QString ChatWidgetInput::placeholderForMode() const
+{
+    return m_inputMode == TranslateMode ? "翻译模式：输入要翻译的内容..." : "输入消息...";
+}
+
 void ChatWidgetInput::setupUi()
 {
     setObjectName("chatWidgetInputRoot");
@@ -64,31 +79,20 @@ void ChatWidgetInput::setupUi()
     m_inputBar = new QFrame(this);
     m_inputBar->setObjectName("chatWidgetInputBar");
 
-    m_plusButton = new QToolButton(m_inputBar);
-    m_plusButton->setObjectName("chatWidgetInputPlusButton");
-    m_plusButton->setProperty("role", "icon");
+    m_plusButton = createToolButton("chatWidgetInputPlusButton", "更多",
+                                     iconOrFallback(this, QStringLiteral("list-add"), QStyle::SP_FileDialogNewFolder),
+                                     "+", m_inputBar);
     m_plusButton->setPopupMode(QToolButton::InstantPopup);
-    m_plusButton->setAutoRaise(true);
-    m_plusButton->setToolTip("更多");
-    m_plusButton->setIcon(iconOrFallback(this, QStringLiteral("list-add"), QStyle::SP_FileDialogNewFolder));
-    m_plusButton->setText(m_plusButton->icon().isNull() ? "+" : QString());
 
-    m_emojiButton = new QToolButton(m_inputBar);
-    m_emojiButton->setObjectName("chatWidgetInputEmojiButton");
-    m_emojiButton->setProperty("role", "icon");
+    m_emojiButton = createToolButton("chatWidgetInputEmojiButton", "表情",
+                                      QIcon::fromTheme(QStringLiteral("face-smile")),
+                                      "☺", m_inputBar);
     m_emojiButton->setPopupMode(QToolButton::InstantPopup);
-    m_emojiButton->setAutoRaise(true);
-    m_emojiButton->setToolTip("表情");
-    m_emojiButton->setIcon(QIcon::fromTheme(QStringLiteral("face-smile")));
-    m_emojiButton->setText(m_emojiButton->icon().isNull() ? "☺" : QString());
 
-    m_voiceButton = new QToolButton(m_inputBar);
-    m_voiceButton->setObjectName("chatWidgetInputVoiceButton");
-    m_voiceButton->setProperty("role", "icon");
-    m_voiceButton->setAutoRaise(true);
-    m_voiceButton->setIcon(iconOrFallback(this, QStringLiteral("audio-input-microphone"), QStyle::SP_MediaVolume));
-    m_voiceButton->setToolTip("语音输入");
-    m_voiceButton->setText(m_voiceButton->icon().isNull() ? "◎" : QString());
+    m_voiceButton = createToolButton("chatWidgetInputVoiceButton", "语音输入",
+                                      iconOrFallback(this, QStringLiteral("audio-input-microphone"), QStyle::SP_MediaVolume),
+                                      "◎", m_inputBar);
+
     m_inputEdit = new QTextEdit(m_inputBar);
     m_inputEdit->setObjectName("chatWidgetInputEdit");
     m_inputEdit->setPlaceholderText("输入消息...");
@@ -98,29 +102,19 @@ void ChatWidgetInput::setupUi()
     m_inputEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_inputEdit->setTabChangesFocus(true);
     m_inputEdit->installEventFilter(this);
-    m_richTextButton = new QToolButton(m_inputBar);
-    m_richTextButton->setObjectName("chatWidgetInputRichButton");
-    m_richTextButton->setCheckable(true);
-    m_richTextButton->setProperty("role", "icon");
-    m_richTextButton->setAutoRaise(true);
-    m_richTextButton->setIcon(QIcon::fromTheme(QStringLiteral("format-text-richtext")));
-    m_richTextButton->setText(m_richTextButton->icon().isNull() ? "A" : QString());
-    m_richTextButton->setToolTip("富文本");
 
-    m_sendButton = new QToolButton(m_inputBar);
-    m_sendButton->setObjectName("chatWidgetInputSendButton");
-    m_sendButton->setProperty("role", "icon");
-    m_sendButton->setAutoRaise(true);
-    m_sendButton->setIcon(iconOrFallback(this, QStringLiteral("mail-send"), QStyle::SP_ArrowForward));
-    m_sendButton->setText(m_sendButton->icon().isNull() ? "➤" : QString());
-    m_sendButton->setToolTip("发送");
+    m_richTextButton = createToolButton("chatWidgetInputRichButton", "富文本",
+                                         QIcon::fromTheme(QStringLiteral("format-text-richtext")),
+                                         "A", m_inputBar);
+    m_richTextButton->setCheckable(true);
+
+    m_sendButton = createToolButton("chatWidgetInputSendButton", "发送",
+                                     iconOrFallback(this, QStringLiteral("mail-send"), QStyle::SP_ArrowForward),
+                                     "➤", m_inputBar);
 
     const QSize toolIconSize(20, 20);
-    m_plusButton->setIconSize(toolIconSize);
-    m_emojiButton->setIconSize(toolIconSize);
-    m_richTextButton->setIconSize(toolIconSize);
-    m_voiceButton->setIconSize(toolIconSize);
-    m_sendButton->setIconSize(toolIconSize);
+    for (auto* btn : { m_plusButton, m_emojiButton, m_richTextButton, m_voiceButton, m_sendButton })
+        btn->setIconSize(toolIconSize);
 
     m_plusMenu = new QMenu(this);
     m_plusMenu->setObjectName("chatWidgetInputMenu");
@@ -310,11 +304,7 @@ bool ChatWidgetInput::tryApplyCommand(const QString& text)
 void ChatWidgetInput::applyMode(InputMode mode)
 {
     m_inputMode = mode;
-    if (m_inputMode == TranslateMode) {
-        m_inputEdit->setPlaceholderText("翻译模式：输入要翻译的内容...");
-    } else {
-        m_inputEdit->setPlaceholderText("输入消息...");
-    }
+    m_inputEdit->setPlaceholderText(placeholderForMode());
     m_inputEdit->clear();
     m_inputEdit->setFocus();
     m_commandMenu->hide();
@@ -323,17 +313,12 @@ void ChatWidgetInput::applyMode(InputMode mode)
 void ChatWidgetInput::positionCommandMenu()
 {
     const int rowHeight = m_commandMenu->sizeHintForRow(0);
-    const int rows = m_commandMenu->count();
-    const int maxVisibleRows = qMin(rows, 6);
+    const int maxVisibleRows = qMin(m_commandMenu->count(), 6);
     const int height = (rowHeight > 0 ? rowHeight : 24) * maxVisibleRows + 2;
-    m_commandMenu->setMinimumWidth(m_inputBar->width());
-    m_commandMenu->setMaximumWidth(m_inputBar->width());
-    m_commandMenu->setMinimumHeight(height);
-    m_commandMenu->setMaximumHeight(height);
+    m_commandMenu->setFixedSize(m_inputBar->width(), height);
 
     const QPoint globalPos = m_inputBar->mapToGlobal(QPoint(0, 0));
-    const int y = globalPos.y() - height - 6;
-    m_commandMenu->move(globalPos.x(), y);
+    m_commandMenu->move(globalPos.x(), globalPos.y() - height - 6);
 }
 
 void ChatWidgetInput::setSending(bool sending)
@@ -372,7 +357,7 @@ void ChatWidgetInput::onVoiceClicked()
         m_commandMenu->hide();
         emit voiceStartRequested();
     } else {
-        m_inputEdit->setPlaceholderText(m_inputMode == TranslateMode ? "翻译模式：输入要翻译的内容..." : "输入消息...");
+        m_inputEdit->setPlaceholderText(placeholderForMode());
         emit voiceStopRequested();
     }
     updateVoiceButtonState();
@@ -380,24 +365,18 @@ void ChatWidgetInput::onVoiceClicked()
 
 void ChatWidgetInput::onPickImage()
 {
-    const QString filter = "Images (*.png *.jpg *.jpeg *.bmp *.gif)";
-    const QString path = QFileDialog::getOpenFileName(this, "选择图片", QString(), filter);
-    if (path.isEmpty()) {
-        return;
-    }
-
-    emit messageSent("【图片】" + path);
+    const QString path = QFileDialog::getOpenFileName(this, "选择图片", QString(),
+                                                      "Images (*.png *.jpg *.jpeg *.bmp *.gif)");
+    if (!path.isEmpty())
+        emit messageSent("【图片】" + path);
 }
 
 void ChatWidgetInput::onPickFile()
 {
-    const QString filter = "All Files (*.*)";
-    const QString path = QFileDialog::getOpenFileName(this, "选择文件", QString(), filter);
-    if (path.isEmpty()) {
-        return;
-    }
-
-    emit messageSent("【文件】" + path);
+    const QString path = QFileDialog::getOpenFileName(this, "选择文件", QString(),
+                                                      "All Files (*.*)");
+    if (!path.isEmpty())
+        emit messageSent("【文件】" + path);
 }
 
 void ChatWidgetInput::onEmojiPicked(QAction* action)

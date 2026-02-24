@@ -12,19 +12,6 @@ qint64 messageTimestampKey(const ChatWidgetMessage& message)
 {
     return message.timestamp.isValid() ? message.timestamp.toMSecsSinceEpoch() : 0;
 }
-
-bool messageIdExists(const QList<ChatWidgetMessage>& messages, const QString& messageId)
-{
-    if (messageId.isEmpty()) {
-        return false;
-    }
-    for (const ChatWidgetMessage& msg : messages) {
-        if (msg.messageId == messageId) {
-            return true;
-        }
-    }
-    return false;
-}
 } // namespace
 
 ChatWidgetModel::ChatWidgetModel(QObject* parent)
@@ -155,37 +142,39 @@ void ChatWidgetModel::setMessages(const QList<ChatWidgetMessage>& messages)
     });
 
     for (const ChatWidgetMessage& message : sorted) {
-        if (!message.messageId.isEmpty()) {
-            if (m_messageIds.contains(message.messageId)) {
-                continue;
-            }
+        if (!message.messageId.isEmpty() && m_messageIds.contains(message.messageId))
+            continue;
+        if (!message.messageId.isEmpty())
             m_messageIds.insert(message.messageId);
-        }
         m_messages.append(message);
     }
     endResetModel();
 }
 
-void ChatWidgetModel::appendMessages(const QList<ChatWidgetMessage>& messages)
+QList<ChatWidgetMessage> ChatWidgetModel::filterNewMessages(const QList<ChatWidgetMessage>& messages)
 {
-    if (messages.isEmpty()) {
-        return;
-    }
     QList<ChatWidgetMessage> filtered;
+    if (messages.isEmpty())
+        return filtered;
+
     filtered.reserve(messages.size());
     for (const ChatWidgetMessage& message : messages) {
-        if (!message.messageId.isEmpty() && m_messageIds.contains(message.messageId)) {
+        if (!message.messageId.isEmpty() && m_messageIds.contains(message.messageId))
             continue;
-        }
-        if (!message.messageId.isEmpty()) {
+        if (!message.messageId.isEmpty())
             m_messageIds.insert(message.messageId);
-        }
         filtered.append(message);
     }
-    if (filtered.isEmpty()) {
+    return filtered;
+}
+
+void ChatWidgetModel::appendMessages(const QList<ChatWidgetMessage>& messages)
+{
+    const QList<ChatWidgetMessage> filtered = filterNewMessages(messages);
+    if (filtered.isEmpty())
         return;
-    }
-    int start = m_messages.count();
+
+    const int start = m_messages.count();
     beginInsertRows(QModelIndex(), start, start + filtered.count() - 1);
     m_messages.append(filtered);
     endInsertRows();
@@ -193,23 +182,10 @@ void ChatWidgetModel::appendMessages(const QList<ChatWidgetMessage>& messages)
 
 void ChatWidgetModel::prependMessages(const QList<ChatWidgetMessage>& messages)
 {
-    if (messages.isEmpty()) {
+    const QList<ChatWidgetMessage> filtered = filterNewMessages(messages);
+    if (filtered.isEmpty())
         return;
-    }
-    QList<ChatWidgetMessage> filtered;
-    filtered.reserve(messages.size());
-    for (const ChatWidgetMessage& message : messages) {
-        if (!message.messageId.isEmpty() && m_messageIds.contains(message.messageId)) {
-            continue;
-        }
-        if (!message.messageId.isEmpty()) {
-            m_messageIds.insert(message.messageId);
-        }
-        filtered.append(message);
-    }
-    if (filtered.isEmpty()) {
-        return;
-    }
+
     beginInsertRows(QModelIndex(), 0, filtered.count() - 1);
     QList<ChatWidgetMessage> combined = filtered;
     combined.append(m_messages);
@@ -462,28 +438,17 @@ void ChatWidgetModel::removeMessageAt(int row)
 
 void ChatWidgetModel::removeLastMessage()
 {
-    if (m_messages.isEmpty()) {
-        return;
-    }
-
-    int lastIdx = m_messages.size() - 1;
-    const QString removedId = m_messages[lastIdx].messageId;
-    beginRemoveRows(QModelIndex(), lastIdx, lastIdx);
-    m_messages.removeAt(lastIdx);
-    endRemoveRows();
-    if (!removedId.isEmpty() && !messageIdExists(m_messages, removedId)) {
-        m_messageIds.remove(removedId);
-    }
+    removeMessageAt(m_messages.size() - 1);
 }
 
 void ChatWidgetModel::clearMessages()
 {
     if (m_messages.isEmpty())
         return;
-    beginRemoveRows(QModelIndex(), 0, m_messages.size() - 1);
+    beginResetModel();
     m_messages.clear();
     m_messageIds.clear();
-    endRemoveRows();
+    endResetModel();
 }
 
 int ChatWidgetModel::messageCount() const

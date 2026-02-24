@@ -119,20 +119,20 @@ int main(int argc, char* argv[])
     };
 
     auto applyTheme = [chat]() {
-        auto themeStyle = ThemeManager::instance()->chatWidgetStyle();
+        auto t = ThemeManager::instance()->chatWidgetStyle();
         ChatWidgetDelegate::Style style;
-        style.avatarSize = themeStyle.avatarSize;
-        style.margin = themeStyle.margin;
-        style.bubblePadding = themeStyle.bubblePadding;
-        style.bubbleRadius = themeStyle.bubbleRadius;
-        style.myBubbleColor = themeStyle.myBubbleColor;
-        style.otherBubbleColor = themeStyle.otherBubbleColor;
-        style.myAvatarColor = themeStyle.myAvatarColor;
-        style.otherAvatarColor = themeStyle.otherAvatarColor;
-        style.myTextColor = themeStyle.myTextColor;
-        style.otherTextColor = themeStyle.otherTextColor;
-        style.messageFont = themeStyle.messageFont;
-        style.avatarFont = themeStyle.avatarFont;
+        style.avatarSize      = t.avatarSize;
+        style.margin          = t.margin;
+        style.bubblePadding   = t.bubblePadding;
+        style.bubbleRadius    = t.bubbleRadius;
+        style.myBubbleColor   = t.myBubbleColor;
+        style.otherBubbleColor = t.otherBubbleColor;
+        style.myAvatarColor   = t.myAvatarColor;
+        style.otherAvatarColor = t.otherAvatarColor;
+        style.myTextColor     = t.myTextColor;
+        style.otherTextColor  = t.otherTextColor;
+        style.messageFont     = t.messageFont;
+        style.avatarFont      = t.avatarFont;
         chat->setDelegateStyle(style);
     };
 

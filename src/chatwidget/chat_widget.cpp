@@ -47,29 +47,33 @@ void ChatWidget::setupUi()
     connect(m_viewWidget, &ChatWidgetView::messageActionRequested, this, &ChatWidget::messageActionRequested);
     connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &ChatWidget::onInputMessageSent);
     connect(m_inputWidget, &ChatWidgetInputBase::stopRequested, this, [this]() {
-    setSendingState(false);
-    emit stopRequested(); });
+        setSendingState(false);
+        emit stopRequested();
+    });
+}
+
+void ChatWidget::addMessageToModel(const ChatWidgetMessage& msg)
+{
+    if (auto* dataModel = model()) {
+        dataModel->addMessage(msg);
+    }
+    if (m_viewWidget) {
+        m_viewWidget->scrollToBottom();
+    }
 }
 
 void ChatWidget::addMessage(const MessageParams& params)
 {
+    ChatWidgetMessage msg;
+    msg.messageId = params.messageId;
+    msg.content = params.content;
+    msg.timestamp = QDateTime::currentDateTime();
+
     if (params.senderId.trimmed().isEmpty()) {
-        const QString fallbackName = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
-        ChatWidgetMessage msg;
-        msg.messageId = params.messageId;
-        msg.senderId = QString();
-        msg.sender = fallbackName;
-        msg.content = params.content;
+        msg.sender = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
         msg.avatarPath = params.avatarPath;
         msg.isMine = params.isMine;
-        msg.timestamp = QDateTime::currentDateTime();
-
-        if (auto* dataModel = model()) {
-            dataModel->addMessage(msg);
-        }
-        if (m_viewWidget) {
-            m_viewWidget->scrollToBottom();
-        }
+        addMessageToModel(msg);
         return;
     }
 
@@ -83,26 +87,11 @@ void ChatWidget::addMessage(const MessageParams& params)
     }
     m_participants.insert(params.senderId, info);
 
-    const QString finalName = info.displayName.isEmpty() ? params.senderId : info.displayName;
-    bool isMine = params.isMine;
-    if (!m_currentUserId.isEmpty()) {
-        isMine = params.senderId == m_currentUserId;
-    }
-    ChatWidgetMessage msg;
-    msg.messageId = params.messageId;
     msg.senderId = params.senderId;
-    msg.sender = finalName;
-    msg.content = params.content;
+    msg.sender = info.displayName.isEmpty() ? params.senderId : info.displayName;
     msg.avatarPath = info.avatarPath;
-    msg.isMine = isMine;
-    msg.timestamp = QDateTime::currentDateTime();
-
-    if (auto* dataModel = model()) {
-        dataModel->addMessage(msg);
-    }
-    if (m_viewWidget) {
-        m_viewWidget->scrollToBottom();
-    }
+    msg.isMine = !m_currentUserId.isEmpty() ? (params.senderId == m_currentUserId) : params.isMine;
+    addMessageToModel(msg);
 }
 
 void ChatWidget::streamOutput(const QString& content)
@@ -393,6 +382,105 @@ bool ChatWidget::hasParticipant(const QString& userId) const
     return m_participants.contains(userId);
 }
 
+void ChatWidget::updateParticipantFromHistory(const HistoryMessage& history, QHash<QString, ParticipantInfo>* updatedParticipants)
+{
+    if (history.senderId.trimmed().isEmpty())
+        return;
+
+    ParticipantInfo info = m_participants.value(history.senderId);
+    const QString oldName = info.displayName;
+    const QString oldAvatar = info.avatarPath;
+    info.id = history.senderId;
+    if (!history.displayName.isEmpty())
+        info.displayName = history.displayName;
+    if (!history.avatarPath.isEmpty())
+        info.avatarPath = history.avatarPath;
+    m_participants.insert(history.senderId, info);
+
+    if (updatedParticipants) {
+        if ((!history.displayName.isEmpty() && oldName != info.displayName) ||
+            (!history.avatarPath.isEmpty() && oldAvatar != info.avatarPath)) {
+            updatedParticipants->insert(history.senderId, info);
+        }
+    }
+}
+
+ChatWidgetMessage ChatWidget::convertHistoryMessage(const HistoryMessage& history)
+{
+    ChatWidgetMessage msg;
+    msg.messageId = history.messageId;
+    msg.content = history.content;
+    msg.timestamp = history.timestamp;
+    msg.messageType = history.messageType;
+    msg.status = history.status;
+    msg.imagePath = history.imagePath;
+    msg.filePath = history.filePath;
+    msg.fileName = history.fileName;
+    msg.fileSize = history.fileSize;
+    msg.replyToMessageId = history.replyToMessageId;
+    msg.replySender = history.replySender;
+    msg.replyPreview = history.replyPreview;
+    msg.isForwarded = history.isForwarded;
+    msg.forwardedFrom = history.forwardedFrom;
+    msg.reactions = history.reactions;
+    msg.mentions = history.mentions;
+
+    if (history.senderId.trimmed().isEmpty()) {
+        msg.senderId = QString();
+        msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
+        msg.avatarPath = history.avatarPath;
+        msg.isMine = history.isMine;
+    } else {
+        const ParticipantInfo info = m_participants.value(history.senderId);
+        msg.senderId = history.senderId;
+        msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
+        msg.avatarPath = info.avatarPath;
+        msg.isMine = !m_currentUserId.isEmpty() ? (history.senderId == m_currentUserId) : history.isMine;
+    }
+
+    if (!msg.messageId.isEmpty())
+        m_messageIds.insert(msg.messageId);
+
+    return msg;
+}
+
+void ChatWidget::sortHistoryByTimestamp(QList<HistoryMessage>& messages)
+{
+    std::sort(messages.begin(), messages.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
+        const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
+        const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
+        return at < bt;
+    });
+}
+
+QList<ChatWidgetMessage> ChatWidget::convertHistoryBatch(const QList<HistoryMessage>& sorted, bool dedupe,
+                                                          QHash<QString, ParticipantInfo>* updatedParticipants)
+{
+    QList<ChatWidgetMessage> converted;
+    converted.reserve(sorted.size());
+    for (const HistoryMessage& history : sorted) {
+        if (dedupe && !history.messageId.isEmpty() && m_messageIds.contains(history.messageId))
+            continue;
+        updateParticipantFromHistory(history, updatedParticipants);
+        converted.append(convertHistoryMessage(history));
+    }
+    return converted;
+}
+
+void ChatWidget::applyUpdatedParticipants(const QHash<QString, ParticipantInfo>& updatedParticipants)
+{
+    if (updatedParticipants.isEmpty())
+        return;
+    for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
+        const ParticipantInfo& info = it.value();
+        const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
+        if (auto* dataModel = model())
+            dataModel->updateParticipantInfo(it.key(), finalName, info.avatarPath);
+    }
+    if (m_viewWidget)
+        m_viewWidget->refreshLayout();
+}
+
 void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool resetParticipants)
 {
     ParticipantInfo currentInfo;
@@ -410,68 +498,9 @@ void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool 
     }
 
     QList<HistoryMessage> sorted = messages;
-    std::sort(sorted.begin(), sorted.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
-        const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
-        const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
-        return at < bt;
-    });
+    sortHistoryByTimestamp(sorted);
 
-    QList<ChatWidgetMessage> converted;
-    converted.reserve(sorted.size());
-    for (const HistoryMessage& history : sorted) {
-        if (!history.messageId.isEmpty() && m_messageIds.contains(history.messageId)) {
-            continue;
-        }
-
-        ChatWidgetMessage msg;
-        msg.messageId = history.messageId;
-        msg.content = history.content;
-        msg.timestamp = history.timestamp;
-        msg.messageType = history.messageType;
-        msg.status = history.status;
-        msg.imagePath = history.imagePath;
-        msg.filePath = history.filePath;
-        msg.fileName = history.fileName;
-        msg.fileSize = history.fileSize;
-        msg.replyToMessageId = history.replyToMessageId;
-        msg.replySender = history.replySender;
-        msg.replyPreview = history.replyPreview;
-        msg.isForwarded = history.isForwarded;
-        msg.forwardedFrom = history.forwardedFrom;
-        msg.reactions = history.reactions;
-        msg.mentions = history.mentions;
-
-        if (history.senderId.trimmed().isEmpty()) {
-            msg.senderId = QString();
-            msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
-            msg.avatarPath = history.avatarPath;
-            msg.isMine = history.isMine;
-        } else {
-            ParticipantInfo info = m_participants.value(history.senderId);
-            info.id = history.senderId;
-            if (!history.displayName.isEmpty()) {
-                info.displayName = history.displayName;
-            }
-            if (!history.avatarPath.isEmpty()) {
-                info.avatarPath = history.avatarPath;
-            }
-            m_participants.insert(history.senderId, info);
-
-            msg.senderId = history.senderId;
-            msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
-            msg.avatarPath = info.avatarPath;
-            msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
-            if (m_currentUserId.isEmpty()) {
-                msg.isMine = history.isMine;
-            }
-        }
-
-        if (!msg.messageId.isEmpty()) {
-            m_messageIds.insert(msg.messageId);
-        }
-        converted.append(msg);
-    }
-
+    const QList<ChatWidgetMessage> converted = convertHistoryBatch(sorted, true);
     if (m_viewWidget) {
         m_viewWidget->setMessages(converted);
     }
@@ -479,194 +508,46 @@ void ChatWidget::setHistoryMessages(const QList<HistoryMessage>& messages, bool 
 
 void ChatWidget::appendHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe)
 {
-    if (messages.isEmpty()) {
+    if (messages.isEmpty())
         return;
-    }
+
     QList<HistoryMessage> sorted = messages;
     if (sortAndDedupe) {
-        std::sort(sorted.begin(), sorted.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
-            const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
-            const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
-            return at < bt;
-        });
+        sortHistoryByTimestamp(sorted);
     }
-    QList<ChatWidgetMessage> converted;
-    converted.reserve(sorted.size());
+
     QHash<QString, ParticipantInfo> updatedParticipants;
-    for (const HistoryMessage& history : sorted) {
-        if (sortAndDedupe && !history.messageId.isEmpty() && m_messageIds.contains(history.messageId)) {
-            continue;
-        }
+    const QList<ChatWidgetMessage> converted = convertHistoryBatch(sorted, sortAndDedupe, &updatedParticipants);
 
-        ChatWidgetMessage msg;
-        msg.messageId = history.messageId;
-        msg.content = history.content;
-        msg.timestamp = history.timestamp;
-        msg.messageType = history.messageType;
-        msg.status = history.status;
-        msg.imagePath = history.imagePath;
-        msg.filePath = history.filePath;
-        msg.fileName = history.fileName;
-        msg.fileSize = history.fileSize;
-        msg.replyToMessageId = history.replyToMessageId;
-        msg.replySender = history.replySender;
-        msg.replyPreview = history.replyPreview;
-        msg.isForwarded = history.isForwarded;
-        msg.forwardedFrom = history.forwardedFrom;
-        msg.reactions = history.reactions;
-        msg.mentions = history.mentions;
-
-        if (history.senderId.trimmed().isEmpty()) {
-            msg.senderId = QString();
-            msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
-            msg.avatarPath = history.avatarPath;
-            msg.isMine = history.isMine;
-        } else {
-            ParticipantInfo info = m_participants.value(history.senderId);
-            const QString oldName = info.displayName;
-            const QString oldAvatar = info.avatarPath;
-            info.id = history.senderId;
-            if (!history.displayName.isEmpty()) {
-                info.displayName = history.displayName;
-            }
-            if (!history.avatarPath.isEmpty()) {
-                info.avatarPath = history.avatarPath;
-            }
-            m_participants.insert(history.senderId, info);
-            if ((!history.displayName.isEmpty() && oldName != info.displayName) ||
-                (!history.avatarPath.isEmpty() && oldAvatar != info.avatarPath)) {
-                updatedParticipants.insert(history.senderId, info);
-            }
-
-            msg.senderId = history.senderId;
-            msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
-            msg.avatarPath = info.avatarPath;
-            msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
-            if (m_currentUserId.isEmpty()) {
-                msg.isMine = history.isMine;
-            }
-        }
-
-        if (!msg.messageId.isEmpty()) {
-            m_messageIds.insert(msg.messageId);
-        }
-        converted.append(msg);
-    }
-
-    if (m_viewWidget) {
+    if (m_viewWidget)
         m_viewWidget->appendMessages(converted);
-    }
-    if (!updatedParticipants.isEmpty()) {
-        for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
-            const ParticipantInfo& info = it.value();
-            const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
-            if (auto* dataModel = model()) {
-                dataModel->updateParticipantInfo(it.key(), finalName, info.avatarPath);
-            }
-        }
-        if (m_viewWidget) {
-            m_viewWidget->refreshLayout();
-        }
-    }
+
+    applyUpdatedParticipants(updatedParticipants);
 }
 
 void ChatWidget::prependHistoryMessages(const QList<HistoryMessage>& messages, bool sortAndDedupe)
 {
-    if (messages.isEmpty()) {
+    if (messages.isEmpty())
         return;
-    }
+
     QList<HistoryMessage> sorted = messages;
     if (sortAndDedupe) {
-        std::sort(sorted.begin(), sorted.end(), [](const HistoryMessage& a, const HistoryMessage& b) {
-            const qint64 at = a.timestamp.isValid() ? a.timestamp.toMSecsSinceEpoch() : 0;
-            const qint64 bt = b.timestamp.isValid() ? b.timestamp.toMSecsSinceEpoch() : 0;
-            return at < bt;
-        });
+        sortHistoryByTimestamp(sorted);
     }
-    QList<ChatWidgetMessage> converted;
-    converted.reserve(sorted.size());
+
     QHash<QString, ParticipantInfo> updatedParticipants;
-    for (const HistoryMessage& history : sorted) {
-        if (sortAndDedupe && !history.messageId.isEmpty() && m_messageIds.contains(history.messageId)) {
-            continue;
-        }
+    const QList<ChatWidgetMessage> converted = convertHistoryBatch(sorted, sortAndDedupe, &updatedParticipants);
 
-        ChatWidgetMessage msg;
-        msg.messageId = history.messageId;
-        msg.content = history.content;
-        msg.timestamp = history.timestamp;
-        msg.messageType = history.messageType;
-        msg.status = history.status;
-        msg.imagePath = history.imagePath;
-        msg.filePath = history.filePath;
-        msg.fileName = history.fileName;
-        msg.fileSize = history.fileSize;
-        msg.replyToMessageId = history.replyToMessageId;
-        msg.replySender = history.replySender;
-        msg.replyPreview = history.replyPreview;
-        msg.isForwarded = history.isForwarded;
-        msg.forwardedFrom = history.forwardedFrom;
-        msg.reactions = history.reactions;
-        msg.mentions = history.mentions;
-
-        if (history.senderId.trimmed().isEmpty()) {
-            msg.senderId = QString();
-            msg.sender = history.displayName.isEmpty() ? QStringLiteral("User") : history.displayName;
-            msg.avatarPath = history.avatarPath;
-            msg.isMine = history.isMine;
-        } else {
-            ParticipantInfo info = m_participants.value(history.senderId);
-            const QString oldName = info.displayName;
-            const QString oldAvatar = info.avatarPath;
-            info.id = history.senderId;
-            if (!history.displayName.isEmpty()) {
-                info.displayName = history.displayName;
-            }
-            if (!history.avatarPath.isEmpty()) {
-                info.avatarPath = history.avatarPath;
-            }
-            m_participants.insert(history.senderId, info);
-            if ((!history.displayName.isEmpty() && oldName != info.displayName) ||
-                (!history.avatarPath.isEmpty() && oldAvatar != info.avatarPath)) {
-                updatedParticipants.insert(history.senderId, info);
-            }
-
-            msg.senderId = history.senderId;
-            msg.sender = info.displayName.isEmpty() ? history.senderId : info.displayName;
-            msg.avatarPath = info.avatarPath;
-            msg.isMine = !m_currentUserId.isEmpty() && history.senderId == m_currentUserId;
-            if (m_currentUserId.isEmpty()) {
-                msg.isMine = history.isMine;
-            }
-        }
-
-        if (!msg.messageId.isEmpty()) {
-            m_messageIds.insert(msg.messageId);
-        }
-        converted.append(msg);
-    }
-
-    if (m_viewWidget) {
+    if (m_viewWidget)
         m_viewWidget->prependMessages(converted);
-    }
-    if (!updatedParticipants.isEmpty()) {
-        for (auto it = updatedParticipants.constBegin(); it != updatedParticipants.constEnd(); ++it) {
-            const ParticipantInfo& info = it.value();
-            const QString finalName = info.displayName.isEmpty() ? it.key() : info.displayName;
-            if (auto* dataModel = model()) {
-                dataModel->updateParticipantInfo(it.key(), finalName, info.avatarPath);
-            }
-        }
-        if (m_viewWidget) {
-            m_viewWidget->refreshLayout();
-        }
-    }
+
+    applyUpdatedParticipants(updatedParticipants);
 }
 
 void ChatWidget::onStreamingTimeout()
 {
     if (m_streamingIndex < m_streamingContent.length()) {
-        int chunk = qMin(3, (int)m_streamingContent.length() - m_streamingIndex);
+        int chunk = qMin(3, static_cast<int>(m_streamingContent.length()) - m_streamingIndex);
         streamOutput(m_streamingContent.mid(m_streamingIndex, chunk));
         m_streamingIndex += chunk;
     } else {

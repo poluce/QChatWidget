@@ -176,7 +176,7 @@ QWidget* ProfileWidget::createBottomBar()
 
     m_msgButton = new QPushButton();
     m_msgButton->setText(QStringLiteral(" 发消息"));
-    m_msgButton->setIcon(this->style()->standardIcon(QStyle::SP_DialogApplyButton));
+    m_msgButton->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
     m_msgButton->setCursor(Qt::PointingHandCursor);
     m_msgButton->setObjectName("MsgButton");
     m_msgButton->setFixedHeight(kBottomButtonHeight);
@@ -207,9 +207,8 @@ void ProfileWidget::clearDetails()
 
     QLayoutItem* item;
     while ((item = m_detailListLayout->takeAt(0)) != nullptr) {
-        if (QWidget* widget = item->widget()) {
+        if (QWidget* widget = item->widget())
             widget->deleteLater();
-        }
         delete item;
     }
 }
@@ -244,9 +243,8 @@ QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& 
         contentLbl->setMaximumHeight(maxHeight);
         contentLbl->setToolTip(content);
     }
-    if (!isEditable) {
+    if (!isEditable)
         contentLbl->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    }
     contentLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     layout->addWidget(titleLbl);
@@ -299,9 +297,8 @@ void ProfileWidget::resizeEvent(QResizeEvent* event)
 
 void ProfileWidget::updateHeaderLabels()
 {
-    if (!m_nameLabel || !m_idLabel) {
+    if (!m_nameLabel || !m_idLabel)
         return;
-    }
 
     const QString userName = m_userNameRaw.trimmed().isEmpty() ? m_defaultUserName : m_userNameRaw;
     const QString tmId = m_tmIdRaw.trimmed().isEmpty() ? m_defaultTmId : m_tmIdRaw;
@@ -310,12 +307,10 @@ void ProfileWidget::updateHeaderLabels()
 
     const int nameWidth = m_nameLabel->width();
     const int idWidth = m_idLabel->width();
-    if (nameWidth > 0) {
+    if (nameWidth > 0)
         nameText = m_nameLabel->fontMetrics().elidedText(nameText, Qt::ElideRight, nameWidth);
-    }
-    if (idWidth > 0) {
+    if (idWidth > 0)
         idText = m_idLabel->fontMetrics().elidedText(idText, Qt::ElideRight, idWidth);
-    }
 
     m_nameLabel->setText(nameText);
     m_idLabel->setText(idText);
@@ -328,8 +323,7 @@ void ProfileWidget::applyDefaultStyle()
 
 bool ProfileWidget::applyStyleSheetFile(const QString& fileNameOrPath)
 {
-    if (fileNameOrPath.trimmed().isEmpty()) {
+    if (fileNameOrPath.trimmed().isEmpty())
         return false;
-    }
     return QssUtils::applyStyleSheetFromFile(this, fileNameOrPath);
 }

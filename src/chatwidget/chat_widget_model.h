@@ -132,6 +132,8 @@ public:
     int messageCount() const;
 
 private:
+    QList<ChatWidgetMessage> filterNewMessages(const QList<ChatWidgetMessage>& messages);
+
     QList<ChatWidgetMessage> m_messages;
     QString m_searchKeyword;
     QSet<QString> m_messageIds;

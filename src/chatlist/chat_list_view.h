@@ -22,6 +22,9 @@ public:
     void setChatDelegate(ChatListDelegate* delegate);
     QStandardItemModel* standardModel();
 
+    ChatListDelegate::Style currentStyle() const;
+    void setStyle(const ChatListDelegate::Style& style);
+
     void setItemHeight(int height);
     void setAvatarSize(int size);
     void setAvatarShape(ChatListDelegate::AvatarShape shape);
@@ -69,10 +72,12 @@ private slots:
     void onItemClicked(const QModelIndex& index);
 
 private:
-    ChatListDelegate::Style currentStyle() const;
-    void setStyle(const ChatListDelegate::Style& style);
     QStandardItemModel* ensureStandardModel();
+    const QStandardItemModel* resolveSourceModel() const;
     void updateViewStyleSheet();
+
+    template<typename T>
+    void updateStyleField(T ChatListDelegate::Style::*field, const T& value);
 
     ChatListDelegate* m_delegate = nullptr;
     QStandardItemModel* m_standardModel = nullptr;

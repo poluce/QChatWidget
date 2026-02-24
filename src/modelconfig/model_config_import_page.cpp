@@ -25,7 +25,7 @@ void ModelConfigImportPage::applyStyleSheet(const QString& styleSheet)
     const QString combinedStyle = QssUtils::buildCombinedStyleSheet(
         "model_config_import_page.qss",
         styleSheet);
-    this->setStyleSheet(combinedStyle);
+    setStyleSheet(combinedStyle);
 }
 
 void ModelConfigImportPage::addProvider(const ModelConfigProvider& provider)
@@ -386,13 +386,11 @@ QVariantMap ModelConfigImportPage::collectCurrentConfig() const
     for (const auto& field : provider.fields) {
         if (widgets.inputs.contains(field.key)) {
             config[field.key] = widgets.inputs.value(field.key)->text();
-            continue;
-        }
-        if (widgets.combos.contains(field.key)) {
+        } else if (widgets.combos.contains(field.key)) {
             config[field.key] = widgets.combos.value(field.key)->currentText();
-            continue;
+        } else {
+            config[field.key] = QString();
         }
-        config[field.key] = QString();
     }
 
     return config;
@@ -443,9 +441,8 @@ void ModelConfigImportPage::setTestStatus(TestStatus status, const QString& mess
         statusKey = "failed";
         break;
     }
-    if (!message.trimmed().isEmpty()) {
+    if (!message.trimmed().isEmpty())
         text += tr("：") + message;
-    }
     m_testStatusLabel->setText(text);
     m_testStatusLabel->setProperty("status", statusKey);
     m_testStatusLabel->style()->unpolish(m_testStatusLabel);
@@ -497,9 +494,7 @@ void ModelConfigImportPage::setFieldOptions(const QString& providerId, const QSt
     normalized.reserve(options.size());
     for (const QString& item : options) {
         const QString trimmed = item.trimmed();
-        if (trimmed.isEmpty())
-            continue;
-        if (!normalized.contains(trimmed))
+        if (!trimmed.isEmpty() && !normalized.contains(trimmed))
             normalized.append(trimmed);
     }
 
@@ -514,10 +509,9 @@ void ModelConfigImportPage::setFieldOptions(const QString& providerId, const QSt
         int currentIndex = combo->findText(current);
         if (currentIndex < 0) {
             combo->addItem(current);
-            currentIndex = combo->findText(current);
+            currentIndex = combo->count() - 1;
         }
         combo->setCurrentIndex(currentIndex);
-        combo->setCurrentText(current);
     } else if (combo->count() > 0) {
         combo->setCurrentIndex(0);
     }
@@ -536,9 +530,8 @@ int ModelConfigImportPage::providerIndexForId(const QString& providerId) const
     if (providerId.isEmpty())
         return -1;
     for (int i = 0; i < m_providers.size(); ++i) {
-        if (m_providers[i].id == providerId) {
+        if (m_providers[i].id == providerId)
             return i;
-        }
     }
     return -1;
 }
@@ -571,7 +564,7 @@ void ModelConfigImportPage::autoGenerateConfigId()
         modelId = widgets.inputs.value(QStringLiteral("modelId"))->text().trimmed();
 
     if (modelId.isEmpty()) {
-        m_configIdEdit->setText(QString());
+        m_configIdEdit->clear();
         return;
     }
 

@@ -3,7 +3,6 @@
 #include <QDebug>
 #include <QPainter>
 #include <QPixmap>
-#include <QTimer>
 #include "profile/profile_widget.h"
 
 static QPixmap buildAvatarPixmap(int size, const QString &text, const QColor &color) {
@@ -58,10 +57,6 @@ int main(int argc, char *argv[]) {
     QObject::connect(&profile, &ProfileWidget::detailItemClicked,
                      [](const QString &title) {
         qDebug() << "Detail item clicked:" << title;
-    });
-
-    QTimer::singleShot(1200, [&profile]() {
-        profile.setUserName(QStringLiteral("王小明"));
     });
 
     profile.show();
