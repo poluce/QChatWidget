@@ -15,6 +15,11 @@ const int kReactionPaddingH = 8;
 const int kReactionPaddingV = 2;
 const int kAttachmentWidth = 180;
 const int kAttachmentHeight = 120;
+const int kImageMaxWidth = 240;
+const int kImageMaxHeight = 240;
+const int kImageMinSize = 60;
+const int kVoiceBarWidth = 160;
+const int kVoiceBarHeight = 36;
 const int kFileCardHeight = 56;
 const int kSystemPaddingH = 16;
 const int kSystemPaddingV = 6;
@@ -131,12 +136,43 @@ int calcReactionHeight(const QFont& reactionFont, const QList<ChatWidgetReaction
     return metrics.height() + kReactionPaddingV * 2;
 }
 
-int calcAttachmentHeight(bool hasImage, bool hasFile)
+int calcAttachmentHeight(bool hasImage, bool hasFile, bool hasVoice,
+                         int imageWidth = 0, int imageHeight = 0)
 {
-    if (hasImage)
+    if (hasImage) {
+        if (imageWidth > 0 && imageHeight > 0) {
+            double scale = qMin(static_cast<double>(kImageMaxWidth) / imageWidth,
+                                static_cast<double>(kImageMaxHeight) / imageHeight);
+            if (scale > 1.0) scale = 1.0;
+            int h = qRound(imageHeight * scale);
+            return qMax(kImageMinSize, h);
+        }
         return kAttachmentHeight;
+    }
+    if (hasVoice)
+        return kVoiceBarHeight;
     if (hasFile)
         return kFileCardHeight;
+    return 0;
+}
+
+int calcAttachmentWidth(bool hasImage, bool hasFile, bool hasVoice,
+                        int imageWidth = 0, int imageHeight = 0)
+{
+    if (hasImage) {
+        if (imageWidth > 0 && imageHeight > 0) {
+            double scale = qMin(static_cast<double>(kImageMaxWidth) / imageWidth,
+                                static_cast<double>(kImageMaxHeight) / imageHeight);
+            if (scale > 1.0) scale = 1.0;
+            int w = qRound(imageWidth * scale);
+            return qMax(kImageMinSize, w);
+        }
+        return kAttachmentWidth;
+    }
+    if (hasVoice)
+        return kVoiceBarWidth;
+    if (hasFile)
+        return 0; // determined by doc width
     return 0;
 }
 
@@ -155,8 +191,16 @@ struct IndexData {
     QString senderId;
     QString avatarPath;
     QString imagePath;
+    QString imageThumbnailPath;
+    int imageWidth;
+    int imageHeight;
+    ChatWidgetMessage::ImageLoadState imageLoadState;
     QString fileName;
     qint64 fileSize;
+    QString voicePath;
+    int voiceDuration;
+    ChatWidgetMessage::VoicePlayState voicePlayState;
+    int voiceProgress;
     QString replySender;
     QString replyPreview;
     QString replyId;
@@ -168,6 +212,7 @@ struct IndexData {
 
     bool hasImage;
     bool hasFile;
+    bool hasVoice;
     bool hasReply;
     bool hasForward;
 
@@ -183,8 +228,18 @@ struct IndexData {
         d.senderId = index.data(ChatWidgetModel::ChatWidgetSenderIdRole).toString();
         d.avatarPath = index.data(ChatWidgetModel::ChatWidgetAvatarRole).toString();
         d.imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
+        d.imageThumbnailPath = index.data(ChatWidgetModel::ChatWidgetImageThumbnailRole).toString();
+        d.imageWidth = index.data(ChatWidgetModel::ChatWidgetImageWidthRole).toInt();
+        d.imageHeight = index.data(ChatWidgetModel::ChatWidgetImageHeightRole).toInt();
+        d.imageLoadState = static_cast<ChatWidgetMessage::ImageLoadState>(
+            index.data(ChatWidgetModel::ChatWidgetImageLoadStateRole).toInt());
         d.fileName = index.data(ChatWidgetModel::ChatWidgetFileNameRole).toString();
         d.fileSize = index.data(ChatWidgetModel::ChatWidgetFileSizeRole).toLongLong();
+        d.voicePath = index.data(ChatWidgetModel::ChatWidgetVoicePathRole).toString();
+        d.voiceDuration = index.data(ChatWidgetModel::ChatWidgetVoiceDurationRole).toInt();
+        d.voicePlayState = static_cast<ChatWidgetMessage::VoicePlayState>(
+            index.data(ChatWidgetModel::ChatWidgetVoicePlayStateRole).toInt());
+        d.voiceProgress = index.data(ChatWidgetModel::ChatWidgetVoicePlayProgressRole).toInt();
         d.replySender = index.data(ChatWidgetModel::ChatWidgetReplySenderRole).toString();
         d.replyPreview = index.data(ChatWidgetModel::ChatWidgetReplyPreviewRole).toString();
         d.replyId = index.data(ChatWidgetModel::ChatWidgetReplyToMessageIdRole).toString();
@@ -196,6 +251,7 @@ struct IndexData {
 
         d.hasImage = !d.imagePath.isEmpty() || d.type == ChatWidgetMessage::MessageType::Image;
         d.hasFile = !d.fileName.isEmpty() || d.type == ChatWidgetMessage::MessageType::File;
+        d.hasVoice = !d.voicePath.isEmpty() || d.type == ChatWidgetMessage::MessageType::Voice;
         d.hasReply = !d.replySender.isEmpty() || !d.replyPreview.isEmpty() || !d.replyId.isEmpty();
         d.hasForward = d.isForwarded || !d.forwardedFrom.isEmpty();
         return d;
@@ -242,7 +298,8 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
 
     const int docHeight = qCeil(doc.size().height());
     const int replyHeight = calcReplyHeight(m_style.replyFont, d.hasReply, d.hasForward);
-    const int attachmentHeight = calcAttachmentHeight(d.hasImage, d.hasFile);
+    const int attachmentHeight = calcAttachmentHeight(d.hasImage, d.hasFile, d.hasVoice,
+                                                       d.imageWidth, d.imageHeight);
     const int reactionHeight = calcReactionHeight(m_style.reactionFont, d.reactions);
 
     int contentHeight = docHeight;
@@ -318,8 +375,11 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     int attachmentWidth = 0;
     int attachmentHeight = 0;
     if (d.hasImage) {
-        attachmentWidth = kAttachmentWidth;
-        attachmentHeight = kAttachmentHeight;
+        attachmentWidth = calcAttachmentWidth(true, false, false, d.imageWidth, d.imageHeight);
+        attachmentHeight = calcAttachmentHeight(true, false, false, d.imageWidth, d.imageHeight);
+    } else if (d.hasVoice) {
+        attachmentWidth = kVoiceBarWidth;
+        attachmentHeight = kVoiceBarHeight;
     } else if (d.hasFile) {
         attachmentWidth = qMax(160, docWidth);
         attachmentHeight = kFileCardHeight;
@@ -433,25 +493,99 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
 
     if (attachmentHeight > 0) {
         QRect attachRect(innerRect.left(), cursorY, qMin(innerRect.width(), attachmentWidth), attachmentHeight);
-        painter->setPen(QPen(m_style.fileBorderColor));
-        painter->setBrush(m_style.fileCardColor);
-        painter->drawRoundedRect(attachRect, 6, 6);
 
         if (d.hasImage) {
-            QPixmap image(d.imagePath);
-            if (!image.isNull()) {
-                QPainterPath clipPath;
-                clipPath.addRoundedRect(attachRect, 6, 6);
-                painter->save();
-                painter->setClipPath(clipPath);
-                painter->drawPixmap(attachRect, image);
-                painter->restore();
-            } else {
+            // 加载状态判断
+            if (d.imageLoadState == ChatWidgetMessage::ImageLoadState::Loading) {
+                painter->setPen(QPen(m_style.fileBorderColor));
+                painter->setBrush(m_style.fileCardColor);
+                painter->drawRoundedRect(attachRect, 6, 6);
                 painter->setPen(m_style.replyTextColor);
                 painter->setFont(m_style.replyFont);
-                painter->drawText(attachRect, Qt::AlignCenter, "Image");
+                painter->drawText(attachRect, Qt::AlignCenter, QStringLiteral("加载中..."));
+            } else if (d.imageLoadState == ChatWidgetMessage::ImageLoadState::Failed) {
+                painter->setPen(QPen(m_style.fileBorderColor));
+                painter->setBrush(m_style.fileCardColor);
+                painter->drawRoundedRect(attachRect, 6, 6);
+                painter->setPen(m_style.statusColor);
+                painter->setFont(m_style.replyFont);
+                painter->drawText(attachRect, Qt::AlignCenter, QStringLiteral("加载失败"));
+            } else {
+                // 优先使用缩略图
+                const QString& imgSrc = d.imageThumbnailPath.isEmpty() ? d.imagePath : d.imageThumbnailPath;
+                QPixmap image(imgSrc);
+                if (!image.isNull()) {
+                    QPainterPath clipPath;
+                    clipPath.addRoundedRect(attachRect, 6, 6);
+                    painter->save();
+                    painter->setClipPath(clipPath);
+                    painter->drawPixmap(attachRect, image.scaled(attachRect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    painter->restore();
+                } else {
+                    painter->setPen(QPen(m_style.fileBorderColor));
+                    painter->setBrush(m_style.fileCardColor);
+                    painter->drawRoundedRect(attachRect, 6, 6);
+                    painter->setPen(m_style.replyTextColor);
+                    painter->setFont(m_style.replyFont);
+                    painter->drawText(attachRect, Qt::AlignCenter, QStringLiteral("Image"));
+                }
             }
+        } else if (d.hasVoice) {
+            // 语音消息绘制：圆角背景 + 波形条 + 时长
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(d.isMine ? m_style.myBubbleColor.darker(108) : m_style.otherBubbleColor.darker(108));
+            painter->drawRoundedRect(attachRect, attachRect.height() / 2, attachRect.height() / 2);
+
+            // 播放/暂停图标区域
+            const int iconSize = 20;
+            const int iconX = attachRect.left() + 8;
+            const int iconY = attachRect.center().y() - iconSize / 2;
+            painter->setPen(d.isMine ? m_style.myTextColor : m_style.otherTextColor);
+            painter->setFont(m_style.replyFont);
+            const bool isPlaying = (d.voicePlayState == ChatWidgetMessage::VoicePlayState::Playing);
+            painter->drawText(QRect(iconX, iconY, iconSize, iconSize), Qt::AlignCenter,
+                              isPlaying ? QStringLiteral("||") : QStringLiteral("▶"));
+
+            // 波形条（简化为若干竖线）
+            const int barStartX = iconX + iconSize + 6;
+            const int barEndX = attachRect.right() - 40;
+            const int barCount = qMin(20, (barEndX - barStartX) / 4);
+            const int barCenterY = attachRect.center().y();
+            QPen barPen(d.isMine ? m_style.myTextColor : m_style.otherTextColor);
+            barPen.setWidth(2);
+            barPen.setCapStyle(Qt::RoundCap);
+            painter->setPen(barPen);
+            for (int i = 0; i < barCount; ++i) {
+                const int x = barStartX + i * 4;
+                // 伪波形高度
+                const int h = 4 + (i % 3 == 0 ? 8 : (i % 2 == 0 ? 5 : 3));
+                // 已播放部分用深色，未播放用浅色
+                const int progressBars = (d.voiceProgress > 0 && d.voiceDuration > 0)
+                    ? (barCount * d.voiceProgress / d.voiceDuration) : 0;
+                if (i >= progressBars) {
+                    QPen lightPen(barPen);
+                    lightPen.setColor(barPen.color().lighter(160));
+                    painter->setPen(lightPen);
+                }
+                painter->drawLine(x, barCenterY - h / 2, x, barCenterY + h / 2);
+                painter->setPen(barPen);
+            }
+
+            // 时长文字
+            const int durSec = d.voiceDuration > 0 ? d.voiceDuration : 0;
+            const QString durText = QStringLiteral("%1:%2")
+                .arg(durSec / 60, 1, 10, QChar('0'))
+                .arg(durSec % 60, 2, 10, QChar('0'));
+            painter->setPen(d.isMine ? m_style.myTextColor : m_style.otherTextColor);
+            painter->setFont(m_style.timestampFont);
+            QFontMetrics durMetrics(m_style.timestampFont);
+            painter->drawText(QRect(attachRect.right() - 36, attachRect.top(),
+                                    34, attachRect.height()),
+                              Qt::AlignCenter, durText);
         } else if (d.hasFile) {
+            painter->setPen(QPen(m_style.fileBorderColor));
+            painter->setBrush(m_style.fileCardColor);
+            painter->drawRoundedRect(attachRect, 6, 6);
             painter->setPen(m_style.replyTextColor);
             painter->setFont(m_style.replyFont);
             QFontMetrics fileMetrics(m_style.replyFont);
@@ -562,7 +696,7 @@ QRect ChatWidgetDelegate::fileCardRect(const QStyleOptionViewItem& option, const
     const IndexData d = IndexData::fromIndex(index);
     if (isSystemType(d.type))
         return QRect();
-    if (!d.hasImage && !d.hasFile)
+    if (!d.hasImage && !d.hasFile && !d.hasVoice)
         return QRect();
 
     QString html = ChatWidgetMarkdownUtils::renderMarkdown(d.content);
@@ -574,8 +708,10 @@ QRect ChatWidgetDelegate::fileCardRect(const QStyleOptionViewItem& option, const
     doc.setTextWidth(maxWidth);
     const int docWidth = qMin(maxWidth, qCeil(doc.idealWidth()));
 
-    const int attachmentWidth = d.hasImage ? kAttachmentWidth : qMax(160, docWidth);
-    const int attachmentHeight = d.hasImage ? kAttachmentHeight : kFileCardHeight;
+    const int attW = calcAttachmentWidth(d.hasImage, d.hasFile, d.hasVoice, d.imageWidth, d.imageHeight);
+    const int attachmentWidth = (attW > 0) ? attW : qMax(160, docWidth);
+    const int attachmentHeight = calcAttachmentHeight(d.hasImage, d.hasFile, d.hasVoice,
+                                                       d.imageWidth, d.imageHeight);
 
     const int contentWidth = qMax(docWidth, attachmentWidth);
     const int bubbleWidth = contentWidth + m_style.bubblePadding * 2;

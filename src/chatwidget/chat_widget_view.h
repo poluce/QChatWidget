@@ -36,6 +36,8 @@ signals:
     void messageSelected(const QString& messageId);
     void messageContextMenuRequested(const QString& messageId, const QPoint& globalPos);
     void messageActionRequested(const QString& action, const QString& messageId, const QString& content);
+    void imageClicked(const QString& messageId, const QString& imagePath);
+    void voicePlayToggled(const QString& messageId, const QString& voicePath, bool play);
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;

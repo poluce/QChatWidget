@@ -3,6 +3,7 @@
 
 #include "chat_widget_delegate.h"
 #include "chat_widget_model.h"
+#include "chat_widget_command.h"
 #include <QDateTime>
 #include <QHash>
 #include <QList>
@@ -46,9 +47,16 @@ public:
         ChatWidgetMessage::MessageStatus status = ChatWidgetMessage::MessageStatus::Sent;
 
         QString imagePath;
+        QString imageThumbnailPath;
+        int imageWidth = 0;
+        int imageHeight = 0;
+
         QString filePath;
         QString fileName;
         qint64 fileSize = 0;
+
+        QString voicePath;
+        int voiceDuration = 0;
 
         QString replyToMessageId;
         QString replySender;
@@ -107,6 +115,23 @@ public:
                             const QString& replyPreview, bool isForwarded, const QString& forwardedFrom);
     void setSearchKeyword(const QString& keyword);
 
+    // API: 命令系统
+    ChatWidgetCommandRegistry* commandRegistry() const;
+    void registerCommand(const ChatWidgetCommand& command);
+    void unregisterCommand(const QString& name);
+
+    // API: 图片消息
+    void addImageMessage(const MessageParams& params, const QString& imagePath,
+                         int imageWidth = 0, int imageHeight = 0);
+    void updateImageState(const QString& messageId, const QString& imagePath,
+                          const QString& thumbnailPath, int width, int height,
+                          ChatWidgetMessage::ImageLoadState state);
+
+    // API: 语音消息
+    void addVoiceMessage(const MessageParams& params, const QString& voicePath, int durationSeconds);
+    void updateVoicePlayState(const QString& messageId,
+                              ChatWidgetMessage::VoicePlayState state, int progress);
+
     // API: 模拟 AI 自动流式回复（组件内部管理定时器）
     void startSimulatedStreaming(const QString& content, int interval = 30);
 
@@ -120,6 +145,10 @@ signals:
     void messageSelected(const QString& messageId);
     void messageContextMenuRequested(const QString& messageId, const QPoint& globalPos);
     void messageActionRequested(const QString& action, const QString& messageId, const QString& content);
+    void commandExecuted(const QString& command, const QStringList& arguments, const QString& rawText);
+    void imageSelected(const QStringList& paths);
+    void imageClicked(const QString& messageId, const QString& imagePath);
+    void voicePlayToggled(const QString& messageId, const QString& voicePath, bool play);
 
 private slots:
     void onInputMessageSent(const QString& content);

@@ -1,4 +1,5 @@
 #include "chat_widget_input.h"
+#include "chat_widget_command.h"
 #include <QFileDialog>
 #include <QEvent>
 #include <QFrame>
@@ -40,8 +41,20 @@ void refreshWidgetStyle(QWidget* widget)
 
 ChatWidgetInput::ChatWidgetInput(QWidget* parent)
     : ChatWidgetInputBase(parent)
+    , m_commandRegistry(new ChatWidgetCommandRegistry())
 {
+    m_commandRegistry->registerDefaults();
     setupUi();
+}
+
+ChatWidgetCommandRegistry* ChatWidgetInput::commandRegistry() const
+{
+    return m_commandRegistry;
+}
+
+ChatWidgetInput::~ChatWidgetInput()
+{
+    delete m_commandRegistry;
 }
 
 void ChatWidgetInput::resizeEvent(QResizeEvent* event)
@@ -254,25 +267,25 @@ void ChatWidgetInput::updateCommandMenu(const QString& text)
         return;
     }
 
-    const QString keyword = text.mid(1).trimmed();
-    struct CommandItem {
-        const char* cmd;
-        const char* label;
-    };
-
-    const CommandItem commands[] = {
-        { "/trans", "/trans  翻译模式" },
-        { "/normal", "/normal 普通模式" }
-    };
+    const QString prefix = text.mid(1).trimmed();
+    const QList<ChatWidgetCommand> matched = m_commandRegistry->matchCommands(prefix);
 
     m_commandMenu->clear();
-    for (const auto& c : commands) {
-        const QString cmd = QString::fromUtf8(c.cmd);
-        if (keyword.isEmpty() || cmd.mid(1).startsWith(keyword, Qt::CaseInsensitive)) {
-            QListWidgetItem* item = new QListWidgetItem(QString::fromUtf8(c.label));
-            item->setData(Qt::UserRole, cmd);
-            m_commandMenu->addItem(item);
+    QString lastCategory;
+    for (const ChatWidgetCommand& cmd : matched) {
+        if (!cmd.category.isEmpty() && cmd.category != lastCategory) {
+            lastCategory = cmd.category;
+            QListWidgetItem* header = new QListWidgetItem(cmd.category);
+            header->setFlags(Qt::NoItemFlags);
+            QFont headerFont = header->font();
+            headerFont.setBold(true);
+            header->setFont(headerFont);
+            m_commandMenu->addItem(header);
         }
+        const QString label = cmd.name + "  " + cmd.description;
+        QListWidgetItem* item = new QListWidgetItem(label);
+        item->setData(Qt::UserRole, cmd.name);
+        m_commandMenu->addItem(item);
     }
 
     if (m_commandMenu->count() == 0) {
@@ -280,25 +293,38 @@ void ChatWidgetInput::updateCommandMenu(const QString& text)
         return;
     }
 
-    m_commandMenu->setCurrentRow(0);
+    // 选中第一个可选项（跳过分类标题）
+    for (int i = 0; i < m_commandMenu->count(); ++i) {
+        if (m_commandMenu->item(i)->flags() & Qt::ItemIsSelectable) {
+            m_commandMenu->setCurrentRow(i);
+            break;
+        }
+    }
     positionCommandMenu();
     m_commandMenu->show();
 }
 
 bool ChatWidgetInput::tryApplyCommand(const QString& text)
 {
-    const QString trimmed = text.trimmed();
-    const QString command = trimmed.split(' ', Qt::SkipEmptyParts).value(0);
+    ChatWidgetCommandRegistry::ParsedCommand parsed = m_commandRegistry->parse(text);
+    if (!parsed.valid)
+        return false;
 
-    if (command.compare("/trans", Qt::CaseInsensitive) == 0) {
+    // 内置命令本地处理
+    if (parsed.commandName.compare("/trans", Qt::CaseInsensitive) == 0) {
         applyMode(TranslateMode);
         return true;
     }
-    if (command.compare("/normal", Qt::CaseInsensitive) == 0) {
+    if (parsed.commandName.compare("/normal", Qt::CaseInsensitive) == 0) {
         applyMode(NormalMode);
         return true;
     }
-    return false;
+
+    // 外部命令通过信号委托
+    m_inputEdit->clear();
+    m_commandMenu->hide();
+    emit commandExecuted(parsed.commandName, parsed.arguments, parsed.rawText);
+    return true;
 }
 
 void ChatWidgetInput::applyMode(InputMode mode)
@@ -365,10 +391,10 @@ void ChatWidgetInput::onVoiceClicked()
 
 void ChatWidgetInput::onPickImage()
 {
-    const QString path = QFileDialog::getOpenFileName(this, "选择图片", QString(),
-                                                      "Images (*.png *.jpg *.jpeg *.bmp *.gif)");
-    if (!path.isEmpty())
-        emit messageSent("【图片】" + path);
+    const QStringList paths = QFileDialog::getOpenFileNames(this, "选择图片", QString(),
+                                                            "Images (*.png *.jpg *.jpeg *.bmp *.gif)");
+    if (!paths.isEmpty())
+        emit imageSelected(paths);
 }
 
 void ChatWidgetInput::onPickFile()

@@ -45,11 +45,19 @@ void ChatWidget::setupUi()
     connect(m_viewWidget, &ChatWidgetView::messageSelected, this, &ChatWidget::messageSelected);
     connect(m_viewWidget, &ChatWidgetView::messageContextMenuRequested, this, &ChatWidget::messageContextMenuRequested);
     connect(m_viewWidget, &ChatWidgetView::messageActionRequested, this, &ChatWidget::messageActionRequested);
+    connect(m_viewWidget, &ChatWidgetView::imageClicked, this, &ChatWidget::imageClicked);
+    connect(m_viewWidget, &ChatWidgetView::voicePlayToggled, this, &ChatWidget::voicePlayToggled);
     connect(m_inputWidget, &ChatWidgetInputBase::messageSent, this, &ChatWidget::onInputMessageSent);
     connect(m_inputWidget, &ChatWidgetInputBase::stopRequested, this, [this]() {
         setSendingState(false);
         emit stopRequested();
     });
+
+    // 命令和图片信号转发
+    if (auto* input = qobject_cast<ChatWidgetInput*>(m_inputWidget)) {
+        connect(input, &ChatWidgetInput::commandExecuted, this, &ChatWidget::commandExecuted);
+        connect(input, &ChatWidgetInput::imageSelected, this, &ChatWidget::imageSelected);
+    }
 }
 
 void ChatWidget::addMessageToModel(const ChatWidgetMessage& msg)
@@ -414,9 +422,14 @@ ChatWidgetMessage ChatWidget::convertHistoryMessage(const HistoryMessage& histor
     msg.messageType = history.messageType;
     msg.status = history.status;
     msg.imagePath = history.imagePath;
+    msg.imageThumbnailPath = history.imageThumbnailPath;
+    msg.imageWidth = history.imageWidth;
+    msg.imageHeight = history.imageHeight;
     msg.filePath = history.filePath;
     msg.fileName = history.fileName;
     msg.fileSize = history.fileSize;
+    msg.voicePath = history.voicePath;
+    msg.voiceDuration = history.voiceDuration;
     msg.replyToMessageId = history.replyToMessageId;
     msg.replySender = history.replySender;
     msg.replyPreview = history.replyPreview;
@@ -553,4 +566,96 @@ void ChatWidget::onStreamingTimeout()
     } else {
         setSendingState(false);
     }
+}
+
+ChatWidgetCommandRegistry* ChatWidget::commandRegistry() const
+{
+    if (auto* input = qobject_cast<ChatWidgetInput*>(m_inputWidget))
+        return input->commandRegistry();
+    return nullptr;
+}
+
+void ChatWidget::registerCommand(const ChatWidgetCommand& command)
+{
+    if (auto* reg = commandRegistry())
+        reg->registerCommand(command);
+}
+
+void ChatWidget::unregisterCommand(const QString& name)
+{
+    if (auto* reg = commandRegistry())
+        reg->unregisterCommand(name);
+}
+
+void ChatWidget::addImageMessage(const MessageParams& params, const QString& imagePath,
+                                 int imageWidth, int imageHeight)
+{
+    ChatWidgetMessage msg;
+    msg.messageId = params.messageId;
+    msg.content = params.content;
+    msg.timestamp = QDateTime::currentDateTime();
+    msg.messageType = ChatWidgetMessage::Image;
+    msg.imagePath = imagePath;
+    msg.imageWidth = imageWidth;
+    msg.imageHeight = imageHeight;
+
+    if (params.senderId.trimmed().isEmpty()) {
+        msg.sender = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
+        msg.avatarPath = params.avatarPath;
+        msg.isMine = params.isMine;
+    } else {
+        ParticipantInfo info = m_participants.value(params.senderId);
+        info.id = params.senderId;
+        if (!params.displayName.isEmpty()) info.displayName = params.displayName;
+        if (!params.avatarPath.isEmpty()) info.avatarPath = params.avatarPath;
+        m_participants.insert(params.senderId, info);
+        msg.senderId = params.senderId;
+        msg.sender = info.displayName.isEmpty() ? params.senderId : info.displayName;
+        msg.avatarPath = info.avatarPath;
+        msg.isMine = !m_currentUserId.isEmpty() ? (params.senderId == m_currentUserId) : params.isMine;
+    }
+    addMessageToModel(msg);
+}
+
+void ChatWidget::updateImageState(const QString& messageId, const QString& imagePath,
+                                  const QString& thumbnailPath, int width, int height,
+                                  ChatWidgetMessage::ImageLoadState state)
+{
+    if (auto* dataModel = model())
+        dataModel->updateImageState(messageId, imagePath, thumbnailPath, width, height, state);
+}
+
+void ChatWidget::addVoiceMessage(const MessageParams& params, const QString& voicePath, int durationSeconds)
+{
+    ChatWidgetMessage msg;
+    msg.messageId = params.messageId;
+    msg.content = params.content;
+    msg.timestamp = QDateTime::currentDateTime();
+    msg.messageType = ChatWidgetMessage::Voice;
+    msg.voicePath = voicePath;
+    msg.voiceDuration = durationSeconds;
+
+    if (params.senderId.trimmed().isEmpty()) {
+        msg.sender = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
+        msg.avatarPath = params.avatarPath;
+        msg.isMine = params.isMine;
+    } else {
+        ParticipantInfo info = m_participants.value(params.senderId);
+        info.id = params.senderId;
+        if (!params.displayName.isEmpty()) info.displayName = params.displayName;
+        if (!params.avatarPath.isEmpty()) info.avatarPath = params.avatarPath;
+        m_participants.insert(params.senderId, info);
+        msg.senderId = params.senderId;
+        msg.sender = info.displayName.isEmpty() ? params.senderId : info.displayName;
+        msg.avatarPath = info.avatarPath;
+        msg.isMine = !m_currentUserId.isEmpty() ? (params.senderId == m_currentUserId) : params.isMine;
+    }
+    addMessageToModel(msg);
+}
+
+void ChatWidget::updateVoicePlayState(const QString& messageId,
+                                      ChatWidgetMessage::VoicePlayState state, int progress)
+{
+    if (auto* dataModel = model())
+        dataModel->updateVoicePlayState(messageId, state, progress);
 }

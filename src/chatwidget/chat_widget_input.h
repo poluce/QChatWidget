@@ -4,6 +4,8 @@
 #include <QString>
 #include <QWidget>
 
+class ChatWidgetCommandRegistry;
+
 class QTextEdit;
 class QToolButton;
 class QListWidget;
@@ -24,6 +26,7 @@ public:
 signals:
     void messageSent(const QString& content);
     void stopRequested();
+    void commandExecuted(const QString& command, const QStringList& arguments, const QString& rawText);
 };
 
 class ChatWidgetInput : public ChatWidgetInputBase {
@@ -31,7 +34,9 @@ class ChatWidgetInput : public ChatWidgetInputBase {
 
 public:
     explicit ChatWidgetInput(QWidget* parent = nullptr);
-    ~ChatWidgetInput() override = default;
+    ~ChatWidgetInput() override;
+
+    ChatWidgetCommandRegistry* commandRegistry() const;
 
 signals:
     void voiceStartRequested();
@@ -39,6 +44,7 @@ signals:
     void emojiSelected(const QString& emoji);
     void richTextToggled(bool enabled);
     void draftChanged(const QString& text);
+    void imageSelected(const QStringList& paths);
 
 public slots:
     void setSendingState(bool sending);
@@ -88,6 +94,7 @@ private:
     QAction* m_pickImageAction;
     QAction* m_pickFileAction;
     QListWidget* m_commandMenu;
+    ChatWidgetCommandRegistry* m_commandRegistry;
     InputMode m_inputMode = NormalMode;
     bool m_isRecording = false;
     bool m_isSending = false;

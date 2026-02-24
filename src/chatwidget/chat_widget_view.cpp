@@ -140,8 +140,20 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
             // 检测文件卡片点击 → 用系统默认应用打开文件（精确命中卡片区域）
             const QRect fileHitRect = m_delegate->fileCardRect(option, index);
             if (!fileHitRect.isNull() && fileHitRect.contains(mouseEvent->pos())) {
+                const int msgType = index.data(ChatWidgetModel::ChatWidgetMessageTypeRole).toInt();
                 const QString filePath = index.data(ChatWidgetModel::ChatWidgetFilePathRole).toString();
-                if (!filePath.isEmpty()) {
+                const QString imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
+                const QString voicePath = index.data(ChatWidgetModel::ChatWidgetVoicePathRole).toString();
+
+                if (!imagePath.isEmpty() || msgType == static_cast<int>(ChatWidgetMessage::MessageType::Image)) {
+                    // 图片点击
+                    emit imageClicked(messageId, imagePath);
+                } else if (!voicePath.isEmpty() || msgType == static_cast<int>(ChatWidgetMessage::MessageType::Voice)) {
+                    // 语音点击：切换播放状态
+                    const int playState = index.data(ChatWidgetModel::ChatWidgetVoicePlayStateRole).toInt();
+                    const bool isPlaying = (playState == static_cast<int>(ChatWidgetMessage::VoicePlayState::Playing));
+                    emit voicePlayToggled(messageId, voicePath, !isPlaying);
+                } else if (!filePath.isEmpty()) {
                     QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
                 }
             }

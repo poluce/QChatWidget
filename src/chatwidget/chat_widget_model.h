@@ -38,6 +38,7 @@ struct ChatWidgetMessage {
         Text,
         Image,
         File,
+        Voice,
         System,
         DateSeparator
     };
@@ -61,9 +62,21 @@ struct ChatWidgetMessage {
     MessageStatus status = MessageStatus::Sent;
 
     QString imagePath;
+    QString imageThumbnailPath;
+    int imageWidth = 0;
+    int imageHeight = 0;
+    enum class ImageLoadState { None, Loading, Loaded, Failed };
+    ImageLoadState imageLoadState = ImageLoadState::None;
+
     QString filePath;
     QString fileName;
     qint64 fileSize = 0;
+
+    QString voicePath;
+    int voiceDuration = 0;
+    enum class VoicePlayState { Stopped, Playing, Paused };
+    VoicePlayState voicePlayState = VoicePlayState::Stopped;
+    int voicePlayProgress = 0;
 
     QString replyToMessageId;
     QString replySender;
@@ -100,7 +113,15 @@ public:
         ChatWidgetReactionsRole,
         ChatWidgetMentionsRole,
         ChatWidgetIsSystemRole,
-        ChatWidgetSearchKeywordRole
+        ChatWidgetSearchKeywordRole,
+        ChatWidgetImageThumbnailRole,
+        ChatWidgetImageWidthRole,
+        ChatWidgetImageHeightRole,
+        ChatWidgetImageLoadStateRole,
+        ChatWidgetVoicePathRole,
+        ChatWidgetVoiceDurationRole,
+        ChatWidgetVoicePlayStateRole,
+        ChatWidgetVoicePlayProgressRole
     };
 
     explicit ChatWidgetModel(QObject* parent = nullptr);
@@ -126,6 +147,11 @@ public:
     void updateMessageReply(const QString& messageId, const QString& replyToMessageId, const QString& replySender,
                             const QString& replyPreview, bool isForwarded, const QString& forwardedFrom);
     void setSearchKeyword(const QString& keyword);
+    void updateImageState(const QString& messageId, const QString& imagePath,
+                          const QString& thumbnailPath, int width, int height,
+                          ChatWidgetMessage::ImageLoadState state);
+    void updateVoicePlayState(const QString& messageId,
+                              ChatWidgetMessage::VoicePlayState state, int progress);
     void removeMessageAt(int row);
     void removeLastMessage();
     void clearMessages();

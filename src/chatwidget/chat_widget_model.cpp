@@ -87,6 +87,22 @@ QVariant ChatWidgetModel::data(const QModelIndex& index, int role) const
         return isSystemMessage(msg.messageType);
     case ChatWidgetSearchKeywordRole:
         return m_searchKeyword;
+    case ChatWidgetImageThumbnailRole:
+        return msg.imageThumbnailPath;
+    case ChatWidgetImageWidthRole:
+        return msg.imageWidth;
+    case ChatWidgetImageHeightRole:
+        return msg.imageHeight;
+    case ChatWidgetImageLoadStateRole:
+        return static_cast<int>(msg.imageLoadState);
+    case ChatWidgetVoicePathRole:
+        return msg.voicePath;
+    case ChatWidgetVoiceDurationRole:
+        return msg.voiceDuration;
+    case ChatWidgetVoicePlayStateRole:
+        return static_cast<int>(msg.voicePlayState);
+    case ChatWidgetVoicePlayProgressRole:
+        return msg.voicePlayProgress;
     default:
         return QVariant();
     }
@@ -117,6 +133,14 @@ QHash<int, QByteArray> ChatWidgetModel::roleNames() const
     roles[ChatWidgetMentionsRole] = "mentions";
     roles[ChatWidgetIsSystemRole] = "isSystem";
     roles[ChatWidgetSearchKeywordRole] = "searchKeyword";
+    roles[ChatWidgetImageThumbnailRole] = "imageThumbnail";
+    roles[ChatWidgetImageWidthRole] = "imageWidth";
+    roles[ChatWidgetImageHeightRole] = "imageHeight";
+    roles[ChatWidgetImageLoadStateRole] = "imageLoadState";
+    roles[ChatWidgetVoicePathRole] = "voicePath";
+    roles[ChatWidgetVoiceDurationRole] = "voiceDuration";
+    roles[ChatWidgetVoicePlayStateRole] = "voicePlayState";
+    roles[ChatWidgetVoicePlayProgressRole] = "voicePlayProgress";
     return roles;
 }
 
@@ -454,4 +478,69 @@ void ChatWidgetModel::clearMessages()
 int ChatWidgetModel::messageCount() const
 {
     return m_messages.size();
+}
+
+void ChatWidgetModel::updateImageState(const QString& messageId, const QString& imagePath,
+                                       const QString& thumbnailPath, int width, int height,
+                                       ChatWidgetMessage::ImageLoadState state)
+{
+    if (messageId.trimmed().isEmpty())
+        return;
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId)
+            continue;
+        bool changed = false;
+        if (m_messages[i].imagePath != imagePath) {
+            m_messages[i].imagePath = imagePath;
+            changed = true;
+        }
+        if (m_messages[i].imageThumbnailPath != thumbnailPath) {
+            m_messages[i].imageThumbnailPath = thumbnailPath;
+            changed = true;
+        }
+        if (m_messages[i].imageWidth != width) {
+            m_messages[i].imageWidth = width;
+            changed = true;
+        }
+        if (m_messages[i].imageHeight != height) {
+            m_messages[i].imageHeight = height;
+            changed = true;
+        }
+        if (m_messages[i].imageLoadState != state) {
+            m_messages[i].imageLoadState = state;
+            changed = true;
+        }
+        if (!changed)
+            return;
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetImagePathRole, ChatWidgetImageThumbnailRole,
+                                     ChatWidgetImageWidthRole, ChatWidgetImageHeightRole,
+                                     ChatWidgetImageLoadStateRole });
+        return;
+    }
+}
+
+void ChatWidgetModel::updateVoicePlayState(const QString& messageId,
+                                           ChatWidgetMessage::VoicePlayState state, int progress)
+{
+    if (messageId.trimmed().isEmpty())
+        return;
+    for (int i = 0; i < m_messages.size(); ++i) {
+        if (m_messages[i].messageId != messageId)
+            continue;
+        bool changed = false;
+        if (m_messages[i].voicePlayState != state) {
+            m_messages[i].voicePlayState = state;
+            changed = true;
+        }
+        if (m_messages[i].voicePlayProgress != progress) {
+            m_messages[i].voicePlayProgress = progress;
+            changed = true;
+        }
+        if (!changed)
+            return;
+        QModelIndex idx = index(i, 0);
+        emit dataChanged(idx, idx, { ChatWidgetVoicePlayStateRole, ChatWidgetVoicePlayProgressRole });
+        return;
+    }
 }
