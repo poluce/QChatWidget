@@ -121,17 +121,5 @@ ChatWidgetCommandRegistry::ParsedCommand ChatWidgetCommandRegistry::parse(const 
 
 void ChatWidgetCommandRegistry::registerDefaults()
 {
-    ChatWidgetCommand trans;
-    trans.name = "/trans";
-    trans.description = "翻译模式";
-    trans.category = "模式";
-    trans.priority = 10;
-    registerCommand(trans);
-
-    ChatWidgetCommand normal;
-    normal.name = "/normal";
-    normal.description = "普通模式";
-    normal.category = "模式";
-    normal.priority = 10;
-    registerCommand(normal);
+    // 不再注册硬编码命令，由宿主通过 registerCommand() 注入
 }

@@ -1,5 +1,16 @@
 #include "theme_manager.h"
 
+#include <QGuiApplication>
+
+static QFont defaultFont(int pointSize, int weight = -1)
+{
+    QFont f = QGuiApplication::font();
+    f.setPointSize(pointSize);
+    if (weight >= 0)
+        f.setWeight(static_cast<QFont::Weight>(weight));
+    return f;
+}
+
 ThemeManager* ThemeManager::instance()
 {
     static ThemeManager s_instance;
@@ -48,10 +59,10 @@ void ThemeManager::initLightTheme()
     m_lightChatListStyle.separatorColor = QColor(230, 230, 230);
     m_lightChatListStyle.badgeColor = QColor(250, 81, 81);
     m_lightChatListStyle.badgeTextColor = Qt::white;
-    m_lightChatListStyle.nameFont = QFont("Microsoft YaHei", 14);
-    m_lightChatListStyle.messageFont = QFont("Microsoft YaHei", 12);
-    m_lightChatListStyle.timeFont = QFont("Microsoft YaHei", 10);
-    m_lightChatListStyle.badgeFont = QFont("Microsoft YaHei", 9, QFont::Bold);
+    m_lightChatListStyle.nameFont = defaultFont(14);
+    m_lightChatListStyle.messageFont = defaultFont(12);
+    m_lightChatListStyle.timeFont = defaultFont(10);
+    m_lightChatListStyle.badgeFont = defaultFont(9, QFont::Bold);
 
     // ChatWidget Light 主题
     m_lightChatWidgetStyle.backgroundColor = QColor(245, 245, 245);
@@ -62,8 +73,8 @@ void ThemeManager::initLightTheme()
     m_lightChatWidgetStyle.otherAvatarColor = QColor(200, 200, 200);
     m_lightChatWidgetStyle.myTextColor = QColor(25, 25, 25);
     m_lightChatWidgetStyle.otherTextColor = QColor(25, 25, 25);
-    m_lightChatWidgetStyle.messageFont = QFont("Microsoft YaHei", 9);
-    m_lightChatWidgetStyle.avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
+    m_lightChatWidgetStyle.messageFont = defaultFont(9);
+    m_lightChatWidgetStyle.avatarFont = defaultFont(10, QFont::Bold);
 }
 
 void ThemeManager::initDarkTheme()
@@ -78,10 +89,10 @@ void ThemeManager::initDarkTheme()
     m_darkChatListStyle.separatorColor = QColor(60, 60, 60);
     m_darkChatListStyle.badgeColor = QColor(220, 60, 60);
     m_darkChatListStyle.badgeTextColor = Qt::white;
-    m_darkChatListStyle.nameFont = QFont("Microsoft YaHei", 14);
-    m_darkChatListStyle.messageFont = QFont("Microsoft YaHei", 12);
-    m_darkChatListStyle.timeFont = QFont("Microsoft YaHei", 10);
-    m_darkChatListStyle.badgeFont = QFont("Microsoft YaHei", 9, QFont::Bold);
+    m_darkChatListStyle.nameFont = defaultFont(14);
+    m_darkChatListStyle.messageFont = defaultFont(12);
+    m_darkChatListStyle.timeFont = defaultFont(10);
+    m_darkChatListStyle.badgeFont = defaultFont(9, QFont::Bold);
 
     // ChatWidget Dark 主题
     m_darkChatWidgetStyle.backgroundColor = QColor(25, 25, 25);
@@ -92,6 +103,6 @@ void ThemeManager::initDarkTheme()
     m_darkChatWidgetStyle.otherAvatarColor = QColor(100, 100, 100);
     m_darkChatWidgetStyle.myTextColor = QColor(230, 230, 230);
     m_darkChatWidgetStyle.otherTextColor = QColor(230, 230, 230);
-    m_darkChatWidgetStyle.messageFont = QFont("Microsoft YaHei", 9);
-    m_darkChatWidgetStyle.avatarFont = QFont("Microsoft YaHei", 10, QFont::Bold);
+    m_darkChatWidgetStyle.messageFont = defaultFont(9);
+    m_darkChatWidgetStyle.avatarFont = defaultFont(10, QFont::Bold);
 }

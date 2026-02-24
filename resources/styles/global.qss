@@ -211,5 +211,5 @@ QLabel.secondary {
  * ============================================================================ */
 
 * {
-    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    /* font-family inherited from QApplication::setFont() or system default */
 }

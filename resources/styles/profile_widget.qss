@@ -13,14 +13,12 @@ ProfileWidget, #ContentWidget {
 }
 
 #NameLabel {
-    font-family: "Microsoft YaHei";
     font-size: 20px;
     font-weight: bold;
     color: #111111;
 }
 
 #IdLabel {
-    font-family: "Microsoft YaHei";
     font-size: 13px;
     color: #8A8A8A;
 }
@@ -72,6 +70,11 @@ ProfileWidget, #ContentWidget {
 
 #DetailSeparator {
     color: #EDEDED;
+}
+
+#DetailArrow {
+    color: #CCCCCC;
+    font-weight: bold;
 }
 
 #BottomBar {

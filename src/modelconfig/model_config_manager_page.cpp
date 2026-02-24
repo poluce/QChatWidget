@@ -16,26 +16,6 @@
 #include <QStyle>
 #include <QVBoxLayout>
 
-#include "core/utils/ModelConfigLoader.h"
-#include "llm/LLMTypes.h"
-
-// ---------------------------------------------------------------------------
-// 官方域名表，用于判断"官方"/"中转"标签
-// ---------------------------------------------------------------------------
-namespace {
-const QHash<QString, QStringList>& officialDomains()
-{
-    static const QHash<QString, QStringList> map {
-        { "deepseek", { "api.deepseek.com" } },
-        { "openai", { "api.openai.com" } },
-        { "anthropic", { "api.anthropic.com" } },
-        { "ollama", { "localhost", "127.0.0.1" } },
-        { "gemini", { "generativelanguage.googleapis.com" } },
-    };
-    return map;
-}
-} // namespace
-
 // ===========================================================================
 // 构造 / 样式
 // ===========================================================================
@@ -52,6 +32,36 @@ void ModelConfigManagerPage::applyStyleSheet(const QString& styleSheet)
     const QString combined = QssUtils::buildCombinedStyleSheet(
         "model_config_manager_page.qss", styleSheet);
     setStyleSheet(combined);
+}
+
+void ModelConfigManagerPage::setConfigListLoader(const ConfigListLoader& loader)
+{
+    m_configListLoader = loader;
+}
+
+void ModelConfigManagerPage::setSingleConfigLoader(const SingleConfigLoader& loader)
+{
+    m_singleConfigLoader = loader;
+}
+
+void ModelConfigManagerPage::setDefaultConfigIdLoader(const DefaultConfigIdLoader& loader)
+{
+    m_defaultConfigIdLoader = loader;
+}
+
+void ModelConfigManagerPage::setProviderTagInferrer(const ProviderTagInferrer& inferrer)
+{
+    m_providerTagInferrer = inferrer;
+}
+
+void ModelConfigManagerPage::setProviderAliasResolver(const ProviderAliasResolver& resolver)
+{
+    m_providerAliasResolver = resolver;
+}
+
+void ModelConfigManagerPage::setConfigIdGenerator(const ConfigIdGenerator& generator)
+{
+    m_configIdGenerator = generator;
 }
 
 // ===========================================================================
@@ -124,8 +134,10 @@ void ModelConfigManagerPage::refreshConfigList()
     if (m_configList->currentItem())
         selectedConfigId = m_configList->currentItem()->data(Qt::UserRole).toString();
 
-    m_defaultConfigId = ModelConfigLoader::getDefaultConfigId(m_yamlPath);
-    const QVector<ModelConfig> configs = ModelConfigLoader::loadFromFile(m_yamlPath, false);
+    m_defaultConfigId = m_defaultConfigIdLoader ? m_defaultConfigIdLoader(m_yamlPath) : QString();
+    const QList<ModelConfigEntry> configs = m_configListLoader
+        ? m_configListLoader(m_yamlPath)
+        : QList<ModelConfigEntry>();
 
     m_configList->clear();
 
@@ -133,7 +145,7 @@ void ModelConfigManagerPage::refreshConfigList()
     for (int i = 0; i < configs.size(); ++i) {
         const auto& cfg = configs[i];
         const bool isDefault = (cfg.configId == m_defaultConfigId);
-        const QString tag = inferProviderTag(cfg.provider, cfg.baseUrl);
+        const QString tag = inferProviderTag(cfg.providerId, cfg.baseUrl);
         const QString display = cfg.displayName.isEmpty() ? cfg.configId : cfg.displayName;
 
         auto* item = new QListWidgetItem();
@@ -205,8 +217,7 @@ void ModelConfigManagerPage::setFieldError(const QString& providerId, const QStr
     label->setVisible(!message.trimmed().isEmpty());
 }
 
-void ModelConfigManagerPage::setFieldOptions(const QString& providerId, const QString& fieldKey,
-                                              const QStringList& options, bool editable)
+void ModelConfigManagerPage::setFieldOptions(const QString& providerId, const QString& fieldKey, const QStringList& options, bool editable)
 {
     const int index = providerId.isEmpty() ? m_formStack->currentIndex() : providerIndexForId(providerId);
     if (index < 0 || !m_fieldWidgetsMap.contains(index))
@@ -388,8 +399,7 @@ QWidget* ModelConfigManagerPage::createRightPanel()
     layout->addLayout(bottomLayout);
 
     // 连接信号
-    connect(m_providerGroup, QOverload<int>::of(&QButtonGroup::buttonClicked),
-            this, &ModelConfigManagerPage::onProviderButtonClicked);
+    connect(m_providerGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), this, &ModelConfigManagerPage::onProviderButtonClicked);
     connect(m_saveBtn, &QPushButton::clicked, this, &ModelConfigManagerPage::onSaveClicked);
     connect(m_testBtn, &QPushButton::clicked, this, &ModelConfigManagerPage::onTestConnectionClicked);
 
@@ -423,8 +433,7 @@ QWidget* ModelConfigManagerPage::createFormWidget(const ModelConfigProvider& pro
             layout->addRow(f.label + ":", combo);
             fieldWidgets.combos.insert(f.key, combo);
 
-            connect(combo, &QComboBox::currentTextChanged,
-                    this, &ModelConfigManagerPage::autoGenerateConfigId);
+            connect(combo, &QComboBox::currentTextChanged, this, &ModelConfigManagerPage::autoGenerateConfigId);
         } else {
             auto* edit = new QLineEdit();
             if (f.isPassword)
@@ -484,7 +493,7 @@ QWidget* ModelConfigManagerPage::createConfigItemWidget(
     tagLabel->setObjectName("providerTag");
     bottomRow->addWidget(tagLabel);
     if (isDefault) {
-        auto* defaultLabel = new QLabel(QStringLiteral("\u2605\u9ED8\u8BA4")); // ★默认
+        auto* defaultLabel = new QLabel(QStringLiteral("\u2605") + tr("默认")); // ★默认
         defaultLabel->setObjectName("defaultMark");
         bottomRow->addWidget(defaultLabel);
     }
@@ -539,8 +548,7 @@ void ModelConfigManagerPage::onSaveClicked()
         const auto& provider = m_providers[index];
         for (const auto& f : provider.fields) {
             if (f.isRequired && config[f.key].toString().isEmpty()) {
-                QMessageBox::warning(this, tr("验证失败"),
-                    QString(tr("%1 不能为空")).arg(f.label));
+                QMessageBox::warning(this, tr("验证失败"), QString(tr("%1 不能为空")).arg(f.label));
                 return;
             }
         }
@@ -577,9 +585,7 @@ void ModelConfigManagerPage::onDeleteClicked()
     if (!item)
         return;
     const QString configId = item->data(Qt::UserRole).toString();
-    if (QMessageBox::question(this, tr("确认删除"),
-            tr("确定要删除配置「%1」吗？").arg(configId),
-            QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
+    if (QMessageBox::question(this, tr("确认删除"), tr("确定要删除配置「%1」吗？").arg(configId), QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
         return;
     }
     emit configDeleted(configId);
@@ -625,7 +631,9 @@ void ModelConfigManagerPage::switchToEditMode(const QString& configId)
     if (m_yamlPath.isEmpty())
         return;
 
-    ModelConfig cfg = ModelConfigLoader::getModelConfig(m_yamlPath, configId, false);
+    ModelConfigEntry cfg;
+    if (m_singleConfigLoader)
+        cfg = m_singleConfigLoader(m_yamlPath, configId);
     if (cfg.configId.isEmpty())
         return;
 
@@ -638,19 +646,8 @@ void ModelConfigManagerPage::switchToEditMode(const QString& configId)
     clearFieldErrors();
 
     // 找到对应的 provider 并选中
-    const QString pid = cfg.provider.toLower();
+    const QString pid = cfg.providerId.toLower();
     int providerIdx = providerIndexForId(pid);
-    if (providerIdx < 0) {
-        // 尝试从 baseUrl 推断
-        for (int i = 0; i < m_providers.size() && providerIdx < 0; ++i) {
-            for (const auto& d : officialDomains().value(m_providers[i].id)) {
-                if (cfg.baseUrl.contains(d)) {
-                    providerIdx = i;
-                    break;
-                }
-            }
-        }
-    }
     if (providerIdx < 0)
         providerIdx = 0;
 
@@ -663,11 +660,16 @@ void ModelConfigManagerPage::switchToEditMode(const QString& configId)
 
     // 填充表单
     if (m_fieldWidgetsMap.contains(providerIdx)) {
-        const QHash<QString, QString> values {
-            { QStringLiteral("apiKey"),  cfg.apiKey  },
+        QHash<QString, QString> values {
+            { QStringLiteral("apiKey"), cfg.apiKey },
             { QStringLiteral("baseUrl"), cfg.baseUrl },
             { QStringLiteral("modelId"), cfg.modelId },
         };
+        // 合并 extraFields
+        for (auto it = cfg.extraFields.constBegin(); it != cfg.extraFields.constEnd(); ++it) {
+            values.insert(it.key(), it.value().toString());
+        }
+
         auto& widgets = m_fieldWidgetsMap[providerIdx];
 
         for (auto it = widgets.inputs.begin(); it != widgets.inputs.end(); ++it) {
@@ -749,7 +751,11 @@ void ModelConfigManagerPage::autoGenerateConfigId()
         return;
     }
 
-    m_configIdEdit->setText(QStringLiteral("%1@%2").arg(provider.id, modelId));
+    if (m_configIdGenerator) {
+        m_configIdEdit->setText(m_configIdGenerator(provider.id, modelId));
+    } else {
+        m_configIdEdit->setText(QStringLiteral("%1@%2").arg(provider.id, modelId));
+    }
 }
 
 int ModelConfigManagerPage::providerIndexForId(const QString& providerId) const
@@ -765,13 +771,7 @@ int ModelConfigManagerPage::providerIndexForId(const QString& providerId) const
 
 QString ModelConfigManagerPage::inferProviderTag(const QString& provider, const QString& baseUrl) const
 {
-    const QString pid = provider.toLower();
-    const auto& domains = officialDomains().value(pid);
-    for (const auto& d : domains) {
-        if (baseUrl.contains(d))
-            return tr("(官方)");
-    }
-    if (!baseUrl.isEmpty())
-        return tr("(中转)");
+    if (m_providerTagInferrer)
+        return m_providerTagInferrer(provider, baseUrl);
     return QString();
 }

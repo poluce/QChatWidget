@@ -2,7 +2,9 @@
 #define MODEL_CONFIG_MANAGER_PAGE_H
 
 #include "model_config_import_page.h" // ModelConfigProvider, ModelConfigField
+#include <QVariantMap>
 #include <QWidget>
+#include <functional>
 
 class QButtonGroup;
 class QComboBox;
@@ -12,6 +14,21 @@ class QListWidget;
 class QListWidgetItem;
 class QPushButton;
 class QStackedWidget;
+
+/**
+ * @brief 库内部模型配置数据结构，替代外部 ModelConfig
+ */
+struct ModelConfigEntry {
+    QString configId;
+    QString providerId;
+    QString displayName;
+    QString baseUrl;
+    QString apiKey;
+    QString modelId;
+    bool enabled = true;
+    bool isDefault = false;
+    QVariantMap extraFields;
+};
 
 /**
  * @brief 模型配置管理页面
@@ -25,6 +42,11 @@ public:
     enum class FormMode { CreateNew, EditExisting };
     enum class TestStatus { Idle, Testing, Success, Failed };
 
+    // 回调类型：宿主注入数据加载逻辑，替代外部 ModelConfigLoader
+    using ConfigListLoader = std::function<QList<ModelConfigEntry>(const QString& path)>;
+    using SingleConfigLoader = std::function<ModelConfigEntry(const QString& path, const QString& configId)>;
+    using DefaultConfigIdLoader = std::function<QString(const QString& path)>;
+
     explicit ModelConfigManagerPage(QWidget* parent = nullptr);
 
     void setProviders(const QList<ModelConfigProvider>& providers);
@@ -37,6 +59,20 @@ public:
                          const QStringList& options, bool editable = true);
     void clearFieldErrors();
     void applyStyleSheet(const QString& styleSheet = QString());
+
+    // 回调 setter：宿主注入数据加载逻辑
+    void setConfigListLoader(const ConfigListLoader& loader);
+    void setSingleConfigLoader(const SingleConfigLoader& loader);
+    void setDefaultConfigIdLoader(const DefaultConfigIdLoader& loader);
+
+    // 回调类型：Provider 标签推断、别名解析、configId 生成
+    using ProviderTagInferrer = std::function<QString(const QString& providerId, const QString& baseUrl)>;
+    using ProviderAliasResolver = std::function<QString(const QString& rawProviderId)>;
+    using ConfigIdGenerator = std::function<QString(const QString& providerId, const QString& modelId)>;
+
+    void setProviderTagInferrer(const ProviderTagInferrer& inferrer);
+    void setProviderAliasResolver(const ProviderAliasResolver& resolver);
+    void setConfigIdGenerator(const ConfigIdGenerator& generator);
 
 signals:
     void configSaved(const QVariantMap& config);
@@ -97,6 +133,14 @@ private:
         QHash<QString, QLabel*> errors;
     };
     QHash<int, FieldWidgets> m_fieldWidgetsMap;
+
+    // 回调存储
+    ConfigListLoader m_configListLoader;
+    SingleConfigLoader m_singleConfigLoader;
+    DefaultConfigIdLoader m_defaultConfigIdLoader;
+    ProviderTagInferrer m_providerTagInferrer;
+    ProviderAliasResolver m_providerAliasResolver;
+    ConfigIdGenerator m_configIdGenerator;
 };
 
 #endif // MODEL_CONFIG_MANAGER_PAGE_H

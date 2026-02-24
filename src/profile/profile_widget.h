@@ -44,12 +44,16 @@ public:
     void setAvatar(const QPixmap& pixmap);
     void setUserName(const QString& name);
     void setTmId(const QString& uuid);
+    void setDefaultUserName(const QString& name);
+    void setDefaultTmId(const QString& id);
+    void setTmIdPrefix(const QString& prefix);
     void applyDefaultStyle();
     bool applyStyleSheetFile(const QString& fileNameOrPath);
 
     // --- 详情列表接口 ---
     // isEditable: true 表示显示为可点击样式
-    void addDetailItem(const QString& title, const QString& content, bool isEditable = false);
+    // maxLines: 0 表示不限制行数，>0 表示最多显示 N 行并截断
+    void addDetailItem(const QString& title, const QString& content, bool isEditable = false, int maxLines = 0);
     void addSeparator();
     void clearDetails();
 
@@ -69,7 +73,7 @@ private:
 
     // 内部辅助函数
     QFrame* createSeparatorFrame();
-    QWidget* createDetailWidget(const QString& title, const QString& content, bool isEditable);
+    QWidget* createDetailWidget(const QString& title, const QString& content, bool isEditable, int maxLines);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -87,6 +91,7 @@ private:
     QPixmap m_defaultAvatar;
     QString m_defaultUserName = QStringLiteral("agentname");
     QString m_defaultTmId = QStringLiteral("--");
+    QString m_tmIdPrefix = QStringLiteral("TmId: ");
     QString m_userNameRaw;
     QString m_tmIdRaw;
 };

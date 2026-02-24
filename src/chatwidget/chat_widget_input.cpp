@@ -43,7 +43,6 @@ ChatWidgetInput::ChatWidgetInput(QWidget* parent)
     : ChatWidgetInputBase(parent)
     , m_commandRegistry(new ChatWidgetCommandRegistry())
 {
-    m_commandRegistry->registerDefaults();
     setupUi();
 }
 
@@ -82,7 +81,7 @@ QToolButton* ChatWidgetInput::createToolButton(const QString& objectName, const 
 
 QString ChatWidgetInput::placeholderForMode() const
 {
-    return m_inputMode == TranslateMode ? "翻译模式：输入要翻译的内容..." : "输入消息...";
+    return m_inputMode == TranslateMode ? tr("翻译模式：输入要翻译的内容...") : tr("输入消息...");
 }
 
 void ChatWidgetInput::setupUi()
@@ -92,23 +91,23 @@ void ChatWidgetInput::setupUi()
     m_inputBar = new QFrame(this);
     m_inputBar->setObjectName("chatWidgetInputBar");
 
-    m_plusButton = createToolButton("chatWidgetInputPlusButton", "更多",
+    m_plusButton = createToolButton("chatWidgetInputPlusButton", tr("更多"),
                                      iconOrFallback(this, QStringLiteral("list-add"), QStyle::SP_FileDialogNewFolder),
                                      "+", m_inputBar);
     m_plusButton->setPopupMode(QToolButton::InstantPopup);
 
-    m_emojiButton = createToolButton("chatWidgetInputEmojiButton", "表情",
+    m_emojiButton = createToolButton("chatWidgetInputEmojiButton", tr("表情"),
                                       QIcon::fromTheme(QStringLiteral("face-smile")),
                                       "☺", m_inputBar);
     m_emojiButton->setPopupMode(QToolButton::InstantPopup);
 
-    m_voiceButton = createToolButton("chatWidgetInputVoiceButton", "语音输入",
+    m_voiceButton = createToolButton("chatWidgetInputVoiceButton", tr("语音输入"),
                                       iconOrFallback(this, QStringLiteral("audio-input-microphone"), QStyle::SP_MediaVolume),
                                       "◎", m_inputBar);
 
     m_inputEdit = new QTextEdit(m_inputBar);
     m_inputEdit->setObjectName("chatWidgetInputEdit");
-    m_inputEdit->setPlaceholderText("输入消息...");
+    m_inputEdit->setPlaceholderText(tr("输入消息..."));
     m_inputEdit->setAcceptRichText(false);
     m_inputEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_inputEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -116,12 +115,12 @@ void ChatWidgetInput::setupUi()
     m_inputEdit->setTabChangesFocus(true);
     m_inputEdit->installEventFilter(this);
 
-    m_richTextButton = createToolButton("chatWidgetInputRichButton", "富文本",
+    m_richTextButton = createToolButton("chatWidgetInputRichButton", tr("富文本"),
                                          QIcon::fromTheme(QStringLiteral("format-text-richtext")),
                                          "A", m_inputBar);
     m_richTextButton->setCheckable(true);
 
-    m_sendButton = createToolButton("chatWidgetInputSendButton", "发送",
+    m_sendButton = createToolButton("chatWidgetInputSendButton", tr("发送"),
                                      iconOrFallback(this, QStringLiteral("mail-send"), QStyle::SP_ArrowForward),
                                      "➤", m_inputBar);
 
@@ -131,17 +130,13 @@ void ChatWidgetInput::setupUi()
 
     m_plusMenu = new QMenu(this);
     m_plusMenu->setObjectName("chatWidgetInputMenu");
-    m_pickImageAction = m_plusMenu->addAction("图片");
-    m_pickFileAction = m_plusMenu->addAction("文件");
+    m_pickImageAction = m_plusMenu->addAction(tr("图片"));
+    m_pickFileAction = m_plusMenu->addAction(tr("文件"));
     m_plusButton->setMenu(m_plusMenu);
 
     m_emojiMenu = new QMenu(this);
     m_emojiMenu->setObjectName("chatWidgetInputEmojiMenu");
-    const QStringList emojis = { "😀", "😂", "😍", "👍", "🎉", "🔥", "🙏", "✅", "✨", "😅" };
-    for (const QString& emoji : emojis) {
-        QAction* action = m_emojiMenu->addAction(emoji);
-        action->setData(emoji);
-    }
+    setEmojiList({ "😀", "😂", "😍", "👍", "🎉", "🔥", "🙏", "✅", "✨", "😅" });
     m_emojiButton->setMenu(m_emojiMenu);
 
     m_commandMenu = new QListWidget(this);
@@ -310,30 +305,11 @@ bool ChatWidgetInput::tryApplyCommand(const QString& text)
     if (!parsed.valid)
         return false;
 
-    // 内置命令本地处理
-    if (parsed.commandName.compare("/trans", Qt::CaseInsensitive) == 0) {
-        applyMode(TranslateMode);
-        return true;
-    }
-    if (parsed.commandName.compare("/normal", Qt::CaseInsensitive) == 0) {
-        applyMode(NormalMode);
-        return true;
-    }
-
-    // 外部命令通过信号委托
+    // 所有命令统一通过信号委托给宿主
     m_inputEdit->clear();
     m_commandMenu->hide();
     emit commandExecuted(parsed.commandName, parsed.arguments, parsed.rawText);
     return true;
-}
-
-void ChatWidgetInput::applyMode(InputMode mode)
-{
-    m_inputMode = mode;
-    m_inputEdit->setPlaceholderText(placeholderForMode());
-    m_inputEdit->clear();
-    m_inputEdit->setFocus();
-    m_commandMenu->hide();
 }
 
 void ChatWidgetInput::positionCommandMenu()
@@ -351,7 +327,7 @@ void ChatWidgetInput::setSending(bool sending)
 {
     m_isSending = sending;
     m_sendButton->setProperty("sending", m_isSending);
-    m_sendButton->setToolTip(m_isSending ? "停止生成" : "发送");
+    m_sendButton->setToolTip(m_isSending ? tr("停止生成") : tr("发送"));
     m_sendButton->setIcon(m_isSending
                               ? iconOrFallback(this, QStringLiteral("process-stop"), QStyle::SP_MediaStop)
                               : iconOrFallback(this, QStringLiteral("mail-send"), QStyle::SP_ArrowForward));
@@ -369,6 +345,11 @@ void ChatWidgetInput::setDraftText(const QString& text)
     m_inputEdit->setPlainText(text);
 }
 
+void ChatWidgetInput::setPlaceholderText(const QString& text)
+{
+    m_inputEdit->setPlaceholderText(text);
+}
+
 QString ChatWidgetInput::draftText() const
 {
     return m_inputEdit->toPlainText();
@@ -378,12 +359,12 @@ void ChatWidgetInput::onVoiceClicked()
 {
     m_isRecording = !m_isRecording;
     if (m_isRecording) {
-        m_inputEdit->setPlaceholderText("录音中...（占位）");
+        m_inputEdit->setPlaceholderText(tr("录音中...（占位）"));
         m_inputEdit->clear();
         m_commandMenu->hide();
         emit voiceStartRequested();
     } else {
-        m_inputEdit->setPlaceholderText(placeholderForMode());
+        m_inputEdit->setPlaceholderText(tr("输入消息..."));
         emit voiceStopRequested();
     }
     updateVoiceButtonState();
@@ -391,7 +372,7 @@ void ChatWidgetInput::onVoiceClicked()
 
 void ChatWidgetInput::onPickImage()
 {
-    const QStringList paths = QFileDialog::getOpenFileNames(this, "选择图片", QString(),
+    const QStringList paths = QFileDialog::getOpenFileNames(this, tr("选择图片"), QString(),
                                                             "Images (*.png *.jpg *.jpeg *.bmp *.gif)");
     if (!paths.isEmpty())
         emit imageSelected(paths);
@@ -399,10 +380,10 @@ void ChatWidgetInput::onPickImage()
 
 void ChatWidgetInput::onPickFile()
 {
-    const QString path = QFileDialog::getOpenFileName(this, "选择文件", QString(),
+    const QString path = QFileDialog::getOpenFileName(this, tr("选择文件"), QString(),
                                                       "All Files (*.*)");
     if (!path.isEmpty())
-        emit messageSent("【文件】" + path);
+        emit messageSent(tr("【文件】") + path);
 }
 
 void ChatWidgetInput::onEmojiPicked(QAction* action)
@@ -459,10 +440,19 @@ void ChatWidgetInput::updateInputEditHeight()
 void ChatWidgetInput::updateVoiceButtonState()
 {
     m_voiceButton->setProperty("recording", m_isRecording);
-    m_voiceButton->setToolTip(m_isRecording ? "停止录音" : "语音输入");
+    m_voiceButton->setToolTip(m_isRecording ? tr("停止录音") : tr("语音输入"));
     m_voiceButton->setIcon(m_isRecording
                                ? iconOrFallback(this, QStringLiteral("media-playback-stop"), QStyle::SP_MediaStop)
                                : iconOrFallback(this, QStringLiteral("audio-input-microphone"), QStyle::SP_MediaVolume));
     m_voiceButton->setText(m_voiceButton->icon().isNull() ? (m_isRecording ? "■" : "◎") : QString());
     refreshWidgetStyle(m_voiceButton);
+}
+
+void ChatWidgetInput::setEmojiList(const QStringList& emojis)
+{
+    m_emojiMenu->clear();
+    for (const QString& emoji : emojis) {
+        QAction* action = m_emojiMenu->addAction(emoji);
+        action->setData(emoji);
+    }
 }

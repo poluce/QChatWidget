@@ -1,0 +1,9 @@
+TEXT_PROVIDER_DIR = $$PWD
+
+INCLUDEPATH += $$TEXT_PROVIDER_DIR
+
+SOURCES += \
+    $$TEXT_PROVIDER_DIR/text_provider.cpp
+
+HEADERS += \
+    $$TEXT_PROVIDER_DIR/text_provider.h

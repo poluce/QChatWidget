@@ -9,7 +9,6 @@
 /* 页面根容器 */
 QWidget {
     background-color: #f9fafb;
-    font-family: 'Segoe UI', 'Microsoft YaHei';
 }
 
 /* 面板标题 */

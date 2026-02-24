@@ -48,6 +48,14 @@ public:
     void setBadgeSize(int size);
     void setItemSize(int height, int avatarSize, int margin);
 
+    // 右键菜单定制
+    void setContextMenuActions(const QList<QAction*>& actions);
+    void clearContextMenuActions();
+
+    // 右键菜单请求信号中的 index 信息
+    QModelIndex contextIndex() const;
+    QModelIndex contextSourceIndex() const;
+
     int addChatItem(const QString& name, const QString& message, const QString& time, const QColor& avatarColor, int unreadCount = 0);
     void updateChatItem(int row, const QString& name, const QString& message, const QString& time, const QColor& avatarColor, int unreadCount);
     bool updateChatItemData(int row, int role, const QVariant& value);
@@ -71,6 +79,7 @@ signals:
     void chatItemRemoved(int row);
     void chatItemRenamed(int row, const QString& name);
     void headerActionTriggered(QAction* action);
+    void contextMenuRequested(const QModelIndex& index, const QPoint& globalPos);
     void clicked(const QModelIndex& index);
     void doubleClicked(const QModelIndex& index);
     void pressed(const QModelIndex& index);
@@ -97,6 +106,7 @@ private:
     QAction* m_renameAction = nullptr;
     QAction* m_removeAction = nullptr;
     QModelIndex m_contextIndex;
+    bool m_customContextActions = false;
     class ChatListFilterModel* m_filterModel;
     class QItemSelectionModel* m_selectionModel = nullptr;
     bool m_filterEnabled = false;

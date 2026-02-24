@@ -2,6 +2,7 @@
 #define CHAT_WIDGET_INPUT_H
 
 #include <QString>
+#include <QStringList>
 #include <QWidget>
 
 class ChatWidgetCommandRegistry;
@@ -37,6 +38,7 @@ public:
     ~ChatWidgetInput() override;
 
     ChatWidgetCommandRegistry* commandRegistry() const;
+    void setEmojiList(const QStringList& emojis);
 
 signals:
     void voiceStartRequested();
@@ -49,6 +51,7 @@ signals:
 public slots:
     void setSendingState(bool sending);
     void setDraftText(const QString& text);
+    void setPlaceholderText(const QString& text);
     QString draftText() const;
 
 protected:
@@ -66,17 +69,12 @@ private slots:
     void onRichTextToggled(bool checked);
 
 private:
-    enum InputMode { NormalMode,
-                     TranslateMode };
-
     void setupUi();
     QToolButton* createToolButton(const QString& objectName, const QString& tooltip,
                                   const QIcon& icon, const QString& fallbackText,
                                   QWidget* parent);
-    QString placeholderForMode() const;
     void updateCommandMenu(const QString& text);
     bool tryApplyCommand(const QString& text);
-    void applyMode(InputMode mode);
     void positionCommandMenu();
     void updateInputEditHeight();
     void updateVoiceButtonState();
@@ -95,7 +93,6 @@ private:
     QAction* m_pickFileAction;
     QListWidget* m_commandMenu;
     ChatWidgetCommandRegistry* m_commandRegistry;
-    InputMode m_inputMode = NormalMode;
     bool m_isRecording = false;
     bool m_isSending = false;
     bool m_richTextEnabled = false;

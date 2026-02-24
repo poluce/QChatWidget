@@ -126,7 +126,7 @@ QWidget* ProfileWidget::createHeaderWidget()
     m_nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_nameLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
-    m_idLabel = new QLabel(QStringLiteral("TmId: %1").arg(m_defaultTmId));
+    m_idLabel = new QLabel(m_tmIdPrefix + m_defaultTmId);
     m_idLabel->setObjectName("IdLabel");
     m_idLabel->setWordWrap(false);
     m_idLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -150,7 +150,7 @@ QWidget* ProfileWidget::createHeaderWidget()
 
 QLabel* ProfileWidget::createGroupTitle() const
 {
-    QLabel* groupTitle = new QLabel(QStringLiteral("详细信息"));
+    QLabel* groupTitle = new QLabel(tr("详细信息"));
     groupTitle->setObjectName("DetailGroupTitle");
     groupTitle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     return groupTitle;
@@ -175,7 +175,7 @@ QWidget* ProfileWidget::createBottomBar()
     bottomLayout->setContentsMargins(20, 15, 20, 15);
 
     m_msgButton = new QPushButton();
-    m_msgButton->setText(QStringLiteral(" 发消息"));
+    m_msgButton->setText(tr(" 发消息"));
     m_msgButton->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
     m_msgButton->setCursor(Qt::PointingHandCursor);
     m_msgButton->setObjectName("MsgButton");
@@ -185,11 +185,11 @@ QWidget* ProfileWidget::createBottomBar()
     return bottomBar;
 }
 
-void ProfileWidget::addDetailItem(const QString& title, const QString& content, bool isEditable)
+void ProfileWidget::addDetailItem(const QString& title, const QString& content, bool isEditable, int maxLines)
 {
     if (!m_detailListLayout)
         return;
-    QWidget* item = createDetailWidget(title, content, isEditable);
+    QWidget* item = createDetailWidget(title, content, isEditable, maxLines);
     m_detailListLayout->addWidget(item);
 }
 
@@ -213,7 +213,7 @@ void ProfileWidget::clearDetails()
     }
 }
 
-QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& content, bool isEditable)
+QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& content, bool isEditable, int maxLines)
 {
     QWidget* item;
     if (isEditable) {
@@ -237,8 +237,7 @@ QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& 
     QLabel* contentLbl = new QLabel(content);
     contentLbl->setObjectName("DetailContent");
     contentLbl->setWordWrap(true);
-    if (title == QStringLiteral("角色描述")) {
-        const int maxLines = 2;
+    if (maxLines > 0) {
         const int maxHeight = contentLbl->fontMetrics().lineSpacing() * maxLines + 4;
         contentLbl->setMaximumHeight(maxHeight);
         contentLbl->setToolTip(content);
@@ -252,7 +251,7 @@ QWidget* ProfileWidget::createDetailWidget(const QString& title, const QString& 
 
     if (isEditable) {
         QLabel* arrowLbl = new QLabel(QStringLiteral(">"));
-        arrowLbl->setStyleSheet(QStringLiteral("color: #CCCCCC; font-weight: bold; font-family: consolas;"));
+        arrowLbl->setObjectName("DetailArrow");
         arrowLbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         layout->addWidget(arrowLbl);
     }
@@ -303,7 +302,7 @@ void ProfileWidget::updateHeaderLabels()
     const QString userName = m_userNameRaw.trimmed().isEmpty() ? m_defaultUserName : m_userNameRaw;
     const QString tmId = m_tmIdRaw.trimmed().isEmpty() ? m_defaultTmId : m_tmIdRaw;
     QString nameText = userName;
-    QString idText = QStringLiteral("TmId: ") + tmId;
+    QString idText = m_tmIdPrefix + tmId;
 
     const int nameWidth = m_nameLabel->width();
     const int idWidth = m_idLabel->width();
@@ -326,4 +325,22 @@ bool ProfileWidget::applyStyleSheetFile(const QString& fileNameOrPath)
     if (fileNameOrPath.trimmed().isEmpty())
         return false;
     return QssUtils::applyStyleSheetFromFile(this, fileNameOrPath);
+}
+
+void ProfileWidget::setDefaultUserName(const QString& name)
+{
+    m_defaultUserName = name;
+    updateHeaderLabels();
+}
+
+void ProfileWidget::setDefaultTmId(const QString& id)
+{
+    m_defaultTmId = id;
+    updateHeaderLabels();
+}
+
+void ProfileWidget::setTmIdPrefix(const QString& prefix)
+{
+    m_tmIdPrefix = prefix;
+    updateHeaderLabels();
 }

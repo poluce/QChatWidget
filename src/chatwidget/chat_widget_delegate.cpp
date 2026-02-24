@@ -1,6 +1,7 @@
 #include "chat_widget_delegate.h"
 #include "chat_widget_markdown_utils.h"
 #include "chat_widget_model.h"
+#include <QCoreApplication>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QPainterPath>
@@ -31,13 +32,13 @@ QString formatStatus(ChatWidgetMessage::MessageStatus status)
 {
     switch (status) {
     case ChatWidgetMessage::MessageStatus::Sending:
-        return QStringLiteral("发送中");
+        return QCoreApplication::translate("ChatWidgetDelegate", "发送中");
     case ChatWidgetMessage::MessageStatus::Sent:
-        return QStringLiteral("已发送");
+        return QCoreApplication::translate("ChatWidgetDelegate", "已发送");
     case ChatWidgetMessage::MessageStatus::Failed:
-        return QStringLiteral("失败");
+        return QCoreApplication::translate("ChatWidgetDelegate", "失败");
     case ChatWidgetMessage::MessageStatus::Read:
-        return QStringLiteral("已读");
+        return QCoreApplication::translate("ChatWidgetDelegate", "已读");
     default:
         return QString();
     }
@@ -473,8 +474,8 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         const int textWidth = replyRect.width() - kReplyPadding * 2;
         if (d.hasForward) {
             const QString forwardLabel = d.forwardedFrom.isEmpty()
-                ? QStringLiteral("转发")
-                : QStringLiteral("转发自 %1").arg(d.forwardedFrom);
+                ? tr("转发")
+                : tr("转发自 %1").arg(d.forwardedFrom);
             painter->drawText(QRect(replyRect.left() + kReplyPadding, textY, textWidth, replyMetrics.height()),
                               Qt::AlignLeft | Qt::AlignVCenter,
                               replyMetrics.elidedText(forwardLabel, Qt::ElideRight, textWidth));
@@ -482,8 +483,8 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
         }
         if (d.hasReply) {
             const QString replyText = d.replySender.isEmpty()
-                ? QStringLiteral("回复: %1").arg(d.replyPreview)
-                : QStringLiteral("回复 %1: %2").arg(d.replySender, d.replyPreview);
+                ? tr("回复: %1").arg(d.replyPreview)
+                : tr("回复 %1: %2").arg(d.replySender, d.replyPreview);
             painter->drawText(QRect(replyRect.left() + kReplyPadding, textY, textWidth, replyMetrics.height()),
                               Qt::AlignLeft | Qt::AlignVCenter,
                               replyMetrics.elidedText(replyText, Qt::ElideRight, textWidth));
@@ -502,14 +503,14 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
                 painter->drawRoundedRect(attachRect, 6, 6);
                 painter->setPen(m_style.replyTextColor);
                 painter->setFont(m_style.replyFont);
-                painter->drawText(attachRect, Qt::AlignCenter, QStringLiteral("加载中..."));
+                painter->drawText(attachRect, Qt::AlignCenter, tr("加载中..."));
             } else if (d.imageLoadState == ChatWidgetMessage::ImageLoadState::Failed) {
                 painter->setPen(QPen(m_style.fileBorderColor));
                 painter->setBrush(m_style.fileCardColor);
                 painter->drawRoundedRect(attachRect, 6, 6);
                 painter->setPen(m_style.statusColor);
                 painter->setFont(m_style.replyFont);
-                painter->drawText(attachRect, Qt::AlignCenter, QStringLiteral("加载失败"));
+                painter->drawText(attachRect, Qt::AlignCenter, tr("加载失败"));
             } else {
                 // 优先使用缩略图
                 const QString& imgSrc = d.imageThumbnailPath.isEmpty() ? d.imagePath : d.imageThumbnailPath;
@@ -593,7 +594,7 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
             const QString nameText = fileMetrics.elidedText(d.fileName, Qt::ElideRight, textWidth);
             const QString sizeText = d.fileSize > 0
                 ? QStringLiteral("%1 KB").arg(d.fileSize / 1024)
-                : QStringLiteral("文件");
+                : tr("文件");
             painter->drawText(QRect(attachRect.left() + kReplyPadding, attachRect.top() + kReplyPadding,
                                     textWidth, fileMetrics.height()),
                               Qt::AlignLeft | Qt::AlignVCenter, nameText);

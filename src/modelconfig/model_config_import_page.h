@@ -4,6 +4,7 @@
 #include <QVariantMap>
 #include <QWidget>
 #include <QStringList>
+#include <functional>
 
 class QListWidget;
 class QStackedWidget;
@@ -93,6 +94,13 @@ public:
     void setFieldOptions(const QString& providerId, const QString& fieldKey, const QStringList& options, bool editable = true);
     bool isDirty() const { return m_dirty; }
 
+    // 回调类型：Provider 别名解析、configId 生成
+    using ProviderAliasResolver = std::function<QString(const QString& rawProviderId)>;
+    using ConfigIdGenerator = std::function<QString(const QString& providerId, const QString& modelId)>;
+
+    void setProviderAliasResolver(const ProviderAliasResolver& resolver);
+    void setConfigIdGenerator(const ConfigIdGenerator& generator);
+
 signals:
     void importRequested(const QVariantMap& config);
     void cancelled();
@@ -144,6 +152,10 @@ private:
     QLabel* m_testStatusLabel = nullptr;
     TestStatus m_testStatus = TestStatus::Idle;
     bool m_dirty = false;
+
+    // 回调存储
+    ProviderAliasResolver m_providerAliasResolver;
+    ConfigIdGenerator m_configIdGenerator;
 };
 
 #endif // MODEL_CONFIG_IMPORT_PAGE_H

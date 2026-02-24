@@ -9,7 +9,6 @@
 /* 页面根容器 - 浅灰背景 */
 QWidget {
     background-color: #f9fafb;
-    font-family: 'Segoe UI', 'Microsoft YaHei';
 }
 
 /* Provider 列表 - 特殊样式 */

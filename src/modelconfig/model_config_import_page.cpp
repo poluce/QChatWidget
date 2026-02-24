@@ -68,12 +68,9 @@ void ModelConfigImportPage::setProviders(const QList<ModelConfigProvider>& provi
 void ModelConfigImportPage::setConfigData(const QVariantMap& data)
 {
     QString providerId = data.value("providerId").toString();
-    const QString providerAlias = providerId.trimmed().toLower();
-    if (providerAlias == QStringLiteral("claude")
-        || providerAlias == QStringLiteral("claudeai")) {
-        providerId = QStringLiteral("anthropic");
-    } else if (providerAlias == QStringLiteral("google")) {
-        providerId = QStringLiteral("gemini");
+    // 通过回调解析别名，未设置回调时原样返回
+    if (m_providerAliasResolver) {
+        providerId = m_providerAliasResolver(providerId);
     }
     if (providerId.isEmpty())
         return;
@@ -536,6 +533,16 @@ int ModelConfigImportPage::providerIndexForId(const QString& providerId) const
     return -1;
 }
 
+void ModelConfigImportPage::setProviderAliasResolver(const ProviderAliasResolver& resolver)
+{
+    m_providerAliasResolver = resolver;
+}
+
+void ModelConfigImportPage::setConfigIdGenerator(const ConfigIdGenerator& generator)
+{
+    m_configIdGenerator = generator;
+}
+
 void ModelConfigImportPage::autoGenerateConfigId()
 {
     if (!m_configIdEdit)
@@ -569,5 +576,9 @@ void ModelConfigImportPage::autoGenerateConfigId()
     }
 
     // 格式: provider@modelId  例如 deepseek@deepseek-chat
-    m_configIdEdit->setText(QStringLiteral("%1@%2").arg(provider.id, modelId));
+    if (m_configIdGenerator) {
+        m_configIdEdit->setText(m_configIdGenerator(provider.id, modelId));
+    } else {
+        m_configIdEdit->setText(QStringLiteral("%1@%2").arg(provider.id, modelId));
+    }
 }

@@ -29,7 +29,7 @@ void ChatListWidget::setupUi()
     setObjectName("chatListWidget");
     m_searchBar = new QLineEdit(this);
     m_searchBar->setObjectName("chatListSearchBar");
-    m_searchBar->setPlaceholderText("搜索");
+    m_searchBar->setPlaceholderText(tr("搜索"));
 
     m_listView = new ChatListView(this);
     m_filterModel = new ChatListFilterModel(this);
@@ -86,9 +86,11 @@ void ChatListWidget::setupUi()
         }
         m_listView->setCurrentIndex(index);
         m_contextIndex = index;
+        const QPoint globalPos = m_listView->viewport()->mapToGlobal(pos);
+        emit contextMenuRequested(index, globalPos);
         ensureContextMenu();
         if (m_contextMenu)
-            m_contextMenu->exec(m_listView->viewport()->mapToGlobal(pos));
+            m_contextMenu->exec(globalPos);
     });
 
     wireSelectionSignals();
@@ -115,10 +117,12 @@ void ChatListWidget::ensureContextMenu()
 {
     if (m_contextMenu)
         return;
+    if (m_customContextActions)
+        return; // 宿主已通过 setContextMenuActions() 接管
     m_contextMenu = new QMenu(m_listView);
-    m_renameAction = m_contextMenu->addAction(QStringLiteral("重命名"));
+    m_renameAction = m_contextMenu->addAction(tr("重命名"));
     connect(m_renameAction, &QAction::triggered, this, &ChatListWidget::renameCurrentItem);
-    m_removeAction = m_contextMenu->addAction(QStringLiteral("删除"));
+    m_removeAction = m_contextMenu->addAction(tr("删除"));
     connect(m_removeAction, &QAction::triggered, this, &ChatListWidget::removeCurrentItem);
 }
 
@@ -166,6 +170,38 @@ void ChatListWidget::removeCurrentItem()
     if (removeChatItem(m_contextIndex)) {
         emit chatItemRemoved(sourceRow);
     }
+}
+
+void ChatListWidget::setContextMenuActions(const QList<QAction*>& actions)
+{
+    m_customContextActions = true;
+    delete m_contextMenu;
+    m_contextMenu = new QMenu(m_listView);
+    m_renameAction = nullptr;
+    m_removeAction = nullptr;
+    for (QAction* action : actions) {
+        if (action)
+            m_contextMenu->addAction(action);
+    }
+}
+
+void ChatListWidget::clearContextMenuActions()
+{
+    m_customContextActions = false;
+    delete m_contextMenu;
+    m_contextMenu = nullptr;
+    m_renameAction = nullptr;
+    m_removeAction = nullptr;
+}
+
+QModelIndex ChatListWidget::contextIndex() const
+{
+    return m_contextIndex;
+}
+
+QModelIndex ChatListWidget::contextSourceIndex() const
+{
+    return sourceIndexFor(m_contextIndex);
 }
 
 bool ChatListWidget::applyStyleSheetFile(const QString& fileNameOrPath)

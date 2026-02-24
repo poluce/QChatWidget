@@ -37,3 +37,4 @@ isEmpty(QCHAT_STYLES_QRC_INCLUDED) {
 
 include($$PWD/../common/theme_manager.pri)
 include($$PWD/../common/qss_utils.pri)
+include($$PWD/../common/text_provider.pri)
