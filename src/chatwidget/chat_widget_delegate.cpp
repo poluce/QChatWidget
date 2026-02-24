@@ -582,3 +582,72 @@ QRect ChatWidgetDelegate::avatarRect(const QStyleOptionViewItem& option, const Q
     }
     return QRect(rect.left() + m_style.margin, rect.top() + m_style.margin, m_style.avatarSize, m_style.avatarSize);
 }
+
+QRect ChatWidgetDelegate::fileCardRect(const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+    const auto type = static_cast<ChatWidgetMessage::MessageType>(
+        index.data(ChatWidgetModel::ChatWidgetMessageTypeRole).toInt());
+    if (isSystemType(type))
+        return QRect();
+
+    const QString content = index.data(ChatWidgetModel::ChatWidgetContentRole).toString();
+    const QString imagePath = index.data(ChatWidgetModel::ChatWidgetImagePathRole).toString();
+    const QString fileName = index.data(ChatWidgetModel::ChatWidgetFileNameRole).toString();
+    const bool hasImage = !imagePath.isEmpty() || type == ChatWidgetMessage::MessageType::Image;
+    const bool hasFile = !fileName.isEmpty() || type == ChatWidgetMessage::MessageType::File;
+    if (!hasImage && !hasFile)
+        return QRect();
+
+    const bool isMine = index.data(ChatWidgetModel::ChatWidgetIsMineRole).toBool();
+    const QString senderName = index.data(ChatWidgetModel::ChatWidgetSenderRole).toString();
+    const QString senderId = index.data(ChatWidgetModel::ChatWidgetSenderIdRole).toString();
+
+    // 计算 bubble 位置（与 paint 逻辑一致）
+    QString html = ChatWidgetMarkdownUtils::renderMarkdown(content);
+    int maxWidth = effectiveItemWidth(option) * 0.6;
+    if (maxWidth <= 0) maxWidth = 400;
+
+    QTextDocument doc;
+    doc.setDefaultFont(m_style.messageFont);
+    doc.setHtml(html);
+    doc.setTextWidth(maxWidth);
+    const int docWidth = qMin(maxWidth, qCeil(doc.idealWidth()));
+
+    int attachmentWidth = hasImage ? kAttachmentWidth : qMax(160, docWidth);
+    int attachmentHeight = hasImage ? kAttachmentHeight : kFileCardHeight;
+
+    const int contentWidth = qMax(docWidth, attachmentWidth);
+    int bubbleWidth = contentWidth + m_style.bubblePadding * 2;
+
+    QRect rect = option.rect;
+    QRect avRect = avatarRect(option, index);
+    int contentTop = rect.top() + m_style.margin;
+    if (!isMine && !senderId.isEmpty() && !senderName.isEmpty()) {
+        QFontMetrics nameMetrics(m_style.nameFont);
+        contentTop += nameMetrics.height() + m_style.nameSpacing;
+    }
+
+    int bubbleLeft = isMine
+        ? (avRect.left() - m_style.margin - bubbleWidth)
+        : (avRect.right() + m_style.margin);
+
+    int innerLeft = bubbleLeft + m_style.bubblePadding;
+    int cursorY = contentTop + m_style.bubblePadding;
+
+    // 跳过 reply 区域
+    const QString replySender = index.data(ChatWidgetModel::ChatWidgetReplySenderRole).toString();
+    const QString replyPreview = index.data(ChatWidgetModel::ChatWidgetReplyPreviewRole).toString();
+    const QString replyId = index.data(ChatWidgetModel::ChatWidgetReplyToMessageIdRole).toString();
+    const bool isForwarded = index.data(ChatWidgetModel::ChatWidgetIsForwardedRole).toBool();
+    const QString forwardedFrom = index.data(ChatWidgetModel::ChatWidgetForwardedFromRole).toString();
+    const bool hasReply = !replySender.isEmpty() || !replyPreview.isEmpty() || !replyId.isEmpty();
+    const bool hasForward = isForwarded || !forwardedFrom.isEmpty();
+    if (hasReply || hasForward) {
+        QFontMetrics replyMetrics(m_style.replyFont);
+        int lines = (hasForward ? 1 : 0) + (hasReply ? 1 : 0);
+        cursorY += lines * replyMetrics.height() + kReplyPadding * 2 + kLineSpacing;
+    }
+
+    int innerWidth = contentWidth;
+    return QRect(innerLeft, cursorY, qMin(innerWidth, attachmentWidth), attachmentHeight);
+}

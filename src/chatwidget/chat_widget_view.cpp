@@ -2,6 +2,7 @@
 #include "chat_widget_delegate.h"
 #include "chat_widget_model.h"
 #include <QClipboard>
+#include <QDesktopServices>
 #include <QGuiApplication>
 #include <QListView>
 #include <QMenu>
@@ -9,6 +10,7 @@
 #include <QResizeEvent>
 #include <QStyleOptionViewItem>
 #include <QTimer>
+#include <QUrl>
 #include <QVBoxLayout>
 
 ChatWidgetView::ChatWidgetView(QWidget* parent) : QWidget(parent)
@@ -139,6 +141,15 @@ bool ChatWidgetView::eventFilter(QObject* watched, QEvent* event)
                     } else {
                         emit memberAvatarClicked(senderId, sender, index.row());
                     }
+                }
+            }
+
+            // 检测文件卡片点击 → 用系统默认应用打开文件（精确命中卡片区域）
+            const QRect fileHitRect = m_delegate->fileCardRect(option, index);
+            if (!fileHitRect.isNull() && fileHitRect.contains(mouseEvent->pos())) {
+                const QString filePath = index.data(ChatWidgetModel::ChatWidgetFilePathRole).toString();
+                if (!filePath.isEmpty()) {
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
                 }
             }
         } else if (mouseEvent->button() == Qt::RightButton) {
