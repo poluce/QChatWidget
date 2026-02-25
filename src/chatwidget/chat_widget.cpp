@@ -594,7 +594,7 @@ void ChatWidget::addImageMessage(const MessageParams& params, const QString& ima
     msg.messageId = params.messageId;
     msg.content = params.content;
     msg.timestamp = QDateTime::currentDateTime();
-    msg.messageType = ChatWidgetMessage::Image;
+    msg.messageType = ChatWidgetMessage::MessageType::Image;
     msg.imagePath = imagePath;
     msg.imageWidth = imageWidth;
     msg.imageHeight = imageHeight;
@@ -631,7 +631,7 @@ void ChatWidget::addVoiceMessage(const MessageParams& params, const QString& voi
     msg.messageId = params.messageId;
     msg.content = params.content;
     msg.timestamp = QDateTime::currentDateTime();
-    msg.messageType = ChatWidgetMessage::Voice;
+    msg.messageType = ChatWidgetMessage::MessageType::Voice;
     msg.voicePath = voicePath;
     msg.voiceDuration = durationSeconds;
 

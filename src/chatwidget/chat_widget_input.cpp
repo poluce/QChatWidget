@@ -79,11 +79,6 @@ QToolButton* ChatWidgetInput::createToolButton(const QString& objectName, const 
     return btn;
 }
 
-QString ChatWidgetInput::placeholderForMode() const
-{
-    return m_inputMode == TranslateMode ? tr("翻译模式：输入要翻译的内容...") : tr("输入消息...");
-}
-
 void ChatWidgetInput::setupUi()
 {
     setObjectName("chatWidgetInputRoot");
