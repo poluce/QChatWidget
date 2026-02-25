@@ -368,13 +368,22 @@ QWidget* ModelConfigManagerPage::createRightPanel()
 
     // 配置 ID 行
     auto* configIdRow = new QHBoxLayout();
-    auto* configIdLabel = new QLabel(tr("配置名称:"), container);
+    auto* configIdLabel = new QLabel(tr("配置 ID:"), container);
     m_configIdEdit = new QLineEdit(container);
     m_configIdEdit->setObjectName("configIdEdit");
     m_configIdEdit->setPlaceholderText(tr("自动生成，也可手动指定"));
     configIdRow->addWidget(configIdLabel);
     configIdRow->addWidget(m_configIdEdit);
     layout->addLayout(configIdRow);
+
+    auto* displayNameRow = new QHBoxLayout();
+    auto* displayNameLabel = new QLabel(tr("显示名称:"), container);
+    m_displayNameEdit = new QLineEdit(container);
+    m_displayNameEdit->setObjectName("displayNameEdit");
+    m_displayNameEdit->setPlaceholderText(tr("用于列表展示，可自定义"));
+    displayNameRow->addWidget(displayNameLabel);
+    displayNameRow->addWidget(m_displayNameEdit);
+    layout->addLayout(displayNameRow);
 
     // 表单 stack
     m_formStack = new QStackedWidget(container);
@@ -555,7 +564,7 @@ void ModelConfigManagerPage::onSaveClicked()
     }
 
     if (config.value("configId").toString().trimmed().isEmpty()) {
-        QMessageBox::warning(this, tr("验证失败"), tr("配置名称不能为空"));
+        QMessageBox::warning(this, tr("验证失败"), tr("配置 ID 不能为空"));
         return;
     }
 
@@ -609,6 +618,15 @@ void ModelConfigManagerPage::switchToCreateMode()
     m_editingConfigId.clear();
     m_configIdEdit->setReadOnly(false);
     m_configIdEdit->clear();
+    if (m_displayNameEdit) {
+        int providerIndex = m_formStack->currentIndex();
+        const QString defaultDisplayName =
+            (providerIndex >= 0 && providerIndex < m_providers.size())
+            ? m_providers[providerIndex].name
+            : QString();
+        m_displayNameEdit->setText(defaultDisplayName);
+        m_displayNameEdit->setReadOnly(false);
+    }
     m_saveBtn->setText(tr("导入并保存"));
     setTestStatus(TestStatus::Idle);
     clearFieldErrors();
@@ -641,6 +659,11 @@ void ModelConfigManagerPage::switchToEditMode(const QString& configId)
     m_editingConfigId = configId;
     m_configIdEdit->setReadOnly(true);
     m_configIdEdit->setText(configId);
+    if (m_displayNameEdit) {
+        const QString displayName = cfg.displayName.trimmed().isEmpty() ? cfg.configId : cfg.displayName.trimmed();
+        m_displayNameEdit->setText(displayName);
+        m_displayNameEdit->setReadOnly(false);
+    }
     m_saveBtn->setText(tr("保存修改"));
     setTestStatus(TestStatus::Idle);
     clearFieldErrors();
@@ -704,6 +727,7 @@ QVariantMap ModelConfigManagerPage::collectCurrentConfig() const
     config["providerId"] = provider.id;
     config["providerName"] = provider.name;
     config["configId"] = m_configIdEdit->text().trimmed();
+    config["displayName"] = m_displayNameEdit ? m_displayNameEdit->text().trimmed() : QString();
     config["enabled"] = true;
 
     if (m_formMode == FormMode::EditExisting)

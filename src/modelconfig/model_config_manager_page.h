@@ -114,6 +114,7 @@ private:
     QButtonGroup* m_providerGroup = nullptr;
     QStackedWidget* m_formStack = nullptr;
     QLineEdit* m_configIdEdit = nullptr;
+    QLineEdit* m_displayNameEdit = nullptr;
     QPushButton* m_saveBtn = nullptr;
     QPushButton* m_testBtn = nullptr;
     QLabel* m_testStatusLabel = nullptr;
