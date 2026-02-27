@@ -1,7 +1,6 @@
 #include "chat_widget_delegate.h"
 #include "chat_widget_markdown_utils.h"
 #include "chat_widget_model.h"
-#include <QCoreApplication>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QPainterPath>
@@ -27,22 +26,6 @@ const int kSystemPaddingV = 6;
 const int kFooterTextHPadding = 4;
 const int kFooterTextVPadding = 2;
 const int kFooterBottomSafety = 3;
-
-QString formatStatus(ChatWidgetMessage::MessageStatus status)
-{
-    switch (status) {
-    case ChatWidgetMessage::MessageStatus::Sending:
-        return QCoreApplication::translate("ChatWidgetDelegate", "发送中");
-    case ChatWidgetMessage::MessageStatus::Sent:
-        return QCoreApplication::translate("ChatWidgetDelegate", "已发送");
-    case ChatWidgetMessage::MessageStatus::Failed:
-        return QCoreApplication::translate("ChatWidgetDelegate", "失败");
-    case ChatWidgetMessage::MessageStatus::Read:
-        return QCoreApplication::translate("ChatWidgetDelegate", "已读");
-    default:
-        return QString();
-    }
-}
 
 QString formatTimestamp(const QDateTime& timestamp)
 {
@@ -318,11 +301,9 @@ QSize ChatWidgetDelegate::sizeHint(const QStyleOptionViewItem& option, const QMo
     }
 
     const QString timestampText = formatTimestamp(d.timestamp);
-    if (!timestampText.isEmpty() || d.isMine) {
+    if (!timestampText.isEmpty()) {
         QFontMetrics timestampMetrics(m_style.timestampFont);
-        QFontMetrics statusMetrics(m_style.statusFont);
-        const int footerTextHeight =
-            qMax(timestampMetrics.height(), statusMetrics.height()) + kFooterTextVPadding;
+        const int footerTextHeight = timestampMetrics.height() + kFooterTextVPadding;
         totalHeight += footerTextHeight + kLineSpacing + kFooterBottomSafety;
     }
 
@@ -640,35 +621,17 @@ void ChatWidgetDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     }
 
     const QString timestampText = formatTimestamp(d.timestamp);
-    const QString statusText = d.isMine ? formatStatus(static_cast<ChatWidgetMessage::MessageStatus>(
-                                    index.data(ChatWidgetModel::ChatWidgetMessageStatusRole).toInt()))
-                                      : QString();
-    if (!timestampText.isEmpty() || !statusText.isEmpty()) {
+    if (!timestampText.isEmpty()) {
         const int footerY = bubbleRect.bottom() + kLineSpacing + 1;
         if (d.isMine) {
-            painter->setFont(m_style.statusFont);
-            QFontMetrics statusMetrics(m_style.statusFont);
-            int textX = bubbleRect.right() + 1;
-            if (!timestampText.isEmpty()) {
-                painter->setFont(m_style.timestampFont);
-                painter->setPen(m_style.timestampColor);
-                QFontMetrics tsMetrics(m_style.timestampFont);
-                const int tsWidth = textPixelWidth(tsMetrics, timestampText) + kFooterTextHPadding;
-                const int tsHeight = tsMetrics.height() + kFooterTextVPadding;
-                QRect tsRect(textX - tsWidth, footerY, tsWidth, tsHeight);
-                painter->drawText(tsRect, Qt::AlignRight | Qt::AlignVCenter, timestampText);
-                textX = tsRect.left() - 6;
-            }
-            if (!statusText.isEmpty()) {
-                painter->setFont(m_style.statusFont);
-                painter->setPen(m_style.statusColor);
-                const int statusWidth =
-                    textPixelWidth(statusMetrics, statusText) + kFooterTextHPadding;
-                const int statusHeight = statusMetrics.height() + kFooterTextVPadding;
-                QRect statusRect(textX - statusWidth, footerY, statusWidth, statusHeight);
-                painter->drawText(statusRect, Qt::AlignRight | Qt::AlignVCenter, statusText);
-            }
-        } else if (!timestampText.isEmpty()) {
+            painter->setFont(m_style.timestampFont);
+            painter->setPen(m_style.timestampColor);
+            QFontMetrics tsMetrics(m_style.timestampFont);
+            const int tsWidth = textPixelWidth(tsMetrics, timestampText) + kFooterTextHPadding;
+            const int tsHeight = tsMetrics.height() + kFooterTextVPadding;
+            QRect tsRect(bubbleRect.right() + 1 - tsWidth, footerY, tsWidth, tsHeight);
+            painter->drawText(tsRect, Qt::AlignRight | Qt::AlignVCenter, timestampText);
+        } else {
             painter->setFont(m_style.timestampFont);
             painter->setPen(m_style.timestampColor);
             QFontMetrics tsMetrics(m_style.timestampFont);
