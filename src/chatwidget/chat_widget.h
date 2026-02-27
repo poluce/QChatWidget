@@ -120,7 +120,9 @@ public:
     void registerCommand(const ChatWidgetCommand& command);
     void unregisterCommand(const QString& name);
 
-    // API: 图片消息
+    // API: 图片/文件/语音消息
+    void addFileMessage(const MessageParams& params, const QString& filePath,
+                        const QString& fileName, qint64 fileSize);
     void addImageMessage(const MessageParams& params, const QString& imagePath,
                          int imageWidth = 0, int imageHeight = 0);
     void updateImageState(const QString& messageId, const QString& imagePath,

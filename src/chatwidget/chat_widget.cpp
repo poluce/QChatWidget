@@ -659,3 +659,33 @@ void ChatWidget::updateVoicePlayState(const QString& messageId,
     if (auto* dataModel = model())
         dataModel->updateVoicePlayState(messageId, state, progress);
 }
+
+void ChatWidget::addFileMessage(const MessageParams& params, const QString& filePath,
+                                const QString& fileName, qint64 fileSize)
+{
+    ChatWidgetMessage msg;
+    msg.messageId = params.messageId;
+    msg.content = params.content;
+    msg.timestamp = QDateTime::currentDateTime();
+    msg.messageType = ChatWidgetMessage::MessageType::File;
+    msg.filePath = filePath;
+    msg.fileName = fileName;
+    msg.fileSize = fileSize;
+
+    if (params.senderId.trimmed().isEmpty()) {
+        msg.sender = params.displayName.isEmpty() ? QStringLiteral("User") : params.displayName;
+        msg.avatarPath = params.avatarPath;
+        msg.isMine = params.isMine;
+    } else {
+        ParticipantInfo info = m_participants.value(params.senderId);
+        info.id = params.senderId;
+        if (!params.displayName.isEmpty()) info.displayName = params.displayName;
+        if (!params.avatarPath.isEmpty()) info.avatarPath = params.avatarPath;
+        m_participants.insert(params.senderId, info);
+        msg.senderId = params.senderId;
+        msg.sender = info.displayName.isEmpty() ? params.senderId : info.displayName;
+        msg.avatarPath = info.avatarPath;
+        msg.isMine = !m_currentUserId.isEmpty() ? (params.senderId == m_currentUserId) : params.isMine;
+    }
+    addMessageToModel(msg);
+}
