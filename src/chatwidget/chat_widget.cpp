@@ -3,6 +3,7 @@
 #include "chat_widget_model.h"
 #include "chat_widget_view.h"
 #include "qss_utils.h"
+#include <QDateTime>
 #include <QTimer>
 #include <QSizePolicy>
 #include <QVBoxLayout>
@@ -108,16 +109,48 @@ void ChatWidget::streamOutput(const QString& content)
     if (!m_isSending) {
         return;
     }
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+
+    m_pendingStreamBuffer.append(content);
+
+    const bool flushBySize = m_pendingStreamBuffer.size() >= 160;
+    const bool flushByElapsed = (m_lastStreamFlushMs <= 0) || (nowMs - m_lastStreamFlushMs >= 120);
+    const bool shouldFlushNow = flushBySize || flushByElapsed;
+    if (shouldFlushNow) {
+        flushPendingStreamBuffer();
+    } else if (!m_streamFlushQueued) {
+        m_streamFlushQueued = true;
+        QTimer::singleShot(16, this, [this]() {
+            m_streamFlushQueued = false;
+            flushPendingStreamBuffer();
+        });
+    }
+}
+
+void ChatWidget::flushPendingStreamBuffer(bool forceScroll)
+{
+    if (m_pendingStreamBuffer.isEmpty())
+        return;
+
+    const QString batched = m_pendingStreamBuffer;
+    m_pendingStreamBuffer.clear();
+
     if (auto* dataModel = model()) {
         int targetRow = m_streamTargetRow;
-        if (targetRow < 0 || targetRow >= dataModel->messageCount()) {
+        if (targetRow < 0 || targetRow >= dataModel->messageCount())
             targetRow = dataModel->messageCount() - 1;
-        }
-        dataModel->appendContentToMessageAt(targetRow, content);
+        dataModel->appendContentToMessageAt(targetRow, batched);
     }
-    if (m_viewWidget) {
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    const bool shouldScroll = forceScroll
+        || (m_lastScrollMs <= 0)
+        || (nowMs - m_lastScrollMs >= 350)
+        || (batched.size() >= 240);
+    if (m_viewWidget && shouldScroll) {
         m_viewWidget->scrollToBottom();
+        m_lastScrollMs = QDateTime::currentMSecsSinceEpoch();
     }
+    m_lastStreamFlushMs = QDateTime::currentMSecsSinceEpoch();
 }
 
 void ChatWidget::setStreamTargetRow(int row)
@@ -225,6 +258,10 @@ void ChatWidget::clearMessages()
     }
     m_messageIds.clear();
     m_streamTargetRow = -1;
+    m_pendingStreamBuffer.clear();
+    m_streamFlushQueued = false;
+    m_lastStreamFlushMs = 0;
+    m_lastScrollMs = 0;
 }
 
 int ChatWidget::messageCount() const
@@ -242,6 +279,10 @@ void ChatWidget::setSendingState(bool sending)
     // 核心逻辑：当停止发送时，物理停止内置模拟定时器
     if (!sending && m_streamingTimer->isActive()) {
         m_streamingTimer->stop();
+    }
+    if (!sending) {
+        flushPendingStreamBuffer(true);
+        m_streamFlushQueued = false;
     }
 }
 

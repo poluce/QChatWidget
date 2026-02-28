@@ -159,6 +159,7 @@ private slots:
 private:
     void setupUi();
     void addMessageToModel(const ChatWidgetMessage& msg);
+    void flushPendingStreamBuffer(bool forceScroll = false);
     static void sortHistoryByTimestamp(QList<HistoryMessage>& messages);
     QList<ChatWidgetMessage> convertHistoryBatch(const QList<HistoryMessage>& sorted, bool dedupe,
                                                   QHash<QString, ParticipantInfo>* updatedParticipants = nullptr);
@@ -178,6 +179,10 @@ private:
     QString m_streamingContent;
     int m_streamingIndex = 0;
     int m_streamTargetRow = -1;
+    QString m_pendingStreamBuffer;
+    bool m_streamFlushQueued = false;
+    qint64 m_lastStreamFlushMs = 0;
+    qint64 m_lastScrollMs = 0;
 };
 
 #endif // CHAT_WIDGET_H
