@@ -75,6 +75,13 @@ void ModelConfigImportPage::setConfigData(const QVariantMap& data)
     if (providerId.isEmpty())
         return;
 
+    if (m_displayNameEdit) {
+        QString displayName = data.value("displayName").toString();
+        if (displayName.trimmed().isEmpty())
+            displayName = data.value("configId").toString();
+        m_displayNameEdit->setText(displayName);
+    }
+
     // 回显 configId / enabled
     if (data.contains("configId") && m_configIdEdit)
         m_configIdEdit->setText(data.value("configId").toString());
@@ -137,17 +144,33 @@ void ModelConfigImportPage::setupUi()
     QVBoxLayout* rightLayout = new QVBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0, 10, 10, 10); // 上、右、下边缘留白
 
-    // configId / enabled 控件（将嵌入每个厂商表单，此处仅创建）
+    // 名称 / enabled 控件（将作为共享区域嵌入每个厂商表单）
+    auto* commonFields = new QWidget(rightContainer);
+    auto* commonLayout = new QVBoxLayout(commonFields);
+    commonLayout->setContentsMargins(0, 0, 0, 0);
+    commonLayout->setSpacing(8);
+
+    m_displayNameEdit = new QLineEdit();
+    m_displayNameEdit->setObjectName("displayNameEdit");
+    m_displayNameEdit->setPlaceholderText(tr("例如：CC MiniMax 21（用于列表展示）"));
+    m_displayNameEdit->setToolTip(tr("你看到的配置名称；内部配置标识会根据这里自动生成"));
+    m_displayNameEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    auto* nameRow = new QHBoxLayout();
+    auto* nameLabel = new QLabel(tr("名称:"), commonFields);
+    nameRow->addWidget(nameLabel);
+    nameRow->addWidget(m_displayNameEdit);
+
     m_configIdEdit = new QLineEdit();
     m_configIdEdit->setObjectName("configIdEdit");
-    m_configIdEdit->setPlaceholderText(tr("自动生成，也可手动指定"));
-    m_configIdEdit->setToolTip(tr("配置条目的唯一标识，用于区分同一模型的不同配置"));
-    m_configIdEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_configIdEdit->hide();
 
     m_enabledCheck = new QCheckBox(tr("启用"));
     m_enabledCheck->setObjectName("enabledCheck");
     m_enabledCheck->setChecked(true);
     m_enabledCheck->setToolTip(tr("取消勾选可暂时禁用此配置，不会删除"));
+    nameRow->addWidget(m_enabledCheck);
+    commonLayout->addLayout(nameRow);
 
     m_detailStack = new QStackedWidget(rightContainer);
     m_detailStack->setObjectName("detailStack");
@@ -191,16 +214,14 @@ void ModelConfigImportPage::setupUi()
 
     mainLayout->addWidget(splitter);
 
-    connect(m_providerList, &QListWidget::currentRowChanged, this, [this](int row) {
+    connect(m_providerList, &QListWidget::currentRowChanged, this, [this, commonFields](int row) {
         m_detailStack->setCurrentIndex(row);
         // 将 configId / enabled 控件移入当前厂商表单的占位行
         QWidget* page = m_detailStack->widget(row);
         if (page) {
             QWidget* ph = page->findChild<QWidget*>("configIdPlaceholder");
-            if (ph && ph->layout()) {
-                ph->layout()->addWidget(m_configIdEdit);
-                ph->layout()->addWidget(m_enabledCheck);
-            }
+            if (ph && ph->layout())
+                ph->layout()->addWidget(commonFields);
         }
         autoGenerateConfigId(); // 切换厂商时自动更新 configId
     });
@@ -211,7 +232,10 @@ void ModelConfigImportPage::setupUi()
     connect(m_exportBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onExportClicked);
     connect(m_resetBtn, &QPushButton::clicked, this, &ModelConfigImportPage::onResetClicked);
 
-    connect(m_configIdEdit, &QLineEdit::textChanged, this, [this]() { setDirty(true); });
+    connect(m_displayNameEdit, &QLineEdit::textChanged, this, [this]() {
+        autoGenerateConfigId();
+        setDirty(true);
+    });
     connect(m_enabledCheck, &QCheckBox::toggled, this, [this]() { setDirty(true); });
 }
 
@@ -225,13 +249,13 @@ QWidget* ModelConfigImportPage::createFormWidget(const ModelConfigProvider& prov
     QLabel* header = new QLabel(QString("<h2>%1 %2</h2>").arg(provider.name).arg(tr("配置")));
     layout->addRow(header);
 
-    // 占位行：切换厂商时 configId + enabled 控件会被移入此处
+    // 占位行：切换厂商时共享的名称 / 启用 / 配置 ID 控件会被移入此处
     QWidget* configIdPlaceholder = new QWidget();
     configIdPlaceholder->setObjectName("configIdPlaceholder");
     QHBoxLayout* phLayout = new QHBoxLayout(configIdPlaceholder);
     phLayout->setContentsMargins(0, 0, 0, 0);
     phLayout->setSpacing(8);
-    layout->addRow(tr("配置 ID:"), configIdPlaceholder);
+    layout->addRow(configIdPlaceholder);
 
     FieldWidgets fieldWidgets;
     fieldWidgets.providerId = provider.id;
@@ -304,7 +328,7 @@ void ModelConfigImportPage::onImportClicked()
 
     // configId 不能为空
     if (config.value("configId").toString().trimmed().isEmpty()) {
-        QMessageBox::warning(this, tr("验证失败"), tr("配置 ID 不能为空"));
+        QMessageBox::warning(this, tr("验证失败"), tr("请填写名称，或先选择模型名称"));
         return;
     }
 
@@ -351,6 +375,8 @@ void ModelConfigImportPage::onResetClicked()
         }
     }
     // 重置通用字段
+    if (m_displayNameEdit)
+        m_displayNameEdit->clear();
     if (m_configIdEdit)
         m_configIdEdit->clear();
     if (m_enabledCheck)
@@ -374,6 +400,7 @@ QVariantMap ModelConfigImportPage::collectCurrentConfig() const
     QVariantMap config;
     config["providerId"] = provider.id;
     config["providerName"] = provider.name; // 额外补充名称，方便显示
+    config["displayName"] = m_displayNameEdit ? m_displayNameEdit->text().trimmed() : QString();
 
     // configId / enabled
     config["configId"] = m_configIdEdit ? m_configIdEdit->text().trimmed() : QString();
@@ -548,37 +575,33 @@ void ModelConfigImportPage::autoGenerateConfigId()
     if (!m_configIdEdit)
         return;
 
-    // 只在 configId 为空或看起来像自动生成的值时才覆盖
-    const QString current = m_configIdEdit->text().trimmed();
-    const bool looksAutoGenerated = current.isEmpty()
-        || current.contains('@');
+    const QSignalBlocker blocker(m_configIdEdit);
+    m_configIdEdit->setText(generatedConfigId());
+}
 
-    if (!looksAutoGenerated)
-        return;
+QString ModelConfigImportPage::generatedConfigId() const
+{
+    const QString displayName = m_displayNameEdit ? m_displayNameEdit->text().simplified() : QString();
+    if (!displayName.isEmpty())
+        return displayName;
 
     int index = m_providerList->currentRow();
     if (index < 0 || index >= m_providers.size())
-        return;
+        return QString();
 
     const auto& provider = m_providers[index];
     const auto& widgets = m_fieldWidgetsMap[index];
 
-    // 从 modelId combo 或 input 获取当前模型名
     QString modelId;
     if (widgets.combos.contains(QStringLiteral("modelId")))
         modelId = widgets.combos.value(QStringLiteral("modelId"))->currentText().trimmed();
     else if (widgets.inputs.contains(QStringLiteral("modelId")))
         modelId = widgets.inputs.value(QStringLiteral("modelId"))->text().trimmed();
 
-    if (modelId.isEmpty()) {
-        m_configIdEdit->clear();
-        return;
-    }
+    if (modelId.isEmpty())
+        return QString();
 
-    // 格式: provider@modelId  例如 deepseek@deepseek-chat
-    if (m_configIdGenerator) {
-        m_configIdEdit->setText(m_configIdGenerator(provider.id, modelId));
-    } else {
-        m_configIdEdit->setText(QStringLiteral("%1@%2").arg(provider.id, modelId));
-    }
+    if (m_configIdGenerator)
+        return m_configIdGenerator(provider.id, modelId);
+    return QStringLiteral("%1@%2").arg(provider.id, modelId);
 }

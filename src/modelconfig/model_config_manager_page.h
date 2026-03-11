@@ -103,6 +103,7 @@ private:
     void autoGenerateConfigId();
     int providerIndexForId(const QString& providerId) const;
     QString inferProviderTag(const QString& provider, const QString& baseUrl) const;
+    QString generatedConfigId() const;
 
     // 左侧面板
     QListWidget* m_configList = nullptr;

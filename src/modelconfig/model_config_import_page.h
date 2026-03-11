@@ -125,6 +125,7 @@ private:
     void setDirty(bool dirty);
     int providerIndexForId(const QString& providerId) const;
     void autoGenerateConfigId();
+    QString generatedConfigId() const;
 
     QListWidget* m_providerList = nullptr;
     QStackedWidget* m_detailStack = nullptr;
@@ -140,6 +141,7 @@ private:
     QList<ModelConfigProvider> m_providers;
 
     // 通用字段（所有厂商共享，位于表单顶部）
+    QLineEdit* m_displayNameEdit = nullptr;
     QLineEdit* m_configIdEdit = nullptr;
     QCheckBox* m_enabledCheck = nullptr;
 
